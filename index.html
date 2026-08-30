@@ -1602,12 +1602,13 @@ async function submitBooking(dateStr, time){
     const booking={
       id: inserted.id, date:dateStr, time,
       name: currentProfile.full_name||'Aluno',
-      email: currentUser.email, phone: currentProfile.phone||'',
+      email: currentProfile.email||'', phone: currentProfile.phone||'',
       type: typeEl.value, isFixed: false, obs,
       createdAt: new Date().toISOString()
     };
-    // Envia email de confirmação e volta ao dashboard (sem modal)
-    await sendBookingEmail(booking);
+    // Envia email de confirmação e volta ao dashboard (sem modal) — só se o aluno tiver e-mail de contato salvo
+    if(booking.email) await sendBookingEmail(booking);
+    else console.warn('Aluno sem e-mail de contato cadastrado — confirmação não enviada por email.');
     await loadAlunoDashboard();
     showPage('dashboard-aluno');
     showToast('✅ Agendamento confirmado! Verifique seu e-mail.');
@@ -2841,12 +2842,9 @@ function fillProfileCard() {
   const initEl  = document.getElementById('dash-avatar-initials');
   if(nameEl)  nameEl.value  = currentProfile.full_name || '';
   if(phoneEl) phoneEl.value = currentProfile.phone || '';
-  if(emailEl && currentUser) {
-    // Tenta carregar e-mail de contato salvo; NÃO mostra o e-mail interno @alunos.lb
-    try {
-      const saved = localStorage.getItem('contact_email_'+currentUser.id) || '';
-      emailEl.value = saved;
-    } catch(_){ emailEl.value=''; }
+  if(emailEl) {
+    // E-mail de contato real do aluno (salvo no Supabase); NÃO é o e-mail interno @alunos.lb
+    emailEl.value = currentProfile.email || '';
   }
   if(cpfEl && currentUser) {
     const digits = (currentUser.email||'').replace(/@alunos\.lb$/,'').replace(/\D/g,'');
@@ -2866,14 +2864,12 @@ async function saveStudentProfile() {
   const btn   = document.getElementById('profile-save-btn');
   if(!name) { showToast('❌ Nome não pode ser vazio.'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
-  const { error } = await sb.from('profiles').update({ full_name:name, phone }).eq('id',currentUser.id);
+  const { error } = await sb.from('profiles').update({ full_name:name, phone, email }).eq('id',currentUser.id);
   btn.disabled=false; btn.textContent='Salvar alterações';
   if(error) {
     showToast('❌ Erro ao salvar: '+error.message);
   } else {
-    // Save contact email in localStorage (it's not the auth email)
-    try { if(email) localStorage.setItem('contact_email_'+currentUser.id, email); } catch(_){}
-    currentProfile = { ...currentProfile, full_name:name, phone };
+    currentProfile = { ...currentProfile, full_name:name, phone, email };
     document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
     updateNavAvatar();
     showToast('✅ Perfil atualizado com sucesso!');
