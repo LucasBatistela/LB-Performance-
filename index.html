@@ -2331,9 +2331,15 @@ async function loginAluno() {
 
   // 6. Criar/atualizar perfil e vínculo com sessão autenticada
   const { error: p1 } = await sb.from('profiles').upsert({ id: loginData.user.id, full_name: preReg.full_name, phone: preReg.phone||null, role: 'student' }, { onConflict: 'id' });
-  const { error: s1 } = await sb.from('students').upsert({ id: loginData.user.id, professor_id: preReg.professor_id }, { onConflict: 'id' });
+  const { error: s1 } = await sb.from('students').upsert({ id: loginData.user.id, cpf: cpf, professor_id: preReg.professor_id }, { onConflict: 'id' });
   if(p1) console.error('Erro ao criar perfil:', p1);
   if(s1) console.error('Erro ao vincular aluno:', s1);
+  if(p1 || s1) {
+    errEl.textContent = 'Conta criada, mas houve um erro ao salvar seu perfil. Avise seu professor (código: '+((p1||s1).code||'?')+').';
+    errEl.style.display='block';
+    await loadUserAndRedirect(loginData.user);
+    return;
+  }
 
   errEl.style.display='none';
   await loadUserAndRedirect(loginData.user);
