@@ -7,7 +7,7 @@
 <script id="site-state" type="application/json">
 {
   "version": 1,
-  "admin": { "pin": "1234", "email": "lucasbatistelapro@gmail.com", "formspree": "", "emailjs": {"serviceId":"","templateId":"","cancelTemplateId":"template_e0jbj5t","publicKey":""} },
+  "admin": { "pin": "1234", "email": "lucasbatistelapro@gmail.com", "formspree": "", "emailjs": {"serviceId":"service_gs73m6h","templateId":"template_3o58hiw","cancelTemplateId":"template_e0jbj5t","publicKey":"wZ78Y6wKEdOYU0_F4"} },
   "availability": {
     "0": [],
     "1": ["07:00","08:00","09:00","17:00","18:00","19:00"],
@@ -1253,6 +1253,9 @@ function getAvailableSlots(date) {
     const [h,m]=time.split(':').map(Number);
     const slotDt=new Date(date.getFullYear(),date.getMonth(),date.getDate(),h,m);
     if(slotDt-now < 3*3600*1000) return false;
+    if(sb && profBookingsProfId){
+      return !profBookingsCache.some(b=> b.date===dateStr && b.time===time);
+    }
     return !state.bookings.some(b=>{
       if(b.date===dateStr && b.time===time) return true;
       if(b.isFixed && b.time===time){ const bd=strToDate(b.date); if(bd.getDay()===dow) return true; }
@@ -1482,9 +1485,24 @@ function toggleAcc(i){
 
 /* ── Calendar ─────────────────────────────────────────────────── */
 let selDate=null, selTime=null, isFixed=false;
-function renderCalendar(){
+let profBookingsCache=[]; let profBookingsProfId=null;
+async function refreshProfBookingsAndAvailability(){
+  let profId=null;
+  if(currentUser && currentProfile?.role==='student'){ profId = currentStudentData?.professor_id; }
+  else if(currentUser && currentProfile?.role==='professor'){ profId = currentUser.id; }
+  profBookingsProfId = profId;
+  if(!sb || !profId){ profBookingsCache=[]; return; }
+  const { data: prof } = await sb.from('professors').select('availability').eq('id', profId).single();
+  if(prof?.availability) state.availability = prof.availability;
+  const { data: bookings } = await sb.from('bookings').select('date,time')
+    .eq('professor_id', profId).eq('status','confirmed');
+  profBookingsCache = bookings || [];
+}
+async function renderCalendar(){
   const root=document.getElementById('calendar-root');
   if(!root) return;
+  root.innerHTML=`<p style="color:var(--muted);font-size:.88rem">Carregando horários...</p>`;
+  await refreshProfBookingsAndAvailability();
   const days=getNext5Days();
   root.innerHTML=`
     <p class="slots-label">Selecione o dia</p>
@@ -1503,9 +1521,10 @@ function renderCalendar(){
     <div id="booking-form-area"></div>`;
   selDate=null; selTime=null;
 }
-function selectDay(i){
+async function selectDay(i){
   const days=getNext5Days(); selDate=days[i]; selTime=null;
   document.querySelectorAll('.day-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
+  await refreshProfBookingsAndAvailability();
   renderSlots();
 }
 function renderSlots(){
@@ -1598,7 +1617,15 @@ async function submitBooking(dateStr, time){
       status: 'confirmed',
       obs: obs
     }).select().single();
-    if(error){ alert('Erro ao confirmar: ' + error.message); return; }
+    if(error){
+      if(error.code==='23505'){
+        alert('Esse horário acabou de ser reservado por outro aluno. Escolha outro horário.');
+        await renderCalendar();
+      } else {
+        alert('Erro ao confirmar: ' + error.message);
+      }
+      return;
+    }
     const booking={
       id: inserted.id, date:dateStr, time,
       name: currentProfile.full_name||'Aluno',
@@ -2186,6 +2213,13 @@ async function saveAvailability(){
       return btns[si]&&btns[si].classList.contains('on');
     });
   }
+  if(sb && currentUser && currentProfile?.role==='professor'){
+    const { error } = await sb.from('professors').update({ availability: newAvail }).eq('id', currentUser.id);
+    if(error){ alert('Erro ao salvar: ' + error.message); return; }
+    state.availability = newAvail;
+    alert('Disponibilidade salva com sucesso! Já vale para todos os alunos.');
+    return;
+  }
   const res=await publishState({...state,availability:newAvail});
   if(res.ok) alert('Disponibilidade salva com sucesso!');
   else alert('Erro ao salvar.');
@@ -2565,9 +2599,14 @@ async function profCancelBooking(id) {
   loadProfAllBookings();
 }
 
-function renderProfDisponibilidade() {
+async function renderProfDisponibilidade() {
   const el = document.getElementById('prof-disponibilidade-content');
   if(!el) return;
+  el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
+  if(sb && currentUser){
+    const { data: prof } = await sb.from('professors').select('availability').eq('id', currentUser.id).single();
+    if(prof?.availability) state.availability = prof.availability;
+  }
   const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
   const DAY_NAMES=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   el.innerHTML=`
