@@ -2350,6 +2350,8 @@ async function loginAluno() {
     return;
   }
 
+  await sb.from('pending_registrations').delete().eq('cpf', cpf);
+
   errEl.style.display='none';
   await loadUserAndRedirect(loginData.user);
 }
