@@ -1,0 +1,3103 @@
+<title>Lucas Batistela · Personal Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script id="site-state" type="application/json">
+{
+  "version": 1,
+  "admin": { "pin": "1234", "email": "lucasbatistelapro@gmail.com", "formspree": "", "emailjs": {"serviceId":"","templateId":"","cancelTemplateId":"template_e0jbj5t","publicKey":""} },
+  "availability": {
+    "0": [],
+    "1": ["07:00","08:00","09:00","17:00","18:00","19:00"],
+    "2": ["07:00","08:00","17:00","18:00"],
+    "3": ["07:00","08:00","09:00","17:00","18:00"],
+    "4": ["07:00","08:00","17:00","18:00"],
+    "5": ["07:00","08:00","09:00"],
+    "6": []
+  },
+  "bookings": [],
+  "anamneseCodes": [],
+  "anamneseResponses": []
+}
+</script>
+
+<style>
+/* ─── TOKENS ──────────────────────────────────────────────────── */
+:root {
+  --ground:      #F2F4F8;
+  --surface:     #FFFFFF;
+  --surface-alt: #E8EDF5;
+  --ink:         #0D1A2E;
+  --ink-2:       #3D5070;
+  --pine:        #346aac;
+  --pine-h:      #2a5590;
+  --citrus:      #879cbb;
+  --border:      #C2CDE0;
+  --muted:       #7A8EB0;
+  --hero-bg:     #000000;
+  --hero-citrus: #879cbb;
+  --radius:      14px;
+  --radius-sm:   8px;
+  --nav-h:       62px;
+  --max-w:       1060px;
+  --font-d:      'Syne', sans-serif;
+  --font-b:      'Plus Jakarta Sans', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #070D18; --surface: #0E1A2E; --surface-alt: #162337;
+    --ink:         #DCE5F0; --ink-2: #8BA5C8; --pine: #5b8fc7; --pine-h: #6fa0d4;
+    --citrus:      #879cbb; --border: #1E2E47; --muted: #5070A0;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:      #070D18; --surface: #0E1A2E; --surface-alt: #162337;
+  --ink:         #DCE5F0; --ink-2: #8BA5C8; --pine: #5b8fc7; --pine-h: #6fa0d4;
+  --citrus:      #879cbb; --border: #1E2E47; --muted: #5070A0;
+}
+
+/* ─── RESET ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-b); background: var(--ground); color: var(--ink);
+  line-height: 1.65; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+ul { list-style: none; }
+input, textarea, select {
+  font-family: inherit; font-size: inherit; color: var(--ink);
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 16px; width: 100%;
+  outline: none; transition: border-color .15s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--pine); }
+textarea { resize: vertical; min-height: 100px; }
+label { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+fieldset { border: none; }
+h1,h2,h3 { font-family: var(--font-d); line-height: 1.15; }
+img { max-width: 100%; display: block; }
+
+/* ─── UTILITIES ───────────────────────────────────────────────── */
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+.eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--pine); margin-bottom: 10px; }
+.section-pad { padding: 80px 0; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--pine); color: #fff; font-weight: 600; font-size: .95rem;
+  padding: 14px 28px; border-radius: 50px; transition: background .15s, transform .12s;
+}
+.btn-primary:hover { background: var(--pine-h); transform: translateY(-1px); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 2px solid var(--border); color: var(--ink); font-weight: 600; font-size: .95rem;
+  padding: 12px 26px; border-radius: 50px; transition: border-color .15s, color .15s;
+}
+.btn-ghost:hover { border-color: var(--pine); color: var(--pine); }
+.btn-wa {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: #25D366; color: #fff; font-weight: 700; font-size: 1rem;
+  padding: 16px 32px; border-radius: 50px; transition: background .15s, transform .12s;
+}
+.btn-wa:hover { background: #1ebe59; transform: translateY(-1px); }
+
+/* ─── NAV ─────────────────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+  height: var(--nav-h); display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; background: var(--ground);
+  border-bottom: 1px solid var(--border); transition: box-shadow .2s;
+}
+.nav.scrolled { box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+.nav-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; color: var(--ink); font-size: 1.2rem; transition: background .15s; }
+.nav-btn:hover { background: var(--surface-alt); }
+.hamburger-lines { display: flex; flex-direction: column; gap: 5px; }
+.hamburger-lines span { display: block; width: 22px; height: 2px; background: var(--ink);
+  border-radius: 2px; transition: transform .25s, opacity .25s; }
+.nav-logo { font-family: var(--font-d); font-size: 1.5rem; font-weight: 800;
+  color: var(--ink); cursor: pointer; }
+.nav-logo span { color: var(--pine); }
+.nav-search-icon { font-size: 1.1rem; }
+.nav-avatar-btn { position: relative; }
+.nav-avatar-circle {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--pine); color: #fff;
+  font-family: var(--font-d); font-size: .82rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .15s;
+}
+.nav-avatar-circle.guest {
+  background: var(--surface-alt); color: var(--muted); font-size: 1rem;
+}
+.nav-avatar-circle:hover { opacity: .85; }
+.nav-profile-drop {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  min-width: 220px; z-index: 500; overflow: hidden;
+}
+.nav-profile-drop-header { padding: 16px; border-bottom: 1px solid var(--border); }
+.nav-profile-drop-name { font-weight: 700; font-size: .95rem; }
+.nav-profile-drop-email { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.nav-profile-drop-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; font-size: .88rem; font-weight: 500;
+  color: var(--ink); cursor: pointer; transition: background .12s; width: 100%; text-align: left;
+}
+.nav-profile-drop-item:hover { background: var(--surface-alt); }
+.nav-profile-drop-item.danger { color: #C0392B; }
+
+/* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
+.menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 950; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.menu-backdrop.open { opacity: 1; pointer-events: all; }
+.menu-panel {
+  position: fixed; top: 0; left: 0; bottom: 0; width: min(320px, 85vw);
+  background: var(--surface); z-index: 960; display: flex; flex-direction: column;
+  padding: 24px; transform: translateX(-100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  box-shadow: 4px 0 32px rgba(0,0,0,.12);
+}
+.menu-panel.open { transform: translateX(0); }
+.menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+.menu-logo { font-family: var(--font-d); font-size: 1.3rem; font-weight: 800; color: var(--ink); }
+.menu-logo span { color: var(--pine); }
+.menu-close { font-size: 1.6rem; color: var(--muted); padding: 4px 8px; border-radius: 8px; }
+.menu-close:hover { background: var(--surface-alt); color: var(--ink); }
+.menu-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.menu-nav a { display: block; font-family: var(--font-d); font-size: 1.6rem; font-weight: 700;
+  color: var(--ink); padding: 12px 8px; border-radius: var(--radius); cursor: pointer;
+  transition: background .15s, color .15s; }
+.menu-nav a:hover { background: var(--surface-alt); color: var(--pine); }
+.menu-footer { padding-top: 24px; border-top: 1px solid var(--border); }
+.menu-footer button { font-size: .82rem; color: var(--muted); padding: 8px;
+  transition: color .15s; }
+.menu-footer button:hover { color: var(--pine); }
+
+/* ─── SEARCH OVERLAY ──────────────────────────────────────────── */
+.search-overlay {
+  position: fixed; inset: 0; background: var(--surface); z-index: 980;
+  display: flex; flex-direction: column; transform: translateY(-100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1); padding-top: var(--nav-h);
+}
+.search-overlay.open { transform: translateY(0); }
+.search-bar { display: flex; align-items: center; gap: 12px; padding: 20px 24px;
+  border-bottom: 1px solid var(--border); }
+.search-bar input { border: none; font-size: 1.2rem; font-weight: 500; background: transparent; }
+.search-bar input:focus { border: none; }
+.search-close { font-size: 1.6rem; color: var(--muted); flex-shrink: 0; padding: 4px 10px;
+  border-radius: 8px; }
+.search-close:hover { background: var(--surface-alt); color: var(--ink); }
+.search-results { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.search-result-item { padding: 14px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.search-result-item:hover .sr-title { color: var(--pine); }
+.sr-section { font-size: .75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: 4px; }
+.sr-title { font-weight: 600; transition: color .15s; }
+.sr-snippet { font-size: .88rem; color: var(--ink-2); margin-top: 4px; }
+.search-empty { color: var(--muted); padding: 24px 0; font-size: .95rem; }
+
+/* ─── PAGES CONTAINER ─────────────────────────────────────────── */
+.pages-wrap { padding-top: var(--nav-h); }
+.page { display: none; min-height: calc(100vh - var(--nav-h)); }
+.page.active { display: block; animation: fadeUp .3s ease both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── HOME: HERO ──────────────────────────────────────────────── */
+.hero {
+  background: var(--hero-bg); color: #fff; min-height: 92vh;
+  display: flex; align-items: center;
+  background-image: radial-gradient(ellipse 60% 60% at 80% 50%, rgba(52,106,172,.35) 0%, transparent 70%);
+}
+.hero-inner { max-width: var(--max-w); margin: 0 auto; padding: 80px 24px; }
+.hero-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--hero-citrus); opacity: .85; margin-bottom: 24px; }
+.hero-headline { font-family: var(--font-d); font-size: clamp(3.4rem,9vw,7rem);
+  font-weight: 800; line-height: 1.0; letter-spacing: -.02em;
+  color: #fff; margin-bottom: 28px; }
+.hero-headline em { color: var(--hero-citrus); font-style: normal; }
+.hero-sub { font-size: 1.1rem; color: rgba(255,255,255,.65); max-width: 440px;
+  line-height: 1.6; margin-bottom: 40px; }
+.hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+.hero-ctas .btn-primary { background: var(--hero-citrus); color: #000000; font-weight: 700; }
+.hero-ctas .btn-primary:hover { background: #6e88ac; }
+.hero-ctas .btn-ghost { border-color: rgba(255,255,255,.3); color: rgba(255,255,255,.8); }
+.hero-ctas .btn-ghost:hover { border-color: var(--hero-citrus); color: var(--hero-citrus); }
+
+/* ─── HOME: IMPACT SECTION ────────────────────────────────────── */
+.impact {
+  background: var(--pine); color: #fff; padding: 100px 24px; text-align: center;
+  background-image: radial-gradient(ellipse 80% 80% at 50% 100%, rgba(135,156,187,.15) 0%, transparent 70%);
+}
+.impact-phrase { font-family: var(--font-d); font-size: clamp(1.8rem,4.5vw,3rem);
+  font-weight: 800; line-height: 1.2; max-width: 700px; margin: 0 auto 36px;
+  text-wrap: balance; }
+.impact-phrase em { color: var(--hero-citrus); font-style: normal; }
+
+/* ─── HOME: PLANS ACCORDION ───────────────────────────────────── */
+.plans-preview { padding: 80px 0; }
+.plans-preview-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+.plans-preview-inner h2 { font-size: 2rem; margin-bottom: 36px; }
+.accordion-item { border: 1.5px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 10px; overflow: hidden; transition: border-color .2s; }
+.accordion-item:hover { border-color: var(--pine); }
+.accordion-trigger {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; background: var(--surface); width: 100%; text-align: left;
+  gap: 16px; cursor: pointer;
+}
+.acc-info { display: flex; flex-direction: column; gap: 3px; }
+.acc-name { font-weight: 700; font-size: 1.05rem; }
+.acc-price { font-size: .88rem; color: var(--muted); }
+.acc-arrow { font-size: 1.2rem; color: var(--pine); transition: transform .25s; flex-shrink: 0; }
+.accordion-item.open .acc-arrow { transform: rotate(180deg); }
+.accordion-body { display: none; padding: 0 22px 20px; background: var(--surface); }
+.accordion-item.open .accordion-body { display: block; }
+.accordion-body ul { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 18px; }
+.accordion-body li { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; }
+.accordion-body li::before { content: '✓'; color: var(--pine); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.acc-cta { font-size: .88rem; }
+
+/* ─── SOBRE ───────────────────────────────────────────────────── */
+.page-header { background: var(--hero-bg); color: #fff; padding: 64px 24px 56px; }
+.page-header-inner { max-width: var(--max-w); margin: 0 auto; }
+.page-header .eyebrow { color: var(--hero-citrus); }
+.page-header h1 { font-size: clamp(2rem,5vw,3.2rem); font-weight: 800; margin-top: 8px; }
+.sobre-body { max-width: var(--max-w); margin: 0 auto; padding: 60px 24px; }
+.sobre-photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 56px; }
+.photo-ph {
+  background: var(--surface-alt); border: 2px dashed var(--border);
+  border-radius: var(--radius); aspect-ratio: 4/5; display: flex;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; color: var(--muted); font-size: .82rem; text-align: center; padding: 16px;
+}
+.photo-ph svg { width: 32px; height: 32px; opacity: .4; }
+.sobre-text { max-width: 680px; margin-bottom: 60px; }
+.sobre-text h2 { font-size: 1.8rem; margin-bottom: 24px; }
+.sobre-text p { color: var(--ink-2); margin-bottom: 16px; line-height: 1.75; }
+.timeline { border-left: 3px solid var(--pine); padding-left: 28px;
+  display: flex; flex-direction: column; gap: 32px; }
+.tl-item { position: relative; }
+.tl-dot { position: absolute; left: -38px; top: 4px; width: 14px; height: 14px;
+  background: var(--pine); border-radius: 50%; border: 3px solid var(--ground); }
+.tl-year { font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--pine); margin-bottom: 4px; }
+.tl-role { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+.tl-desc { font-size: .9rem; color: var(--ink-2); line-height: 1.6; }
+.creds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+  gap: 14px; margin-top: 48px; }
+.cred-card { background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px; }
+.cred-label { font-size: .75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: 6px; }
+.cred-val { font-weight: 600; font-size: .95rem; }
+
+/* ─── AGENDAR ─────────────────────────────────────────────────── */
+.agendar-body { max-width: var(--max-w); margin: 0 auto; padding: 60px 24px; }
+.agendar-body h2 { font-size: 1.8rem; margin-bottom: 8px; }
+.agendar-body > p { color: var(--ink-2); margin-bottom: 40px; }
+.day-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: none; margin-bottom: 32px; }
+.day-strip::-webkit-scrollbar { display: none; }
+.day-btn {
+  flex-shrink: 0; width: 72px; padding: 12px 8px; border-radius: var(--radius);
+  border: 2px solid var(--border); background: var(--surface); text-align: center;
+  transition: border-color .15s, background .15s; cursor: pointer;
+}
+.day-btn .day-name { font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); display: block; }
+.day-btn .day-num { font-family: var(--font-d); font-size: 1.4rem; font-weight: 800;
+  color: var(--ink); display: block; margin: 2px 0; }
+.day-btn .day-month { font-size: .7rem; color: var(--muted); display: block; }
+.day-btn:hover { border-color: var(--pine); }
+.day-btn.selected { border-color: var(--pine); background: var(--pine); }
+.day-btn.selected .day-name, .day-btn.selected .day-num, .day-btn.selected .day-month {
+  color: #fff; }
+.day-btn.no-slots { opacity: .4; pointer-events: none; }
+.slots-label { font-size: .85rem; font-weight: 700; color: var(--ink-2);
+  margin-bottom: 14px; text-transform: uppercase; letter-spacing: .08em; }
+.slots-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 36px; }
+.slot-btn {
+  padding: 10px 20px; border-radius: 50px; border: 2px solid var(--border);
+  background: var(--surface); font-weight: 600; font-size: .9rem;
+  transition: border-color .15s, background .15s; cursor: pointer;
+}
+.slot-btn:hover { border-color: var(--pine); }
+.slot-btn.selected { border-color: var(--pine); background: var(--pine); color: #fff; }
+.booking-form { max-width: 540px; }
+.form-row { margin-bottom: 18px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+.radio-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.radio-opt { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.radio-opt input { width: auto; }
+.toggle-group { display: flex; gap: 8px; margin-top: 6px; }
+.toggle-btn { padding: 8px 18px; border-radius: 50px; border: 2px solid var(--border);
+  font-size: .88rem; font-weight: 600; transition: all .15s; }
+.toggle-btn.on { border-color: var(--pine); background: var(--pine); color: #fff; }
+.form-submit { margin-top: 24px; }
+.no-slots-msg { color: var(--muted); padding: 20px 0; font-style: italic; }
+.select-day-msg { color: var(--muted); padding: 20px 0; }
+
+/* ─── PLANOS ──────────────────────────────────────────────────── */
+.planos-body { max-width: var(--max-w); margin: 0 auto; padding: 60px 24px; }
+.planos-body h2 { font-size: 1.8rem; margin-bottom: 8px; }
+.planos-body > p { color: var(--ink-2); margin-bottom: 48px; }
+.plans-grid { display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 20px; margin-bottom: 52px; }
+.plan-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 28px 24px; display: flex;
+  flex-direction: column; position: relative; transition: border-color .2s, box-shadow .2s;
+}
+.plan-card:hover { border-color: var(--pine); box-shadow: 0 4px 24px rgba(52,106,172,.1); }
+.plan-card.featured { border-color: var(--pine); }
+.plan-badge { position: absolute; top: -12px; left: 24px; background: var(--pine);
+  color: #fff; font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+.plan-icon { font-size: 1.5rem; margin-bottom: 14px; }
+.plan-name { font-family: var(--font-d); font-size: 1.2rem; font-weight: 800;
+  margin-bottom: 6px; }
+.plan-tagline { font-size: .88rem; color: var(--ink-2); margin-bottom: 20px;
+  line-height: 1.5; }
+.plan-price-area { margin-bottom: 20px; }
+.plan-price { font-family: var(--font-d); font-size: 2rem; font-weight: 800; color: var(--pine); }
+.plan-period { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+.plan-freq-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.freq-tab { padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  font-size: .78rem; font-weight: 700; transition: all .15s; cursor: pointer; }
+.freq-tab.active { border-color: var(--pine); background: var(--pine); color: #fff; }
+.plan-features { flex: 1; display: flex; flex-direction: column; gap: 9px;
+  margin-bottom: 24px; }
+.plan-features li { display: flex; align-items: flex-start; gap: 9px; font-size: .88rem; }
+.feat-check { color: var(--pine); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.feat-no { color: var(--muted); }
+.feat-no .feat-check { color: var(--muted); }
+.plan-cta { display: block; text-align: center; }
+.planos-wa { text-align: center; padding: 48px 0 0; border-top: 1px solid var(--border); }
+.planos-wa p { color: var(--ink-2); margin-bottom: 20px; }
+.wa-svg { width: 22px; height: 22px; fill: currentColor; }
+
+/* ─── ANAMNESE ────────────────────────────────────────────────── */
+.anamnese-gate { max-width: 480px; margin: 80px auto; padding: 0 24px; text-align: center; }
+.anamnese-gate h2 { font-size: 1.8rem; margin-bottom: 14px; }
+.anamnese-gate p { color: var(--ink-2); margin-bottom: 32px; }
+.anamnese-gate .form-row { text-align: left; }
+.anamnese-gate input { font-size: 1.5rem; text-align: center; letter-spacing: .3em;
+  font-family: var(--font-d); font-weight: 800; }
+.anamnese-form-wrap { max-width: 700px; margin: 0 auto; padding: 48px 24px 80px; }
+.anamnese-form-wrap h2 { font-size: 1.6rem; margin-bottom: 6px; }
+.anamnese-form-wrap > p { color: var(--ink-2); margin-bottom: 40px; }
+.form-section { background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 28px 24px; margin-bottom: 20px; }
+.form-section-title { font-family: var(--font-d); font-size: 1.05rem; font-weight: 800;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.sec-num { background: var(--pine); color: #fff; width: 26px; height: 26px;
+  border-radius: 50%; font-size: .8rem; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; font-family: var(--font-b); font-weight: 700; }
+.parq-q { padding: 14px 0; border-bottom: 1px solid var(--border); display: flex;
+  align-items: flex-start; justify-content: space-between; gap: 16px; }
+.parq-q:last-child { border-bottom: none; }
+.parq-q-text { font-size: .92rem; line-height: 1.55; flex: 1; }
+.parq-q-opts { display: flex; gap: 16px; flex-shrink: 0; }
+.parq-q-opts label { display: flex; align-items: center; gap: 5px; font-size: .85rem;
+  font-weight: 600; cursor: pointer; margin: 0; }
+.parq-q-opts input { width: auto; }
+.parq-alert { background: rgba(220,60,40,.08); border: 1.5px solid rgba(220,60,40,.25);
+  border-radius: var(--radius-sm); padding: 14px 18px; color: #C0392B; font-size: .9rem;
+  margin-top: 16px; display: none; line-height: 1.6; }
+.check-group { display: flex; flex-direction: column; gap: 10px; }
+.check-opt { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: .92rem; }
+.check-opt input { width: auto; }
+.anamnese-progress { display: flex; gap: 4px; margin-bottom: 28px; }
+.prog-dot { flex: 1; height: 4px; background: var(--border); border-radius: 4px; transition: background .3s; }
+.prog-dot.done { background: var(--pine); }
+.anamnese-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; }
+.anamnese-done-screen { max-width: 480px; margin: 80px auto; padding: 0 24px; text-align: center; }
+.anamnese-done-screen h2 { font-size: 1.8rem; margin-bottom: 14px; }
+.anamnese-done-screen p { color: var(--ink-2); margin-bottom: 28px; }
+.anamnese-done-icon { font-size: 3rem; margin-bottom: 20px; }
+
+/* ─── TOAST ──────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1a2e4a; color: #fff; padding: 14px 28px; border-radius: 50px;
+  font-size: .92rem; font-weight: 600; z-index: 9999;
+  opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none;
+  white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── ADMIN ───────────────────────────────────────────────────── */
+.overlay { position: fixed; inset: 0; z-index: 990; display: flex;
+  align-items: flex-start; justify-content: center; background: rgba(0,0,0,.5);
+  overflow-y: auto; padding: 40px 16px; }
+.overlay[hidden] { display: none; }
+.overlay-panel { background: var(--surface); border-radius: var(--radius);
+  width: 100%; max-width: 720px; padding: 32px; position: relative; }
+.overlay-close { position: absolute; top: 16px; right: 16px; font-size: 1.5rem;
+  color: var(--muted); padding: 4px 10px; border-radius: 8px; }
+.overlay-close:hover { background: var(--surface-alt); color: var(--ink); }
+.admin-tabs { display: flex; gap: 6px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+.admin-tab { padding: 10px 18px; font-weight: 600; font-size: .88rem; color: var(--muted);
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+.admin-tab.active { color: var(--pine); border-bottom-color: var(--pine); }
+.avail-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 20px; }
+.avail-day-col { display: flex; flex-direction: column; gap: 6px; }
+.avail-day-name { font-size: .72rem; font-weight: 700; text-align: center;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.avail-slot-toggle { padding: 5px 4px; border-radius: 6px; border: 1.5px solid var(--border);
+  font-size: .72rem; font-weight: 600; text-align: center; transition: all .15s; }
+.avail-slot-toggle.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.bookings-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.bookings-table th { text-align: left; padding: 8px 12px; font-size: .75rem;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+  border-bottom: 1px solid var(--border); }
+.bookings-table td { padding: 10px 12px; border-bottom: 1px solid var(--border);
+  vertical-align: top; }
+.booking-tag { display: inline-block; padding: 2px 9px; border-radius: 20px;
+  font-size: .72rem; font-weight: 700; }
+.tag-presencial { background: rgba(52,106,172,.12); color: var(--pine); }
+.tag-online { background: rgba(135,156,187,.15); color: #346aac; }
+.tag-fixo { background: rgba(80,80,200,.1); color: #3A3AB0; }
+.pin-screen { text-align: center; }
+.pin-screen h3 { margin-bottom: 20px; }
+.pin-screen input { max-width: 200px; margin: 0 auto 16px; font-size: 1.5rem;
+  text-align: center; letter-spacing: .3em; font-family: var(--font-d); }
+.anamnese-resp-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color .15s; }
+.anamnese-resp-card:hover { border-color: var(--pine); }
+.resp-name { font-weight: 700; margin-bottom: 4px; }
+.resp-meta { font-size: .82rem; color: var(--muted); }
+.code-gen-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.code-gen-row input { flex: 1; }
+.code-item { display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; background: var(--surface-alt); border-radius: var(--radius-sm);
+  margin-bottom: 8px; font-size: .88rem; }
+.code-val { font-family: monospace; font-size: 1rem; font-weight: 700;
+  letter-spacing: .1em; color: var(--pine); }
+.code-used { color: var(--muted); font-size: .78rem; }
+
+/* ─── CONFIRM MODAL ───────────────────────────────────────────── */
+.modal-box { background: var(--surface); border-radius: var(--radius); padding: 32px;
+  max-width: 520px; width: 100%; }
+.modal-icon { font-size: 2.5rem; margin-bottom: 16px; text-align: center; }
+.modal-title { font-family: var(--font-d); font-size: 1.5rem; font-weight: 800;
+  margin-bottom: 8px; text-align: center; }
+.modal-detail { font-size: .95rem; color: var(--ink-2); line-height: 1.65;
+  margin-bottom: 20px; text-align: center; }
+.modal-policy { background: rgba(220,150,0,.07); border: 1px solid rgba(220,150,0,.25);
+  border-radius: var(--radius-sm); padding: 14px 16px; font-size: .85rem;
+  color: #7A5800; line-height: 1.6; margin-bottom: 24px; }
+.modal-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* ─── FOOTER ──────────────────────────────────────────────────── */
+.footer { border-top: 1px solid var(--border); padding: 32px 24px; }
+.footer-inner { max-width: var(--max-w); margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.footer-logo { font-family: var(--font-d); font-size: 1.2rem; font-weight: 800; }
+.footer-logo span { color: var(--pine); }
+.footer-nav { display: flex; gap: 20px; }
+.footer-nav a { font-size: .88rem; color: var(--muted); cursor: pointer;
+  transition: color .15s; }
+.footer-nav a:hover { color: var(--pine); }
+.footer-admin { font-size: .78rem; color: var(--muted); transition: color .15s; }
+.footer-admin:hover { color: var(--pine); }
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .form-row-2 { grid-template-columns: 1fr; }
+  .sobre-photos { grid-template-columns: 1fr; }
+  .avail-grid { grid-template-columns: repeat(4, 1fr); }
+  .plans-grid { grid-template-columns: 1fr; }
+  .footer-inner { flex-direction: column; text-align: center; }
+  .footer-nav { justify-content: center; }
+  .parq-q { flex-direction: column; }
+  .anamnese-nav { flex-direction: column; gap: 10px; }
+}
+
+/* ─── LOGIN / AUTH ─────────────────────────────────────────── */
+.auth-wrap { max-width: 440px; margin: 60px auto; padding: 0 24px 80px; }
+.auth-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 36px 32px; }
+.auth-logo { font-family: var(--font-d); font-size: 1.8rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+.auth-logo span { color: var(--pine); }
+.auth-sub { text-align: center; color: var(--muted); font-size: .88rem; margin-bottom: 28px; }
+.auth-tabs { display: flex; border: 1.5px solid var(--border); border-radius: 50px; overflow: hidden; margin-bottom: 28px; }
+.auth-tab { flex: 1; padding: 10px; text-align: center; font-weight: 600; font-size: .88rem; color: var(--muted); transition: all .15s; cursor: pointer; }
+.auth-tab.active { background: var(--pine); color: #fff; }
+.auth-error { color: #C0392B; font-size: .85rem; margin-bottom: 14px; display: none; padding: 10px 14px; background: rgba(220,60,40,.07); border-radius: var(--radius-sm); }
+
+/* ─── DASHBOARD ────────────────────────────────────────────── */
+.dash-wrap { max-width: var(--max-w); margin: 0 auto; padding: 32px 24px 80px; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+.dash-greeting { font-family: var(--font-d); font-size: 1.5rem; font-weight: 800; }
+.dash-phrase { background: var(--pine); color: #fff; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 28px; font-family: var(--font-d); font-size: 1.1rem; font-weight: 700; line-height: 1.4; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-bottom: 20px; }
+.dash-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 22px; }
+.dash-card-title { font-weight: 700; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
+.dash-booking-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
+.dash-booking-item:last-child { border-bottom: none; }
+.dash-booking-date { font-weight: 700; }
+.dash-booking-meta { color: var(--muted); font-size: .82rem; margin-top: 2px; }
+.prof-student-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.prof-student-row:last-child { border-bottom: none; }
+.prof-student-name { font-weight: 600; font-size: .9rem; }
+.prof-student-plan { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.nav-login-btn { font-size: .78rem; font-weight: 700; background: var(--pine); color: #fff; padding: 6px 14px; border-radius: 20px; transition: background .15s; }
+.nav-login-btn:hover { background: var(--pine-h); }
+</style>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────── -->
+<nav class="nav" id="main-nav">
+  <button class="nav-btn" id="nav-menu-btn" aria-label="Menu" onclick="openMenu()">
+    <div class="hamburger-lines">
+      <span></span><span></span><span></span>
+    </div>
+  </button>
+  <div class="nav-logo" onclick="showPage('home')">Lucas<span>.</span></div>
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="nav-btn nav-search-icon" id="nav-search-btn" aria-label="Buscar" onclick="openSearch()">🔍</button>
+    <div class="nav-avatar-btn" id="nav-avatar-wrap">
+      <button class="nav-btn" style="padding:5px" aria-label="Perfil" onclick="toggleProfileDrop()">
+        <div class="nav-avatar-circle guest" id="nav-avatar-circle">👤</div>
+      </button>
+      <div class="nav-profile-drop" id="nav-profile-drop" hidden>
+        <div id="nav-drop-content"></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── SLIDE-IN MENU ───────────────────────────────────────────── -->
+<div class="menu-backdrop" id="menu-backdrop" onclick="closeMenu()"></div>
+<div class="menu-panel" id="menu-panel">
+  <div class="menu-header">
+    <div class="menu-logo">Lucas<span>.</span></div>
+    <button class="menu-close" onclick="closeMenu()">×</button>
+  </div>
+  <nav class="menu-nav">
+    <a onclick="showPage('home');closeMenu()">Início</a>
+    <a onclick="showPage('sobre');closeMenu()">Sobre</a>
+    <a onclick="showPage('planos');closeMenu()">Planos</a>
+    <a onclick="showPage('login');closeMenu()" id="menu-login-link">Área do Aluno</a>
+  </nav>
+  <div class="menu-footer">
+    <button onclick="showPage('login');closeMenu()">Área do Professor</button>
+  </div>
+</div>
+
+<!-- ─── SEARCH OVERLAY ──────────────────────────────────────────── -->
+<div class="search-overlay" id="search-overlay">
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="O que você está procurando?" oninput="doSearch(this.value)" autofocus>
+    <button class="search-close" onclick="closeSearch()">×</button>
+  </div>
+  <div class="search-results" id="search-results">
+    <p class="search-empty">Digite uma palavra ou frase para buscar.</p>
+  </div>
+</div>
+
+<!-- ─── PAGES CONTAINER ─────────────────────────────────────────── -->
+<div class="pages-wrap">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <section class="hero">
+      <div class="hero-inner">
+        <p class="hero-eyebrow">Personal Trainer · São José dos Campos · SP</p>
+        <h1 class="hero-headline">O TREINAMENTO<br>CERTO GERA<br><em>O RESULTADO CERTO.</em></h1>
+        <p class="hero-sub">Treinamento personalizado presencial e online para quem leva saúde a sério.</p>
+        <div class="hero-ctas">
+          <button class="btn-primary" onclick="showPage('sobre')">Quem sou eu</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="impact">
+      <p class="impact-phrase">"Seu próximo treino <em>começa com um clique.</em>"</p>
+      <a href="https://wa.me/5512981112070?text=Ol%C3%A1%20Lucas!%20Quero%20saber%20mais%20sobre%20o%20treinamento." target="_blank" class="btn-primary" style="background:#25D366;color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:10px;text-decoration:none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Falar no WhatsApp
+      </a>
+    </section>
+
+    <section class="plans-preview">
+      <div class="plans-preview-inner">
+        <p class="eyebrow">Planos</p>
+        <h2>O que ofereço</h2>
+        <div class="accordion" id="home-accordion"></div>
+        <div style="margin-top:28px">
+          <button class="btn-ghost" onclick="showPage('planos')">Ver todos os detalhes →</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-logo">Lucas<span>.</span></div>
+        <nav class="footer-nav">
+          <a onclick="showPage('sobre')">Sobre</a>
+          <a onclick="showPage('planos')">Planos</a>
+        </nav>
+        
+      </div>
+    </footer>
+  </div>
+
+  <!-- SOBRE -->
+  <div class="page" id="page-sobre">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Quem sou eu</p>
+        <h1>Educação Física como<br>ferramenta de cuidado</h1>
+      </div>
+    </div>
+    <div class="sobre-body">
+      <div class="sobre-photos">
+        <div class="photo-ph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          Foto será adicionada
+        </div>
+        <div class="photo-ph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+          </svg>
+          Foto será adicionada
+        </div>
+      </div>
+
+      <div class="sobre-text">
+        <h2>Da paixão ao propósito</h2>
+        <p>Cresci dentro do esporte e sempre soube que seria meu caminho. Formado em Educação Física, construí minha experiência em diferentes frentes — do futebol ao treinamento funcional — até entender que meu papel vai além de prescrever treinos: é educar, cuidar e transformar a relação das pessoas com o próprio corpo.</p>
+        <p>Hoje atendo no Studio10, em São José dos Campos, ministrando aulas de treinamento funcional em grupo. Ao mesmo tempo, estou estruturando meu atendimento como personal trainer para oferecer um acompanhamento ainda mais próximo e individualizado.</p>
+        <p>Minha abordagem é direta: entendo quem você é, onde está e para onde quer ir. Cada treino é uma aula — você sai sabendo mais sobre o seu corpo. E o ambiente? Sempre o mais acolhedor e animado possível.</p>
+      </div>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-year">Início</div>
+          <div class="tl-role">Primeiros passos no esporte</div>
+          <div class="tl-desc">Crescimento em ambiente familiar ligado ao esporte e à atividade física, que moldou a visão de saúde e movimento que carrego até hoje.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-year">Assessoria Esportiva</div>
+          <div class="tl-role">Treinamento coletivo e corrida de rua</div>
+          <div class="tl-desc">Experiência com assessoria esportiva, aprendendo a lidar com grupos heterogêneos e diferentes objetivos dentro do mesmo treino.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-year">Colégio Cassiano</div>
+          <div class="tl-role">Professor de Educação Física</div>
+          <div class="tl-desc">Atuação no ambiente escolar, desenvolvendo habilidades pedagógicas e a capacidade de adaptar o movimento para diferentes faixas etárias.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-year">São José E.C. SAF</div>
+          <div class="tl-role">Preparação Física no futebol</div>
+          <div class="tl-desc">Trabalho com preparação física em contexto de futebol profissional, aprofundando conhecimento em periodização e performance esportiva.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-year">TS Estúdio</div>
+          <div class="tl-role">Treinamento personalizado</div>
+          <div class="tl-desc">Transição para o atendimento individualizado, desenvolvendo a escuta ativa e a capacidade de montar programas totalmente adaptados ao aluno.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-year">Hoje</div>
+          <div class="tl-role">Studio10 · Personal Trainer</div>
+          <div class="tl-desc">Instrutor de treinamento funcional no Studio10 e personal trainer em formação, com foco em saúde, qualidade de vida e performance — para jovens, adultos e idosos.</div>
+        </div>
+      </div>
+
+      <div class="creds-grid" style="margin-top:48px">
+        <div class="cred-card">
+          <div class="cred-label">Formação</div>
+          <div class="cred-val">Educação Física — Bacharelado</div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-label">Pós-graduação</div>
+          <div class="cred-val">Fisiologia do Exercício e do Esporte</div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-label">Pós-graduação</div>
+          <div class="cred-val">Preparação Física e Treinamento Personalizado</div>
+        </div>
+        <div class="cred-card">
+          <div class="cred-label">Atuação atual</div>
+          <div class="cred-val">Funcional em grupo · Studio10, SJC</div>
+        </div>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-logo">Lucas<span>.</span></div>
+        <nav class="footer-nav">
+          <a onclick="showPage('home')">Início</a>
+          <a onclick="showPage('planos')">Planos</a>
+        </nav>
+        
+      </div>
+    </footer>
+  </div>
+
+  <!-- AGENDAR -->
+  <div class="page" id="page-agendar">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Disponibilidade</p>
+        <h1>Reserve sua aula</h1>
+      </div>
+    </div>
+    <div class="agendar-body">
+      <p>Escolha o dia e horário. Agendamentos disponíveis com até 5 dias de antecedência e mínimo 3 horas antes.</p>
+      <div id="calendar-root"><div style="color:var(--muted);padding:20px 0">Carregando agenda…</div></div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-logo">Lucas<span>.</span></div>
+        <nav class="footer-nav">
+          <a onclick="showPage('home')">Início</a>
+          <a onclick="showPage('sobre')">Sobre</a>
+          <a onclick="showPage('planos')">Planos</a>
+        </nav>
+        
+      </div>
+    </footer>
+  </div>
+
+  <!-- PLANOS -->
+  <div class="page" id="page-planos">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Investimento</p>
+        <h1>Escolha seu plano</h1>
+      </div>
+    </div>
+    <div class="planos-body">
+      <p>Cada plano é adaptado à sua rotina e objetivo. Todos começam com anamnese e entrevista inicial.</p>
+      <div class="plans-grid" id="plans-grid"></div>
+      <div class="planos-wa">
+        <p>Dúvidas sobre qual plano escolher? Fale direto comigo.</p>
+        <a href="https://wa.me/5512981112070" target="_blank" class="btn-wa">
+          <svg class="wa-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          Falar com Lucas
+        </a>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-logo">Lucas<span>.</span></div>
+        <nav class="footer-nav">
+          <a onclick="showPage('home')">Início</a>
+          <a onclick="showPage('sobre')">Sobre</a>
+        </nav>
+        
+      </div>
+    </footer>
+  </div>
+
+  <!-- ANAMNESE -->
+  <div class="page" id="page-anamnese">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Avaliação inicial</p>
+        <h1>Anamnese</h1>
+      </div>
+    </div>
+
+    <div id="anamnese-gate" class="anamnese-gate">
+      <h2>Acesso com código</h2>
+      <p>Insira o código de acesso enviado pelo seu treinador para preencher a anamnese.</p>
+      <div class="form-row">
+        <label for="gate-code">Código de acesso</label>
+        <input type="text" id="gate-code" placeholder="• • • • • •" maxlength="8" autocomplete="off"
+          oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div id="gate-error" style="color:#C0392B;font-size:.88rem;margin-bottom:14px;display:none"></div>
+      <button class="btn-primary" onclick="validateAnamneseCode()" style="width:100%;justify-content:center;margin-top:8px">
+        Continuar →
+      </button>
+    </div>
+
+    <div id="anamnese-form-wrap" class="anamnese-form-wrap" hidden>
+      <h2>Ficha de Avaliação</h2>
+      <p>Preencha com atenção. Essas informações guiam todo o seu programa de treinamento.</p>
+      <div class="anamnese-progress" id="anamnese-progress"></div>
+      <div id="anamnese-sections"></div>
+      <div class="anamnese-nav" id="anamnese-nav"></div>
+    </div>
+
+    <div id="anamnese-done-screen" class="anamnese-done-screen" hidden>
+      <div class="anamnese-done-icon">✅</div>
+      <h2>Ficha enviada!</h2>
+      <p>Suas respostas foram recebidas com sucesso. Lucas vai analisar as informações e entrar em contato em breve para dar início ao seu programa.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+        <button class="btn-primary" onclick="voltarAoDashboard()" style="font-size:.88rem;padding:10px 22px">Voltar ao painel</button>
+        <button class="btn-ghost" onclick="showPage('home')" style="font-size:.88rem;padding:10px 22px">Ir para o início</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- LOGIN -->
+  <div class="page" id="page-login">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Acesso</p>
+        <h1>Entrar na plataforma</h1>
+      </div>
+    </div>
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="tab-aluno" onclick="switchAuthTab('aluno')">Sou Aluno</div>
+          <div class="auth-tab" id="tab-prof" onclick="switchAuthTab('prof')">Sou Professor</div>
+        </div>
+        <div id="auth-form-aluno">
+          <div class="form-row"><label>CPF</label>
+            <input type="text" id="login-cpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"></div>
+          <div class="form-row"><label>Senha</label>
+            <input type="password" id="login-senha-aluno" placeholder="••••••••"
+              onkeydown="if(event.key==='Enter')loginAluno()"></div>
+          <div class="auth-error" id="auth-err-aluno"></div>
+          <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginAluno()">Entrar</button>
+        </div>
+        <div id="auth-form-prof" hidden>
+          <div class="form-row"><label>E-mail</label>
+            <input type="email" id="login-email-prof" placeholder="seu@email.com"></div>
+          <div class="form-row"><label>Senha</label>
+            <input type="password" id="login-senha-prof" placeholder="••••••••"
+              onkeydown="if(event.key==='Enter')loginProfessor()"></div>
+          <div class="auth-error" id="auth-err-prof"></div>
+          <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginProfessor()">Entrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD ALUNO -->
+  <div class="page" id="page-dashboard-aluno">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Área do Aluno</p>
+        <h1>Meu Painel</h1>
+      </div>
+    </div>
+    <div class="dash-wrap">
+      <div class="dash-header">
+        <div class="dash-greeting" id="dash-aluno-greeting">Olá!</div>
+        <button class="btn-ghost" onclick="logout()" style="font-size:.85rem;padding:8px 18px">Sair</button>
+      </div>
+      <div class="dash-phrase" id="dash-phrase">💪 Carregando...</div>
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-card-title">Próximo treino</div>
+          <div id="dash-proximo-treino"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento.</p></div>
+          <button class="btn-primary" onclick="showPage('agendar')" style="margin-top:14px;font-size:.85rem;padding:10px 20px">Agendar nova aula</button>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Plano de treino</div>
+          <div id="dash-plano"><p style="color:var(--muted);font-size:.88rem">Seu professor vai vincular seu treino em breve.</p></div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-title">Meu professor</div>
+          <div id="dash-professor"><p style="color:var(--muted);font-size:.88rem">—</p></div>
+          <a id="dash-wa-prof" href="#" target="_blank" class="btn-wa" style="margin-top:14px;font-size:.85rem;padding:10px 20px;display:none">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp do Professor
+          </a>
+        </div>
+      </div>
+      <div class="dash-card" style="margin-top:20px">
+        <div class="dash-card-title">Anamnese</div>
+        <div id="dash-anam-submitted" hidden>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm);margin-bottom:10px">
+            <span style="font-size:1.4rem">✅</span>
+            <div>
+              <div style="font-weight:700;font-size:.9rem">Ficha enviada com sucesso</div>
+              <div style="font-size:.8rem;color:var(--muted)" id="dash-anam-submitted-date">Professor vai analisar em breve.</div>
+            </div>
+          </div>
+        </div>
+        <div id="dash-anam-form">
+          <p style="font-size:.88rem;color:var(--muted);margin-bottom:16px">Insira o código enviado pelo professor para preencher sua ficha de avaliação física.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="dash-anam-code" placeholder="CÓDIGO" maxlength="8"
+              style="flex:1;min-width:140px;text-transform:uppercase;letter-spacing:.25em;font-family:var(--font-d);font-weight:800;font-size:1.05rem;text-align:center"
+              onkeydown="if(event.key==='Enter')acessarAnamnese()" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn-primary" onclick="acessarAnamnese()" style="white-space:nowrap;padding:12px 22px;font-size:.88rem">
+              Acessar →
+            </button>
+          </div>
+          <div id="dash-anam-error" style="color:#C0392B;font-size:.82rem;margin-top:8px;display:none"></div>
+        </div>
+      </div>
+      <!-- PERFIL DO ALUNO -->
+      <div class="dash-card" style="margin-top:20px" id="dash-profile-card">
+        <div class="dash-card-title">Meu Perfil</div>
+
+        <!-- Foto de perfil -->
+        <div style="display:flex;justify-content:center;margin-bottom:24px">
+          <div style="position:relative;width:90px;height:90px">
+            <div id="dash-avatar-display"
+              style="width:90px;height:90px;border-radius:50%;background:var(--pine);color:#fff;
+                font-family:var(--font-d);font-size:1.7rem;font-weight:800;
+                display:flex;align-items:center;justify-content:center;
+                overflow:hidden;cursor:pointer;border:3px solid var(--border)"
+              onclick="document.getElementById('dash-avatar-input').click()"
+              title="Trocar foto de perfil">
+              <span id="dash-avatar-initials">?</span>
+              <img id="dash-avatar-img" src="" alt="Foto de perfil"
+                style="width:100%;height:100%;object-fit:cover;display:none;position:absolute;top:0;left:0;border-radius:50%">
+            </div>
+            <button onclick="document.getElementById('dash-avatar-input').click()"
+              style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;
+                background:var(--pine);color:#fff;font-size:.8rem;
+                display:flex;align-items:center;justify-content:center;
+                border:2px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.18)"
+              title="Editar foto">✏️</button>
+            <input type="file" id="dash-avatar-input" accept="image/*" capture="environment"
+              style="display:none" onchange="handleAvatarUpload(this)">
+          </div>
+        </div>
+        <p style="text-align:center;font-size:.78rem;color:var(--muted);margin-top:-16px;margin-bottom:20px">
+          Toque na foto para trocar · Galeria ou câmera
+        </p>
+
+        <!-- Campos editáveis -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label>Nome completo</label>
+            <input type="text" id="profile-name" placeholder="Seu nome completo">
+          </div>
+          <div>
+            <label>E-mail de contato</label>
+            <input type="email" id="profile-email" placeholder="seu@email.com">
+          </div>
+          <div>
+            <label>WhatsApp</label>
+            <input type="tel" id="profile-phone" placeholder="(11) 99999-9999">
+          </div>
+          <div>
+            <label>CPF <span style="color:var(--muted);font-size:.78rem;font-weight:400">(somente leitura)</span></label>
+            <input type="text" id="profile-cpf" readonly
+              style="color:var(--muted);cursor:default;background:var(--surface-alt)">
+          </div>
+          <button class="btn-primary" onclick="saveStudentProfile()"
+            style="justify-content:center;margin-top:4px" id="profile-save-btn">
+            Salvar alterações
+          </button>
+          <div id="profile-save-msg" style="font-size:.82rem;text-align:center;display:none"></div>
+        </div>
+      </div>
+
+      <div class="dash-card" style="margin-top:20px">
+        <div class="dash-card-title">Histórico de agendamentos</div>
+        <div id="dash-historico"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento ainda.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PROFESSOR -->
+  <div class="page" id="page-dashboard-prof">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Área do Professor</p>
+        <h1 id="dash-prof-title">Meu Painel</h1>
+      </div>
+    </div>
+    <div class="dash-wrap">
+      <div class="dash-header">
+        <div class="dash-greeting" id="dash-prof-greeting">Olá!</div>
+        <button class="btn-ghost" onclick="logout()" style="font-size:.85rem;padding:8px 18px">Sair</button>
+      </div>
+      <!-- Tabs do professor -->
+      <div class="admin-tabs" style="margin-bottom:24px">
+        <button class="admin-tab active" id="ptab-visao" onclick="showProfTab('visao')">Visão Geral</button>
+        <button class="admin-tab" id="ptab-alunos" onclick="showProfTab('alunos')">Alunos</button>
+        <button class="admin-tab" id="ptab-agendamentos" onclick="showProfTab('agendamentos')">Agendamentos</button>
+        <button class="admin-tab" id="ptab-disponibilidade" onclick="showProfTab('disponibilidade')">Disponibilidade</button>
+        <button class="admin-tab" id="ptab-anamnese" onclick="showProfTab('anamnese')">Anamnese</button>
+        <button class="admin-tab" id="ptab-perfil" onclick="showProfTab('perfil')">Meu Perfil</button>
+        <button class="admin-tab" id="ptab-config" onclick="showProfTab('config')">Configurações</button>
+      </div>
+      <!-- Visão Geral -->
+      <div id="prof-tab-visao">
+        <div class="dash-grid">
+          <div class="dash-card">
+            <div class="dash-card-title">Agenda de hoje</div>
+            <div id="prof-agenda-hoje"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento hoje.</p></div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-title">Meus alunos</div>
+            <div id="prof-alunos-lista"><p style="color:var(--muted);font-size:.88rem">Nenhum aluno vinculado.</p></div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-title">Próximos agendamentos</div>
+            <div id="prof-proximos"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento.</p></div>
+          </div>
+        </div>
+        <div class="dash-card" style="margin-top:20px">
+          <div class="dash-card-title">Fichas de anamnese recebidas</div>
+          <div id="prof-anamneses"><p style="color:var(--muted);font-size:.88rem">Nenhuma ficha recebida.</p></div>
+        </div>
+      </div>
+      <!-- Alunos -->
+      <div id="prof-tab-alunos" hidden>
+        <!-- Formulário de cadastro -->
+        <div class="dash-card" style="margin-bottom:20px">
+          <div class="dash-card-title">Cadastrar Novo Aluno</div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">
+            O aluno acessa a Área do Aluno com o CPF como login e a senha inicial é o próprio CPF.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label>Nome completo</label>
+              <input type="text" id="new-aluno-nome" placeholder="Nome completo do aluno">
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:160px">
+                <label>CPF</label>
+                <input type="text" id="new-aluno-cpf" placeholder="000.000.000-00"
+                  maxlength="14" oninput="maskCPF(this)">
+              </div>
+              <div style="flex:1;min-width:160px">
+                <label>WhatsApp</label>
+                <input type="tel" id="new-aluno-phone" placeholder="(11) 99999-9999">
+              </div>
+            </div>
+            <button class="btn-primary" onclick="cadastrarAluno()"
+              id="cadastrar-aluno-btn" style="justify-content:center">
+              Cadastrar Aluno
+            </button>
+            <div id="cadastrar-aluno-result" hidden></div>
+          </div>
+        </div>
+
+        <!-- Lista de alunos -->
+        <div class="dash-card">
+          <div class="dash-card-title">Meus Alunos</div>
+          <div id="prof-alunos-list">
+            <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agendamentos -->
+      <div id="prof-tab-agendamentos" hidden>
+        <div class="dash-card">
+          <div class="dash-card-title">Todos os agendamentos</div>
+          <div id="prof-all-bookings"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+        </div>
+      </div>
+      <!-- Disponibilidade -->
+      <div id="prof-tab-disponibilidade" hidden>
+        <div class="dash-card">
+          <div class="dash-card-title">Horários disponíveis</div>
+          <div id="prof-disponibilidade-content"></div>
+        </div>
+      </div>
+      <!-- Anamnese -->
+      <div id="prof-tab-anamnese" hidden>
+        <div class="dash-card">
+          <div class="dash-card-title">Gerar código de anamnese</div>
+          <div id="prof-anamnese-content"></div>
+        </div>
+      </div>
+      <!-- Perfil do Professor -->
+      <div id="prof-tab-perfil" hidden>
+        <div class="dash-card">
+          <div class="dash-card-title">Meu Perfil</div>
+
+          <!-- Foto de perfil -->
+          <div style="display:flex;justify-content:center;margin-bottom:24px">
+            <div style="position:relative;width:90px;height:90px">
+              <div id="prof-avatar-display"
+                style="width:90px;height:90px;border-radius:50%;background:var(--pine);color:#fff;
+                  font-family:var(--font-d);font-size:1.7rem;font-weight:800;
+                  display:flex;align-items:center;justify-content:center;
+                  overflow:hidden;cursor:pointer;border:3px solid var(--border)"
+                onclick="document.getElementById('prof-avatar-input').click()"
+                title="Trocar foto de perfil">
+                <span id="prof-avatar-initials">?</span>
+                <img id="prof-avatar-img" src="" alt="Foto de perfil"
+                  style="width:100%;height:100%;object-fit:cover;display:none;position:absolute;top:0;left:0;border-radius:50%">
+              </div>
+              <button onclick="document.getElementById('prof-avatar-input').click()"
+                style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;
+                  background:var(--pine);color:#fff;font-size:.8rem;
+                  display:flex;align-items:center;justify-content:center;
+                  border:2px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.18)"
+                title="Editar foto">✏️</button>
+              <input type="file" id="prof-avatar-input" accept="image/*" capture="environment"
+                style="display:none" onchange="handleProfAvatarUpload(this)">
+            </div>
+          </div>
+          <p style="text-align:center;font-size:.78rem;color:var(--muted);margin-top:-16px;margin-bottom:20px">
+            Toque na foto para trocar · Galeria ou câmera
+          </p>
+
+          <!-- Campos editáveis -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label>Nome completo</label>
+              <input type="text" id="prof-profile-name" placeholder="Seu nome completo">
+            </div>
+            <div>
+              <label>E-mail <span style="color:var(--muted);font-size:.78rem;font-weight:400">(somente leitura)</span></label>
+              <input type="email" id="prof-profile-email" readonly
+                style="color:var(--muted);cursor:default;background:var(--surface-alt)">
+            </div>
+            <div>
+              <label>WhatsApp</label>
+              <input type="tel" id="prof-profile-phone" placeholder="(11) 99999-9999">
+            </div>
+            <button class="btn-primary" onclick="saveProfProfile()"
+              style="justify-content:center;margin-top:4px" id="prof-profile-save-btn">
+              Salvar alterações
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configurações -->
+      <div id="prof-tab-config" hidden>
+        <div class="dash-card">
+          <div class="dash-card-title">Configurações</div>
+          <div id="prof-config-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /pages-wrap -->
+
+<!-- ─── ADMIN OVERLAY ─────────────────────────────────────────────── -->
+<div id="admin-overlay" class="overlay" hidden>
+  <div class="overlay-panel">
+    <button class="overlay-close" onclick="closeAdmin()">×</button>
+    <div id="admin-content"></div>
+  </div>
+</div>
+
+<!-- ─── CONFIRM OVERLAY ───────────────────────────────────────────── -->
+<div id="confirm-overlay" class="overlay" hidden>
+  <div class="modal-box">
+    <div id="confirm-content"></div>
+  </div>
+</div>
+
+<!-- ─── TOAST ────────────────────────────────────────────────────── -->
+<div id="site-toast" class="toast"></div>
+
+<script>
+'use strict';
+/* ── MUST BE FIRST: Template capture ─────────────────────────── */
+const TEMPLATE_HTML = document.documentElement.outerHTML;
+
+/* ── State ────────────────────────────────────────────────────── */
+let state = JSON.parse(document.getElementById('site-state').textContent);
+
+/* ── Artifact ─────────────────────────────────────────────────── */
+let artifactAPI = null;
+async function initArtifact() {
+  try {
+    if (window.claude && typeof window.claude.use === 'function')
+      artifactAPI = await window.claude.use('artifact');
+  } catch(_) { artifactAPI = null; }
+}
+function generatePublishHTML(s) {
+  return ('<!DOCTYPE html>\n' + TEMPLATE_HTML).replace(
+    /<script id="site-state" type="application\/json">[\s\S]*?<\/script>/,
+    '<script id="site-state" type="application/json">\n' + JSON.stringify(s, null, 2) + '\n<\/script>'
+  );
+}
+async function publishState(s) {
+  if (!artifactAPI) { state = s; return { ok: true }; }
+  try { await artifactAPI.publish(generatePublishHTML(s)); state = s; return { ok: true }; }
+  catch(e) { return { ok: false, error: e }; }
+}
+
+/* ── Date utils ───────────────────────────────────────────────── */
+const DAYS_S  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MONTHS_S = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function dateToStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function strToDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function getNext5Days() {
+  const days=[]; const now=new Date();
+  for(let i=0;i<5;i++){
+    const d=new Date(now); d.setDate(d.getDate()+i);
+    d.setHours(0,0,0,0); days.push(d);
+  }
+  return days;
+}
+function getAvailableSlots(date) {
+  const dow=date.getDay();
+  const allSlots=[...(state.availability[String(dow)]||[])].sort();
+  const dateStr=dateToStr(date); const now=new Date();
+  return allSlots.filter(time=>{
+    const [h,m]=time.split(':').map(Number);
+    const slotDt=new Date(date.getFullYear(),date.getMonth(),date.getDate(),h,m);
+    if(slotDt-now < 3*3600*1000) return false;
+    return !state.bookings.some(b=>{
+      if(b.date===dateStr && b.time===time) return true;
+      if(b.isFixed && b.time===time){ const bd=strToDate(b.date); if(bd.getDay()===dow) return true; }
+      return false;
+    });
+  });
+}
+
+/* ── Nav scroll ───────────────────────────────────────────────── */
+window.addEventListener('scroll', ()=>{
+  document.getElementById('main-nav').classList.toggle('scrolled', window.scrollY > 10);
+});
+
+/* ── Page routing ─────────────────────────────────────────────── */
+let currentPage = 'home';
+function showPage(id) {
+  // Proteção de rota: dashboards exigem login
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor' };
+  if(protectedRoutes[id]) {
+    const requiredRole = protectedRoutes[id];
+    if(!currentUser || !currentProfile) { showPage('login'); return; }
+    if(currentProfile.role !== requiredRole) { showPage('home'); return; }
+  }
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el = document.getElementById('page-'+id);
+  if(el){ el.classList.add('active'); currentPage=id; }
+  window.scrollTo(0,0);
+  if(id==='agendar') renderCalendar();
+  if(id==='planos') renderPlans();
+  if(id==='home') renderHomeAccordion();
+}
+
+/* ── Menu ─────────────────────────────────────────────────────── */
+function openMenu() {
+  document.getElementById('menu-panel').classList.add('open');
+  document.getElementById('menu-backdrop').classList.add('open');
+}
+function closeMenu() {
+  document.getElementById('menu-panel').classList.remove('open');
+  document.getElementById('menu-backdrop').classList.remove('open');
+}
+
+/* ── Search ───────────────────────────────────────────────────── */
+const SEARCH_INDEX = [
+  { section:'Início', title:'Personal Trainer', snippet:'Treinamento personalizado presencial e online em São José dos Campos.', page:'home' },
+  { section:'Início', title:'Agendamento online', snippet:'Agende sua aula com até 5 dias de antecedência.', page:'agendar' },
+  { section:'Sobre', title:'Lucas Batistela', snippet:'Formado em Educação Física, pós-graduando em Fisiologia do Exercício e Preparação Física.', page:'sobre' },
+  { section:'Sobre', title:'Studio10', snippet:'Instrutor de treinamento funcional no Studio10 em São José dos Campos.', page:'sobre' },
+  { section:'Planos', title:'Plano de Entrada Online', snippet:'R$ 99,99/mês. Treino personalizado no MFIT com suporte por WhatsApp.', page:'planos' },
+  { section:'Planos', title:'Consultoria Online', snippet:'R$ 179,99/mês. Suporte WhatsApp e 2 videochamadas por mês.', page:'planos' },
+  { section:'Planos', title:'Personal Presencial', snippet:'A partir de R$ 85/sessão em São José dos Campos.', page:'planos' },
+  { section:'Planos', title:'Híbrido Presencial + Online', snippet:'R$ 449,99/mês. Sessão presencial semanal + suporte online completo.', page:'planos' },
+  { section:'Agendar', title:'Reservar horário', snippet:'Escolha o dia, o horário e agende sua sessão presencial ou online.', page:'agendar' },
+  { section:'Agendar', title:'Política de cancelamento', snippet:'Cancele com pelo menos 1 hora de antecedência para não ser cobrado.', page:'agendar' },
+];
+function openSearch() {
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('search-input').focus(), 50);
+}
+function closeSearch() {
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('search-input').value='';
+  document.getElementById('search-results').innerHTML='<p class="search-empty">Digite uma palavra ou frase para buscar.</p>';
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeSearch(); closeMenu(); } });
+function doSearch(q) {
+  const el=document.getElementById('search-results');
+  if(!q.trim()){ el.innerHTML='<p class="search-empty">Digite uma palavra ou frase para buscar.</p>'; return; }
+  const lq=q.toLowerCase();
+  const res=SEARCH_INDEX.filter(r=>
+    r.title.toLowerCase().includes(lq)||r.snippet.toLowerCase().includes(lq)||r.section.toLowerCase().includes(lq)
+  );
+  if(!res.length){ el.innerHTML='<p class="search-empty">Nenhum resultado encontrado.</p>'; return; }
+  el.innerHTML=res.map(r=>`
+    <div class="search-result-item" onclick="closeSearch();showPage('${r.page}')">
+      <div class="sr-section">${r.section}</div>
+      <div class="sr-title">${r.title}</div>
+      <div class="sr-snippet">${r.snippet}</div>
+    </div>`).join('');
+}
+
+/* ── Plans data ───────────────────────────────────────────────── */
+const PLANS = [
+  {
+    id:'entrada-online', icon:'🔵', name:'Entrada Online', badge:'',
+    tagline:'Para quem quer treino personalizado com independência. Porta de entrada para o método Lucas Batistela.',
+    price:'R$ 99,99', period:'/mês',
+    features:[
+      'Anamnese online',
+      'Entrevista inicial por vídeo',
+      'Treino personalizado no MFIT',
+      'Suporte WhatsApp (retorno em até 24h)',
+    ],
+    notIncluded:['Videochamadas mensais','Suporte em tempo real'],
+  },
+  {
+    id:'consultoria-online', icon:'🔷', name:'Consultoria Online', badge:'',
+    tagline:'Acompanhamento próximo com suporte ágil e contato direto para quem quer resultado consistente.',
+    priceToggle: [
+      { label:'Mensal', price:'R$ 179,99', period:'/mês' },
+      { label:'Trimestral', price:'R$ 359,99', period:'/3 meses' },
+    ],
+    features:[
+      'Anamnese online',
+      'Entrevista por vídeo',
+      'Treino personalizado no MFIT',
+      'Suporte WhatsApp 9h–20h (resposta rápida)',
+      '2 videochamadas por mês',
+    ],
+    notIncluded:[],
+  },
+  {
+    id:'presencial', icon:'🟠', name:'Personal Presencial', badge:'',
+    tagline:'Sessões presenciais em São José dos Campos com atenção total a cada movimento.',
+    freqToggle:[
+      { label:'1×/semana', price:'R$ 340', period:'/mês', detail:'4 sessões/mês', trimestral:'R$ 920/trimestral' },
+      { label:'2×/semana', price:'R$ 640', period:'/mês', detail:'8 sessões/mês', trimestral:'R$ 1.730/trimestral' },
+      { label:'3×/semana', price:'R$ 900', period:'/mês', detail:'12 sessões/mês', trimestral:'R$ 2.430/trimestral' },
+    ],
+    features:[
+      'Anamnese online',
+      'Entrevista presencial ou por vídeo',
+      'Treino personalizado no MFIT',
+      'Sessões presenciais conforme frequência',
+    ],
+    notIncluded:[],
+  },
+  {
+    id:'hibrido', icon:'🟣', name:'Híbrido Presencial + Online', badge:'Recomendado',
+    tagline:'O melhor dos dois mundos: sessão presencial semanal com suporte online completo.',
+    price:'R$ 449,99', period:'/mês',
+    priceAlt:'R$ 1.200/trimestral',
+    features:[
+      'Anamnese online',
+      'Entrevista presencial ou por vídeo',
+      'Treino personalizado no MFIT',
+      '1 sessão presencial/semana (4/mês)',
+      'Suporte WhatsApp 9h–20h',
+      '2 videochamadas por mês',
+    ],
+    notIncluded:[],
+  },
+];
+
+/* ── Render plans grid ────────────────────────────────────────── */
+function renderPlans() {
+  const grid=document.getElementById('plans-grid');
+  if(!grid||grid.dataset.rendered) return;
+  grid.dataset.rendered='1';
+  grid.innerHTML=PLANS.map((p,pi)=>{
+    let priceHTML='';
+    if(p.freqToggle){
+      const tabs=p.freqToggle.map((f,fi)=>`<button class="freq-tab${fi===0?' active':''}" onclick="selectFreq(${pi},${fi},this)">${f.label}</button>`).join('');
+      priceHTML=`<div class="plan-freq-tabs">${tabs}</div>
+        <div class="plan-price" id="plan-price-${pi}">${p.freqToggle[0].price}<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mês</span></div>
+        <div class="plan-period" id="plan-detail-${pi}">${p.freqToggle[0].detail} · ${p.freqToggle[0].trimestral}</div>`;
+    } else if(p.priceToggle){
+      const tabs=p.priceToggle.map((f,fi)=>`<button class="freq-tab${fi===0?' active':''}" onclick="selectPeriod(${pi},${fi},this)">${f.label}</button>`).join('');
+      priceHTML=`<div class="plan-freq-tabs">${tabs}</div>
+        <div class="plan-price" id="plan-price-${pi}">${p.priceToggle[0].price}</div>
+        <div class="plan-period" id="plan-detail-${pi}">${p.priceToggle[0].period}</div>`;
+    } else {
+      priceHTML=`<div class="plan-price">${p.price}</div>
+        <div class="plan-period">${p.period}${p.priceAlt?` · ${p.priceAlt}`:''}`;
+    }
+    const feats=p.features.map(f=>`<li><span class="feat-check">✓</span>${f}</li>`).join('');
+    const nots=(p.notIncluded||[]).map(f=>`<li class="feat-no"><span class="feat-check">✗</span><span style="color:var(--muted)">${f}</span></li>`).join('');
+    return `<div class="plan-card${p.badge?' featured':''}">
+      ${p.badge?`<div class="plan-badge">${p.badge}</div>`:''}
+      <div class="plan-icon">${p.icon}</div>
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-tagline">${p.tagline}</div>
+      <div class="plan-price-area">${priceHTML}</div>
+      <ul class="plan-features">${feats}${nots}</ul>
+      <a href="https://wa.me/5512981112070" target="_blank" class="btn-primary plan-cta">
+        <svg class="wa-svg" viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        Contratar este plano
+      </a>
+    </div>`;
+  }).join('');
+}
+function selectFreq(pi,fi,btn){
+  btn.closest('.plan-freq-tabs').querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const f=PLANS[pi].freqToggle[fi];
+  document.getElementById('plan-price-'+pi).textContent=f.price;
+  document.getElementById('plan-detail-'+pi).textContent=f.detail+' · '+f.trimestral;
+}
+function selectPeriod(pi,fi,btn){
+  btn.closest('.plan-freq-tabs').querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const f=PLANS[pi].priceToggle[fi];
+  document.getElementById('plan-price-'+pi).textContent=f.price;
+  document.getElementById('plan-detail-'+pi).textContent=f.period;
+}
+
+/* ── Home accordion ───────────────────────────────────────────── */
+function renderHomeAccordion(){
+  const el=document.getElementById('home-accordion');
+  if(!el||el.dataset.rendered) return;
+  el.dataset.rendered='1';
+  el.innerHTML=PLANS.map((p,i)=>{
+    const price=p.price||(p.freqToggle?p.freqToggle[0].price:p.priceToggle[0].price);
+    const feats=p.features.slice(0,3).map(f=>`<li>${f}</li>`).join('');
+    return `<div class="accordion-item" id="acc-${i}">
+      <button class="accordion-trigger" onclick="toggleAcc(${i})">
+        <div class="acc-info">
+          <span class="acc-name">${p.icon} ${p.name}</span>
+          <span class="acc-price">A partir de ${price}</span>
+        </div>
+        <span class="acc-arrow">⌄</span>
+      </button>
+      <div class="accordion-body">
+        <p style="font-size:.9rem;color:var(--ink-2);margin-bottom:10px">${p.tagline}</p>
+        <ul>${feats}</ul>
+        <button class="btn-ghost acc-cta" onclick="showPage('planos')">Ver detalhes →</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleAcc(i){
+  const item=document.getElementById('acc-'+i);
+  item.classList.toggle('open');
+}
+
+/* ── Calendar ─────────────────────────────────────────────────── */
+let selDate=null, selTime=null, isFixed=false;
+function renderCalendar(){
+  const root=document.getElementById('calendar-root');
+  if(!root) return;
+  const days=getNext5Days();
+  root.innerHTML=`
+    <p class="slots-label">Selecione o dia</p>
+    <div class="day-strip" id="day-strip">
+      ${days.map((d,i)=>{
+        const slots=getAvailableSlots(d);
+        const cls=slots.length===0?'day-btn no-slots':'day-btn';
+        return `<button class="${cls}" id="day-${i}" onclick="selectDay(${i})">
+          <span class="day-name">${DAYS_S[d.getDay()]}</span>
+          <span class="day-num">${d.getDate()}</span>
+          <span class="day-month">${MONTHS_S[d.getMonth()]}</span>
+        </button>`;
+      }).join('')}
+    </div>
+    <div id="slots-area"></div>
+    <div id="booking-form-area"></div>`;
+  selDate=null; selTime=null;
+}
+function selectDay(i){
+  const days=getNext5Days(); selDate=days[i]; selTime=null;
+  document.querySelectorAll('.day-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
+  renderSlots();
+}
+function renderSlots(){
+  const area=document.getElementById('slots-area');
+  const slots=getAvailableSlots(selDate);
+  if(!slots.length){
+    area.innerHTML=`<p class="no-slots-msg">Nenhum horário disponível neste dia.</p>`;
+    document.getElementById('booking-form-area').innerHTML='';
+    return;
+  }
+  area.innerHTML=`
+    <p class="slots-label" style="margin-top:24px">Horário disponível</p>
+    <div class="slots-grid">
+      ${slots.map(t=>`<button class="slot-btn" id="slot-${t}" onclick="selectSlot('${t}')">${t}</button>`).join('')}
+    </div>`;
+  document.getElementById('booking-form-area').innerHTML='';
+}
+function selectSlot(t){
+  selTime=t;
+  document.querySelectorAll('.slot-btn').forEach(b=>b.classList.toggle('selected',b.id==='slot-'+t));
+  renderBookingForm();
+}
+function renderBookingForm(){
+  const d=selDate; const ds=dateToStr(d);
+  const dayFull=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][d.getDay()];
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const loggedAsStudent = currentUser && currentProfile?.role==='student';
+  const nomeVal = loggedAsStudent ? (currentProfile.full_name||'') : '';
+  const emailVal = loggedAsStudent ? (currentUser.email||'').replace(/@alunos\.lb$/,'') : '';
+  const phoneVal = loggedAsStudent ? (currentProfile.phone||'') : '';
+  const fieldsHTML = loggedAsStudent ? `
+    <div class="form-row"><p style="font-size:.88rem;color:var(--ink-2)">Agendando como <strong>${nomeVal}</strong></p></div>
+    <input type="hidden" id="b-name" value="${nomeVal}">
+    <input type="hidden" id="b-email" value="${emailVal}">
+    <input type="hidden" id="b-phone" value="${phoneVal}">` : `
+    <div class="form-row-2">
+      <div class="form-row"><label>Nome completo *</label><input type="text" id="b-name" required></div>
+      <div class="form-row"><label>E-mail *</label><input type="email" id="b-email" required></div>
+    </div>
+    <div class="form-row"><label>Telefone / WhatsApp *</label><input type="tel" id="b-phone" required></div>`;
+  document.getElementById('booking-form-area').innerHTML=`
+    <div class="booking-form">
+      <p class="slots-label" style="margin-top:8px">Dados para agendamento</p>
+      <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:20px">${dayFull}, ${d.getDate()} de ${meses[d.getMonth()]} · ${selTime}</p>
+      ${fieldsHTML}
+      <div class="form-row">
+        <label>Modalidade *</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="b-type" value="presencial"> Presencial</label>
+          <label class="radio-opt"><input type="radio" name="b-type" value="online"> Online (videochamada)</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Frequência</label>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="tg-avulso" onclick="setFixed(false)">Aula avulsa</button>
+          <button class="toggle-btn" id="tg-fixo" onclick="setFixed(true)">Fixar este horário</button>
+        </div>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:6px" id="fixed-note"></p>
+      </div>
+      <div class="form-row"><label>Observações</label><textarea id="b-obs" rows="3" placeholder="Algo que o treinador deve saber..."></textarea></div>
+      <div class="form-submit">
+        <button class="btn-primary" style="width:100%;justify-content:center" onclick="submitBooking('${ds}','${selTime}')">Confirmar agendamento →</button>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-top:14px">⚠️ Cancelamentos devem ser feitos com no mínimo 1 hora de antecedência.</p>
+    </div>`;
+  setFixed(false);
+}
+function setFixed(v){
+  isFixed=v;
+  document.getElementById('tg-avulso').classList.toggle('on',!v);
+  document.getElementById('tg-fixo').classList.toggle('on',v);
+  document.getElementById('fixed-note').textContent=v?'Este horário será reservado toda semana automaticamente.':'';
+}
+async function submitBooking(dateStr, time){
+  const typeEl=document.querySelector('input[name="b-type"]:checked');
+  if(!typeEl){ alert('Selecione a modalidade.'); return; }
+  const obs=document.getElementById('b-obs').value.trim();
+
+  // Fluxo Supabase — aluno logado
+  if(currentUser && currentProfile?.role==='student' && sb) {
+    const professorId = currentStudentData?.professor_id;
+    if(!professorId){ alert('Erro: professor não vinculado. Contate o suporte.'); return; }
+    const { data: inserted, error } = await sb.from('bookings').insert({
+      student_id: currentUser.id,
+      professor_id: professorId,
+      date: dateStr,
+      time: time,
+      type: typeEl.value,
+      status: 'confirmed',
+      obs: obs
+    }).select().single();
+    if(error){ alert('Erro ao confirmar: ' + error.message); return; }
+    const booking={
+      id: inserted.id, date:dateStr, time,
+      name: currentProfile.full_name||'Aluno',
+      email: currentUser.email, phone: currentProfile.phone||'',
+      type: typeEl.value, isFixed: false, obs,
+      createdAt: new Date().toISOString()
+    };
+    // Envia email de confirmação e volta ao dashboard (sem modal)
+    await sendBookingEmail(booking);
+    await loadAlunoDashboard();
+    showPage('dashboard-aluno');
+    showToast('✅ Agendamento confirmado! Verifique seu e-mail.');
+    return;
+  }
+
+  // Fluxo legado (sem login)
+  const name=document.getElementById('b-name').value.trim();
+  const email=document.getElementById('b-email').value.trim();
+  const phone=document.getElementById('b-phone').value.trim();
+  if(!name||!email||!phone){
+    alert('Preencha todos os campos obrigatórios.'); return;
+  }
+  const booking={
+    id: Date.now()+'', date:dateStr, time, name, email, phone,
+    type:typeEl.value, isFixed, obs,
+    createdAt: new Date().toISOString()
+  };
+  const newState={...state, bookings:[...state.bookings, booking]};
+  try { sessionStorage.setItem('pending_confirm', JSON.stringify(booking)); } catch(_){}
+  const res=await publishState(newState);
+  if(!res.ok){
+    try { sessionStorage.removeItem('pending_confirm'); } catch(_){}
+    alert('Erro ao confirmar agendamento. Tente novamente.'); return;
+  }
+  if(!artifactAPI) { showConfirmation(booking); return; }
+  // artifact.publish triggers reload; confirmation shown via sessionStorage
+}
+function showConfirmation(b){
+  const d=strToDate(b.date);
+  const dayFull=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][d.getDay()];
+  const typeLabel=b.type==='presencial'?'Presencial':'Online (videochamada)';
+  const freqLabel=b.isFixed?'Horário fixo (semanal)':'Aula avulsa';
+  document.getElementById('confirm-content').innerHTML=`
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">Agendamento confirmado!</div>
+    <div class="modal-detail">
+      <strong>${b.name}</strong><br>
+      ${dayFull}, ${d.getDate()} de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][d.getMonth()]} · ${b.time}<br>
+      ${typeLabel} · ${freqLabel}
+    </div>
+    <div class="modal-policy">⚠️ Cancele com pelo menos <strong>1 hora de antecedência</strong> para não ser cobrado. Em caso de falta sem aviso, a sessão será cobrada normalmente.</div>
+    <div class="modal-actions">
+      <a href="https://wa.me/5512981112070?text=${encodeURIComponent('Olá Lucas! Acabei de agendar uma aula.\n\nNome: '+b.name+'\nData: '+dayFull+', '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'\nHorário: '+b.time+'\nModalidade: '+typeLabel+'\nFrequência: '+freqLabel)}"
+        target="_blank" class="btn-primary" style="justify-content:center">Confirmar via WhatsApp</a>
+      <button class="btn-ghost" onclick="closeConfirm()" style="justify-content:center">Fechar</button>
+    </div>`;
+  document.getElementById('confirm-overlay').hidden=false;
+}
+function closeConfirm(){ document.getElementById('confirm-overlay').hidden=true; renderCalendar(); }
+
+/* ── Toast ───────────────────────────────────────────────────── */
+let _toastTimer=null;
+function showToast(msg, duration=4000){
+  const el=document.getElementById('site-toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'), duration);
+}
+
+/* ── Email de confirmação (EmailJS) ──────────────────────────── */
+async function sendBookingEmail(b){
+  const ejsCfg=state.admin?.emailjs;
+  if(!ejsCfg?.serviceId || !ejsCfg?.templateId || !ejsCfg?.publicKey){
+    console.warn('EmailJS não configurado. Configure em Área do Professor → Configurações.');
+    return;
+  }
+  if(!window.emailjs){ console.warn('EmailJS SDK não carregado.'); return; }
+  const d=strToDate(b.date);
+  const dayFull=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][d.getDay()];
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const typeLabel=b.type==='presencial'?'Presencial':'Online (videochamada)';
+  try {
+    emailjs.init(ejsCfg.publicKey);
+    await emailjs.send(ejsCfg.serviceId, ejsCfg.templateId, {
+      to_email:  b.email,
+      to_name:   b.name,
+      date_full: `${dayFull}, ${d.getDate()} de ${meses[d.getMonth()]}`,
+      time:      b.time,
+      type:      typeLabel,
+      professor: 'Lucas Batistela',
+      whatsapp:  'https://wa.me/5512981112070'
+    });
+    console.log('Email de confirmação enviado para', b.email);
+  } catch(err){
+    console.warn('Falha ao enviar email:', err);
+  }
+}
+document.getElementById('confirm-overlay').addEventListener('click', e=>{
+  if(e.target===document.getElementById('confirm-overlay')) closeConfirm();
+});
+function checkPendingConfirm(){
+  try {
+    const raw=sessionStorage.getItem('pending_confirm');
+    if(!raw) return;
+    sessionStorage.removeItem('pending_confirm');
+    setTimeout(()=>showConfirmation(JSON.parse(raw)), 400);
+  } catch(_){}
+}
+
+/* ── Anamnese sections definition ─────────────────────────────── */
+const ANAMNESE_SECTIONS = [
+  { num:1, title:'Identificação', fields:`
+    <div class="form-row-2">
+      <div class="form-row"><label>Nome completo *</label><input name="nome" required></div>
+      <div class="form-row"><label>Data de nascimento *</label><input name="nascimento" type="date" required></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Sexo *</label>
+        <select name="sexo" required>
+          <option value="">Selecione…</option>
+          <option>Masculino</option><option>Feminino</option><option>Prefiro não informar</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Profissão *</label><input name="profissao" required></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>E-mail *</label><input name="email" type="email" required></div>
+      <div class="form-row"><label>Telefone/WhatsApp *</label><input name="telefone" type="tel" required></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Contato de emergência (nome)</label><input name="emerg_nome"></div>
+      <div class="form-row"><label>Telefone de emergência</label><input name="emerg_tel" type="tel"></div>
+    </div>`
+  },
+  { num:2, title:'Dados físicos', fields:`
+    <div class="form-row-2">
+      <div class="form-row"><label>Peso atual (kg) *</label><input name="peso" type="number" step="0.1" required></div>
+      <div class="form-row"><label>Altura (cm) *</label><input name="altura" type="number" required></div>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted);margin-top:-10px">O percentual de gordura será medido pelo treinador na avaliação física.</p>`
+  },
+  { num:3, title:'Objetivo', fields:`
+    <div class="form-row">
+      <label>Objetivo principal com o treinamento *</label>
+      <div class="check-group">
+        <label class="check-opt"><input type="checkbox" name="obj" value="Emagrecimento e perda de gordura"> Emagrecimento e perda de gordura</label>
+        <label class="check-opt"><input type="checkbox" name="obj" value="Ganho de massa muscular"> Ganho de massa muscular</label>
+        <label class="check-opt"><input type="checkbox" name="obj" value="Saúde e manter meu corpo ativo"> Saúde e manter meu corpo ativo</label>
+        <label class="check-opt"><input type="checkbox" name="obj" value="Reabilitação e recuperação"> Reabilitação e recuperação</label>
+        <label class="check-opt"><input type="checkbox" name="obj" value="Performance esportiva"> Performance esportiva</label>
+        <label class="check-opt"><input type="checkbox" name="obj" value="Condicionamento físico geral"> Condicionamento físico geral</label>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:16px"><label>Outro objetivo ou detalhes adicionais</label>
+      <input name="obj_outro" placeholder="Descreva…"></div>`
+  },
+  { num:4, title:'PAR-Q — Prontidão para atividade física', fields:`
+    <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:20px">Responda com sinceridade. Se responder <strong>Sim</strong> a qualquer questão, uma liberação médica poderá ser necessária antes de iniciar.</p>
+    <div class="parq-q"><span class="parq-q-text">Algum médico já disse que você possui algum problema cardíaco e recomendou que você só pratique exercício físico sob supervisão médica?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq1" value="Não" required> Não</label><label><input type="radio" name="parq1" value="Sim"> Sim</label></div></div>
+    <div class="parq-q"><span class="parq-q-text">Você sente dor no peito quando pratica atividade física?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq2" value="Não" required> Não</label><label><input type="radio" name="parq2" value="Sim"> Sim</label></div></div>
+    <div class="parq-q"><span class="parq-q-text">Você teve dor no peito no último mês sem fazer atividade física?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq3" value="Não" required> Não</label><label><input type="radio" name="parq3" value="Sim"> Sim</label></div></div>
+    <div class="parq-q"><span class="parq-q-text">Você perdeu o equilíbrio por tontura ou perdeu a consciência alguma vez?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq4" value="Não" required> Não</label><label><input type="radio" name="parq4" value="Sim"> Sim</label></div></div>
+    <div class="parq-q"><span class="parq-q-text">Você tem algum problema ósseo ou articular que poderia se agravar com a atividade física?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq5" value="Não" required> Não</label><label><input type="radio" name="parq5" value="Sim"> Sim</label></div></div>
+    <div class="parq-q"><span class="parq-q-text">Algum médico já lhe receitou medicamento para pressão arterial ou problema cardíaco?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq6" value="Não" required> Não</label><label><input type="radio" name="parq6" value="Sim"> Sim</label></div></div>
+    <div class="parq-q"><span class="parq-q-text">Você tem conhecimento de qualquer outra razão pela qual não deveria praticar atividade física?</span>
+      <div class="parq-q-opts"><label><input type="radio" name="parq7" value="Não" required> Não</label><label><input type="radio" name="parq7" value="Sim"> Sim</label></div></div>
+    <div class="parq-alert" id="parq-alert">⚠️ Uma ou mais respostas indicam necessidade de avaliação médica antes de iniciar o treinamento. Seu treinador será informado e entrará em contato.</div>`
+  },
+  { num:5, title:'Histórico de saúde', fields:`
+    <div class="form-row">
+      <label>Doenças crônicas (marque todas que se aplicam)</label>
+      <div class="check-group">
+        <label class="check-opt"><input type="checkbox" name="dc" value="Hipertensão"> Hipertensão</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Diabetes"> Diabetes</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Doenças cardíacas"> Doenças cardíacas</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Osteoporose"> Osteoporose</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Artrite ou artrose"> Artrite ou artrose</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Asma ou problemas respiratórios"> Asma ou problemas respiratórios</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Ansiedade ou depressão"> Ansiedade ou depressão</label>
+        <label class="check-opt"><input type="checkbox" name="dc" value="Nenhuma das acima"> Nenhuma das acima</label>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:16px"><label>Outras doenças crônicas não listadas</label>
+      <input name="dc_outro" placeholder="Descreva…"></div>
+    <div class="form-row-2" style="margin-top:8px">
+      <div class="form-row"><label>Está em processo de reabilitação?</label>
+        <select name="reab"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+      <div class="form-row"><label>Se sim, descreva</label><input name="reab_desc" placeholder="Tipo e fase da reabilitação…"></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Pós-cirúrgico?</label>
+        <select name="cirurgia"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+      <div class="form-row"><label>Se sim, qual cirurgia e quando?</label><input name="cirurgia_desc" placeholder="Ex: joelho, há 3 meses…"></div>
+    </div>
+    <div class="form-row"><label>Lesões atuais ou recentes</label>
+      <textarea name="lesoes" rows="2" placeholder="Descreva localização e gravidade…"></textarea></div>
+    <div class="form-row"><label>Medicamentos em uso</label>
+      <input name="medicamentos" placeholder="Nome e finalidade…"></div>
+    <div class="form-row"><label>Alergias conhecidas</label>
+      <input name="alergias" placeholder="Medicamentos, alimentos, materiais…"></div>
+    <div class="form-row"><label>Restrições físicas</label>
+      <textarea name="restricoes" rows="2" placeholder="Movimentos, posturas ou esforços que deve evitar…"></textarea></div>
+    <div class="form-row"><label>Está na menopausa?</label>
+      <select name="menopausa"><option value="">Prefiro não informar / Não se aplica</option>
+        <option>Não</option><option>Sim</option><option>Em transição (perimenopausa)</option></select></div>
+    <div class="form-row"><label>Tem liberação médica para atividade física?</label>
+      <select name="liberacao" required>
+        <option value="">Selecione…</option>
+        <option>Sim, tenho liberação médica</option>
+        <option>Não consultei médico recentemente</option>
+        <option>Médico indicou restrições (descreva nas observações)</option>
+      </select></div>`
+  },
+  { num:6, title:'Histórico de atividade física', fields:`
+    <div class="form-row"><label>Nível atual de atividade física *</label>
+      <select name="nivel_atv" required>
+        <option value="">Selecione…</option>
+        <option>Sedentário (sem atividade regular)</option>
+        <option>Levemente ativo (1–2x/semana)</option>
+        <option>Moderadamente ativo (3–4x/semana)</option>
+        <option>Muito ativo (5+ vezes/semana)</option>
+      </select></div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Pratica exercício atualmente?</label>
+        <select name="exer_atual"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+      <div class="form-row"><label>Se sim, qual atividade?</label><input name="exer_qual" placeholder="Corrida, academia, pilates…"></div>
+    </div>
+    <div class="form-row"><label>Experiência com musculação / funcional</label>
+      <select name="exp_muscu"><option value="">Selecione…</option>
+        <option>Nenhuma</option><option>Pouca (menos de 6 meses)</option>
+        <option>Moderada (6 meses – 2 anos)</option><option>Muita (2+ anos)</option></select></div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Já treinou com personal trainer?</label>
+        <select name="personal_ant"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+      <div class="form-row"><label>Se sim, por quanto tempo?</label><input name="personal_tempo" placeholder="Ex: 6 meses, 2 anos…"></div>
+    </div>
+    <div class="form-row"><label>Tipo de treino preferido (marque todos que gosta)</label>
+      <div class="check-group" style="margin-top:8px">
+        <label class="check-opt"><input type="checkbox" name="pref" value="Funcional"> Funcional</label>
+        <label class="check-opt"><input type="checkbox" name="pref" value="Musculação"> Musculação</label>
+        <label class="check-opt"><input type="checkbox" name="pref" value="Cardio"> Cardio</label>
+        <label class="check-opt"><input type="checkbox" name="pref" value="Ao ar livre"> Ao ar livre</label>
+        <label class="check-opt"><input type="checkbox" name="pref" value="Sem preferência"> Sem preferência</label>
+      </div></div>`
+  },
+  { num:7, title:'Estilo de vida', fields:`
+    <div class="form-row-2">
+      <div class="form-row"><label>Qualidade do sono *</label>
+        <select name="sono" required><option value="">Selecione…</option>
+          <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div>
+      <div class="form-row"><label>Horas de sono por noite</label>
+        <select name="horas_sono"><option value="">Selecione…</option>
+          <option>Menos de 5h</option><option>5–6h</option><option>7–8h</option><option>Mais de 8h</option></select></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Nível de estresse *</label>
+        <select name="estresse" required><option value="">Selecione…</option>
+          <option>Baixo</option><option>Moderado</option><option>Alto</option><option>Muito alto</option></select></div>
+      <div class="form-row"><label>Hidratação diária</label>
+        <select name="agua"><option value="">Selecione…</option>
+          <option>Menos de 1L</option><option>1–2L</option><option>2–3L</option><option>Mais de 3L</option></select></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Consumo de álcool</label>
+        <select name="alcool"><option value="">Selecione…</option>
+          <option>Não consumo</option><option>Raramente</option><option>Socialmente</option><option>Regularmente</option></select></div>
+      <div class="form-row"><label>Fuma?</label>
+        <select name="fumo"><option value="">Selecione…</option><option>Não</option><option>Sim</option><option>Ex-fumante</option></select></div>
+    </div>
+    <div class="form-row"><label>Como você avalia sua alimentação?</label>
+      <select name="alimentacao"><option value="">Selecione…</option>
+        <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div>
+    <div class="form-row"><label>Usa suplementos?</label>
+      <input name="suplementos" placeholder="Proteína, creatina, vitaminas… ou 'Não'"></div>`
+  },
+  { num:8, title:'Disponibilidade', fields:`
+    <div class="form-row"><label>Dias disponíveis para treinar (marque todos)</label>
+      <div class="check-group" style="margin-top:8px">
+        <label class="check-opt"><input type="checkbox" name="dias" value="Segunda"> Segunda-feira</label>
+        <label class="check-opt"><input type="checkbox" name="dias" value="Terça"> Terça-feira</label>
+        <label class="check-opt"><input type="checkbox" name="dias" value="Quarta"> Quarta-feira</label>
+        <label class="check-opt"><input type="checkbox" name="dias" value="Quinta"> Quinta-feira</label>
+        <label class="check-opt"><input type="checkbox" name="dias" value="Sexta"> Sexta-feira</label>
+        <label class="check-opt"><input type="checkbox" name="dias" value="Sábado"> Sábado</label>
+      </div></div>
+    <div class="form-row-2" style="margin-top:16px">
+      <div class="form-row"><label>Horário preferido</label>
+        <select name="horario_pref"><option value="">Selecione…</option>
+          <option>Manhã (6h–12h)</option><option>Tarde (12h–18h)</option><option>Noite (18h–22h)</option><option>Flexível</option></select></div>
+      <div class="form-row"><label>Modalidade desejada</label>
+        <select name="modalidade_pref"><option value="">Selecione…</option>
+          <option>Presencial</option><option>Online (videochamada)</option><option>Indiferente</option></select></div>
+    </div>`
+  },
+  { num:9, title:'Observações livres', fields:`
+    <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:16px">Escreva qualquer informação que considere importante para o seu treinador saber. Pode ser algo sobre sua rotina, seu histórico, suas preocupações ou expectativas.</p>
+    <div class="form-row"><label>Observações</label>
+      <textarea name="observacoes" rows="5" placeholder="Escreva à vontade…"></textarea></div>`
+  },
+  { num:10, title:'Contexto', fields:`
+    <div class="form-row"><label>Como você conheceu o Lucas?</label>
+      <select name="origem"><option value="">Selecione…</option>
+        <option>Instagram</option><option>Indicação de amigo ou familiar</option>
+        <option>Google</option><option>Studio10</option><option>Outro</option></select></div>
+    <div class="form-row"><label>Como conheceu (detalhe, se quiser)</label>
+      <input name="origem_det" placeholder="Ex: indicação da Maria…"></div>`
+  },
+];
+
+let anamCurrentSection=0;
+let anamData={};
+let anamCode='';
+
+async function validateAnamneseCode(){
+  const code=document.getElementById('gate-code').value.trim().toUpperCase();
+  const errEl=document.getElementById('gate-error');
+  if(!sb){ errEl.style.display='block'; errEl.textContent='Erro de conexão. Recarregue a página.'; return; }
+  const {data:found} = await sb.from('anamnese_codes').select('code').eq('code',code).eq('used',false).maybeSingle();
+  if(!found){ errEl.style.display='block'; errEl.textContent='Código inválido ou já utilizado. Verifique com seu treinador.'; return; }
+  errEl.style.display='none';
+  anamCode=code;
+  document.getElementById('anamnese-gate').hidden=true;
+  document.getElementById('anamnese-form-wrap').hidden=false;
+  anamCurrentSection=0; anamData={};
+  renderAnamneseSection();
+}
+
+/* ── Acesso à anamnese pelo dashboard do aluno ───────────────── */
+async function acessarAnamnese(){
+  const code=(document.getElementById('dash-anam-code').value||'').trim().toUpperCase();
+  const errEl=document.getElementById('dash-anam-error');
+  if(!code){ errEl.style.display='block'; errEl.textContent='Digite o código fornecido pelo professor.'; return; }
+  if(!sb){ errEl.style.display='block'; errEl.textContent='Erro de conexão. Recarregue a página.'; return; }
+  const {data:found} = await sb.from('anamnese_codes').select('code').eq('code',code).eq('used',false).maybeSingle();
+  if(!found){ errEl.style.display='block'; errEl.textContent='Código inválido ou já utilizado. Verifique com seu professor.'; return; }
+  errEl.style.display='none';
+  anamCode=code;
+  document.getElementById('anamnese-gate').hidden=true;
+  document.getElementById('anamnese-form-wrap').hidden=false;
+  document.getElementById('anamnese-done-screen').hidden=true;
+  anamCurrentSection=0; anamData={};
+  renderAnamneseSection();
+  showPage('anamnese');
+  window.scrollTo(0,0);
+}
+
+function voltarAoDashboard(){
+  // Reseta o estado da anamnese e volta ao painel do aluno
+  document.getElementById('anamnese-gate').hidden=false;
+  document.getElementById('anamnese-form-wrap').hidden=true;
+  document.getElementById('anamnese-done-screen').hidden=true;
+  document.getElementById('gate-code').value='';
+  // Atualiza card de status no dashboard
+  const submittedEl=document.getElementById('dash-anam-submitted');
+  const formEl=document.getElementById('dash-anam-form');
+  if(submittedEl && formEl){ submittedEl.hidden=false; formEl.hidden=true; }
+  if(currentProfile?.role==='student') showPage('dashboard-aluno');
+  else showPage('home');
+  window.scrollTo(0,0);
+}
+
+function renderAnamneseSection(){
+  const sec=ANAMNESE_SECTIONS[anamCurrentSection];
+  const total=ANAMNESE_SECTIONS.length;
+  // Progress dots
+  document.getElementById('anamnese-progress').innerHTML=
+    ANAMNESE_SECTIONS.map((_,i)=>`<div class="prog-dot${i<=anamCurrentSection?' done':''}"></div>`).join('');
+  // Section content
+  document.getElementById('anamnese-sections').innerHTML=`
+    <div class="form-section">
+      <div class="form-section-title"><span class="sec-num">${sec.num}</span>${sec.title}</div>
+      <div id="parq-fields">${sec.fields}</div>
+    </div>`;
+  // PAR-Q listener
+  if(anamCurrentSection===3){
+    document.querySelectorAll('input[name^="parq"]').forEach(r=>{
+      r.addEventListener('change',checkParq);
+    });
+  }
+  // Nav buttons
+  const isLast=anamCurrentSection===total-1;
+  document.getElementById('anamnese-nav').innerHTML=`
+    ${anamCurrentSection>0?`<button class="btn-ghost" onclick="anamPrev()">← Voltar</button>`:`<span></span>`}
+    <span style="font-size:.82rem;color:var(--muted)">${sec.num} de ${total}</span>
+    ${isLast
+      ?`<button class="btn-primary" onclick="anamSubmit()">Enviar ficha →</button>`
+      :`<button class="btn-primary" onclick="anamNext()">Próximo →</button>`
+    }`;
+  window.scrollTo(0,0);
+}
+
+function checkParq(){
+  const hasSim=Array.from(document.querySelectorAll('input[name^="parq"]:checked'))
+    .some(r=>r.value==='Sim');
+  document.getElementById('parq-alert').style.display=hasSim?'block':'none';
+}
+
+function collectSectionData(){
+  const sec=ANAMNESE_SECTIONS[anamCurrentSection];
+  const fields=document.querySelectorAll('#anamnese-sections input, #anamnese-sections textarea, #anamnese-sections select');
+  fields.forEach(f=>{
+    if(f.type==='checkbox'){ if(f.checked){ if(!anamData[f.name]) anamData[f.name]=[]; anamData[f.name].push(f.value); } }
+    else if(f.type==='radio'){ if(f.checked) anamData[f.name]=f.value; }
+    else if(f.value) anamData[f.name]=f.value;
+  });
+}
+
+function anamNext(){
+  collectSectionData();
+  anamCurrentSection++;
+  renderAnamneseSection();
+}
+function anamPrev(){
+  collectSectionData();
+  anamCurrentSection--;
+  renderAnamneseSection();
+}
+
+async function anamSubmit(){
+  collectSectionData();
+  const response={
+    id: Date.now()+'', code:anamCode,
+    studentName: anamData.nome||'Aluno',
+    submittedAt: new Date().toISOString(),
+    data: {...anamData}
+  };
+  // Salva no Supabase
+  if(sb){
+    try {
+      const {data:codeRow} = await sb.from('anamnese_codes').select('professor_id').eq('code',anamCode).single();
+      await sb.from('anamnese_responses').insert({
+        code: anamCode,
+        student_name: anamData.nome||'Aluno',
+        professor_id: codeRow?.professor_id||null,
+        data: {...anamData}
+      });
+      await sb.from('anamnese_codes').update({used:true}).eq('code',anamCode);
+    } catch(e){ console.error('Erro ao salvar anamnese:',e); }
+  }
+  // Send to Formspree if configured
+  if(state.admin.formspree){
+    try {
+      await fetch(state.admin.formspree,{
+        method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({...anamData, _subject:`Anamnese — ${anamData.nome||'Aluno'}`})
+      });
+    } catch(_){}
+  }
+  document.getElementById('anamnese-form-wrap').hidden=true;
+  document.getElementById('anamnese-done-screen').hidden=false;
+  window.scrollTo(0,0);
+  // Marca card do dashboard como enviado
+  const submittedEl=document.getElementById('dash-anam-submitted');
+  const formEl=document.getElementById('dash-anam-form');
+  if(submittedEl && formEl){ submittedEl.hidden=false; formEl.hidden=true; }
+}
+
+/* ── Admin panel ──────────────────────────────────────────────── */
+let adminUnlocked=false;
+function openAdmin(){
+  document.getElementById('admin-overlay').hidden=false;
+  if(!adminUnlocked) renderAdminPin();
+  else renderAdminPanel();
+}
+function closeAdmin(){
+  document.getElementById('admin-overlay').hidden=true;
+}
+document.getElementById('admin-overlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('admin-overlay')) closeAdmin();
+});
+
+function renderAdminPin(){
+  document.getElementById('admin-content').innerHTML=`
+    <div class="pin-screen">
+      <h3>Área do treinador</h3>
+      <input type="password" id="admin-pin-input" placeholder="PIN" maxlength="8"
+        onkeydown="if(event.key==='Enter')checkAdminPin()">
+      <div id="admin-pin-err" style="color:#C0392B;font-size:.85rem;margin-bottom:12px;display:none">PIN incorreto.</div>
+      <button class="btn-primary" onclick="checkAdminPin()" style="width:100%;justify-content:center">Entrar</button>
+    </div>`;
+  setTimeout(()=>document.getElementById('admin-pin-input').focus(),100);
+}
+function checkAdminPin(){
+  const v=document.getElementById('admin-pin-input').value;
+  if(v===state.admin.pin){ adminUnlocked=true; renderAdminPanel(); }
+  else { document.getElementById('admin-pin-err').style.display='block'; }
+}
+
+function renderAdminPanel(tab){
+  tab=tab||'agendamentos';
+  const tabs=['agendamentos','disponibilidade','anamnese','config'];
+  const labels={'agendamentos':'Agendamentos','disponibilidade':'Disponibilidade','anamnese':'Anamnese','config':'Configurações'};
+  document.getElementById('admin-content').innerHTML=`
+    <h3 style="margin-bottom:16px;font-family:var(--font-d)">Painel do Treinador</h3>
+    <div class="admin-tabs">
+      ${tabs.map(t=>`<button class="admin-tab${t===tab?' active':''}" onclick="renderAdminPanel('${t}')">${labels[t]}</button>`).join('')}
+    </div>
+    <div id="admin-tab-content"></div>`;
+  renderAdminTab(tab);
+}
+
+function renderAdminTab(tab){
+  const el=document.getElementById('admin-tab-content');
+  if(tab==='agendamentos'){
+    const sorted=[...state.bookings].sort((a,b)=>a.date.localeCompare(b.date));
+    if(!sorted.length){ el.innerHTML='<p style="color:var(--muted)">Nenhum agendamento ainda.</p>'; return; }
+    el.innerHTML=`<div style="overflow-x:auto"><table class="bookings-table">
+      <thead><tr><th>Data</th><th>Hora</th><th>Aluno</th><th>Tipo</th><th>Contato</th><th></th></tr></thead>
+      <tbody>${sorted.map(b=>{
+        const d=strToDate(b.date);
+        const dateStr=`${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
+        return `<tr>
+          <td>${dateStr}${b.isFixed?` <span class="booking-tag tag-fixo">Fixo</span>`:''}</td>
+          <td>${b.time}</td><td>${b.name}</td>
+          <td><span class="booking-tag ${b.type==='presencial'?'tag-presencial':'tag-online'}">${b.type}</span></td>
+          <td style="font-size:.82rem">${b.phone||b.email||''}</td>
+          <td><button style="font-size:.75rem;color:var(--muted)" onclick="deleteBooking('${b.id}')">Remover</button></td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+  } else if(tab==='disponibilidade'){
+    const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
+    const DAY_NAMES=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    el.innerHTML=`
+      <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Clique nos horários para ativar/desativar.</p>
+      <div class="avail-grid">
+        ${DAY_NAMES.map((dn,di)=>`
+          <div class="avail-day-col">
+            <div class="avail-day-name">${dn}</div>
+            ${SLOT_OPTS.map(s=>{
+              const on=(state.availability[String(di)]||[]).includes(s);
+              return `<button class="avail-slot-toggle${on?' on':''}" onclick="toggleSlot(${di},'${s}',this)">${s}</button>`;
+            }).join('')}
+          </div>`).join('')}
+      </div>
+      <button class="btn-primary" style="margin-top:16px" onclick="saveAvailability()">Salvar disponibilidade</button>`;
+  } else if(tab==='anamnese'){
+    el.innerHTML=`
+      <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Gere um código único por aluno. Após o preenchimento, as respostas aparecem abaixo.</p>
+      <div class="code-gen-row">
+        <input id="new-code-name" placeholder="Nome do aluno">
+        <button class="btn-primary" onclick="generateCode()" style="white-space:nowrap">Gerar código</button>
+      </div>
+      <div id="codes-list"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
+      <h4 style="font-family:var(--font-d);margin-bottom:14px">Respostas recebidas</h4>
+      <div id="responses-list"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>`;
+    loadAdminAnamneseTab();
+  } else if(tab==='config'){
+    el.innerHTML=`
+      <div class="form-row"><label>PIN do admin</label><input id="cfg-pin" type="password" value="${state.admin.pin}"></div>
+      <div class="form-row"><label>E-mail de notificação</label><input id="cfg-email" type="email" value="${state.admin.email}"></div>
+      <div class="form-row"><label>Endpoint Formspree (para anamnese)</label>
+        <input id="cfg-formspree" value="${state.admin.formspree}" placeholder="https://formspree.io/f/xxxxxxxx">
+        <p style="font-size:.78rem;color:var(--muted);margin-top:6px">Crie sua conta em formspree.io e cole o endpoint aqui.</p>
+      </div>
+      <button class="btn-primary" style="margin-top:8px" onclick="saveConfig()">Salvar configurações</button>`;
+  }
+}
+
+function toggleSlot(di,slot,btn){
+  btn.classList.toggle('on');
+}
+async function saveAvailability(){
+  const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
+  const newAvail={};
+  for(let di=0;di<7;di++){
+    newAvail[String(di)]=SLOT_OPTS.filter((_,si)=>{
+      const btns=document.querySelectorAll(`.avail-day-col:nth-child(${di+1}) .avail-slot-toggle`);
+      return btns[si]&&btns[si].classList.contains('on');
+    });
+  }
+  const res=await publishState({...state,availability:newAvail});
+  if(res.ok) alert('Disponibilidade salva com sucesso!');
+  else alert('Erro ao salvar.');
+}
+async function deleteBooking(id){
+  if(!confirm('Remover este agendamento?')) return;
+  const res=await publishState({...state,bookings:state.bookings.filter(b=>b.id!==id)});
+  if(res.ok) renderAdminPanel('agendamentos');
+}
+async function loadAdminAnamneseTab(){
+  if(!sb||!currentUser) return;
+  const {data:codes} = await sb.from('anamnese_codes').select('*').eq('professor_id',currentUser.id).order('created_at',{ascending:false});
+  const {data:responses} = await sb.from('anamnese_responses').select('*').eq('professor_id',currentUser.id).order('submitted_at',{ascending:false});
+  const codesList=document.getElementById('codes-list');
+  const responsesList=document.getElementById('responses-list');
+  if(codesList){
+    codesList.innerHTML=(codes||[]).map(c=>`
+      <div class="code-item">
+        <span>${c.student_name}</span>
+        <span class="code-val">${c.code}</span>
+        <span class="code-used">${c.used?'✓ Preenchido':'Aguardando'}</span>
+      </div>`).join('')||'<p style="color:var(--muted);font-size:.88rem">Nenhum código gerado ainda.</p>';
+  }
+  if(responsesList){
+    responsesList.innerHTML=(responses||[]).length===0
+      ?'<p style="color:var(--muted);font-size:.88rem">Nenhuma ficha preenchida ainda.</p>'
+      :(responses||[]).map(r=>`
+        <div class="anamnese-resp-card" onclick="viewResponse('${r.id}')">
+          <div class="resp-name">${r.student_name||'Aluno'}</div>
+          <div class="resp-meta">Código: ${r.code} · ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</div>
+        </div>`).join('');
+  }
+}
+
+async function generateCode(){
+  const name=document.getElementById('new-code-name').value.trim();
+  if(!name){ alert('Informe o nome do aluno.'); return; }
+  if(!sb||!currentUser){ alert('Você precisa estar logado como professor.'); return; }
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';
+  for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+  const {error} = await sb.from('anamnese_codes').insert({
+    code, student_name: name, professor_id: currentUser.id
+  });
+  if(error){ alert('Erro ao gerar código: '+error.message); return; }
+  document.getElementById('new-code-name').value='';
+  const list=document.getElementById('codes-list');
+  if(list) list.insertAdjacentHTML('afterbegin',`
+    <div class="code-item">
+      <span>${name}</span><span class="code-val">${code}</span>
+      <span class="code-used">Aguardando</span>
+    </div>`);
+}
+async function saveConfig(){
+  const email=(document.getElementById('cfg-email')?.value)||state.admin.email;
+  const emailjs={
+    serviceId:        (document.getElementById('cfg-ejs-service')?.value||'').trim(),
+    templateId:       (document.getElementById('cfg-ejs-template')?.value||'').trim(),
+    cancelTemplateId: (document.getElementById('cfg-ejs-cancel-template')?.value||'').trim(),
+    publicKey:        (document.getElementById('cfg-ejs-pubkey')?.value||'').trim()
+  };
+  const res=await publishState({...state,admin:{...state.admin,email,emailjs}});
+  if(res.ok){ state.admin.email=email; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
+  else showToast('Erro ao salvar.');
+}
+async function viewResponse(id){
+  if(!sb){ alert('Erro de conexão.'); return; }
+  const {data:r} = await sb.from('anamnese_responses').select('*').eq('id',id).single();
+  if(!r) return;
+  const rows=Object.entries(r.data||{}).map(([k,v])=>
+    `<tr><td style="padding:6px 10px;font-weight:600;font-size:.82rem;color:var(--muted);white-space:nowrap">${k}</td>
+     <td style="padding:6px 10px;font-size:.88rem">${Array.isArray(v)?v.join(', '):v}</td></tr>`
+  ).join('');
+  document.getElementById('admin-tab-content').innerHTML=`
+    <button class="btn-ghost" style="margin-bottom:16px" onclick="renderAdminTab('anamnese')">← Voltar</button>
+    <h4 style="font-family:var(--font-d);margin-bottom:14px">${r.student_name||'Aluno'} — ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</h4>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      ${rows}
+    </table></div>`;
+}
+
+/* ── Expose anamnese page via URL param ───────────────────────── */
+function checkURLParams(){
+  const p=new URLSearchParams(window.location.search);
+  if(p.get('page')==='anamnese') showPage('anamnese');
+}
+
+/* ── Supabase ──────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://upmealfqrodhpqdpceec.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_hRCllkJR2g-l7o3gU04Fnw_6e3ptJzL';
+let sb = null;
+let currentUser = null;
+let currentProfile = null;
+let currentStudentData = null;
+
+function initSupabase() {
+  try {
+    const { createClient } = window.supabase;
+    sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) { console.error('Supabase init:', e); }
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('tab-aluno').classList.toggle('active', tab==='aluno');
+  document.getElementById('tab-prof').classList.toggle('active', tab==='prof');
+  document.getElementById('auth-form-aluno').hidden = tab!=='aluno';
+  document.getElementById('auth-form-prof').hidden = tab!=='prof';
+}
+
+function maskCPF(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>9) v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+  else if(v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+  else if(v.length>3) v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+  input.value = v;
+}
+
+async function loginAluno() {
+  if(!sb) { alert('Sistema indisponível.'); return; }
+  const cpf   = document.getElementById('login-cpf').value.replace(/\D/g,'');
+  const senha = document.getElementById('login-senha-aluno').value;
+  const errEl = document.getElementById('auth-err-aluno');
+  errEl.style.display='none';
+  if(cpf.length!==11||!senha) { errEl.textContent='Preencha o CPF (11 dígitos) e a senha.'; errEl.style.display='block'; return; }
+
+  const email = `${cpf}@alunos.lb`;
+
+  // 1. Tentativa de login normal
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+  if(!error) { await loadUserAndRedirect(data.user); return; }
+
+  // 2. Login falhou — auto-registro apenas se senha === CPF (primeiro acesso)
+  if(senha !== cpf) { errEl.textContent='CPF ou senha inválidos.'; errEl.style.display='block'; return; }
+
+  errEl.textContent='Verificando cadastro…'; errEl.style.display='block';
+
+  // 3. Buscar pré-cadastro
+  const { data: preReg } = await sb.from('pending_registrations').select('*').eq('cpf', cpf).maybeSingle();
+  if(!preReg) { errEl.textContent='CPF não encontrado. Peça ao professor para cadastrá-lo.'; errEl.style.display='block'; return; }
+
+  // 4. Criar conta via signUp
+  errEl.textContent='Criando sua conta…'; errEl.style.display='block';
+  const { data: signUpData, error: signUpErr } = await sb.auth.signUp({ email, password: cpf });
+  if(signUpErr) { errEl.textContent='Erro ao criar conta: '+signUpErr.message; errEl.style.display='block'; return; }
+
+  // 5. Login imediato — garante sessão autenticada antes dos inserts
+  errEl.textContent='Entrando…'; errEl.style.display='block';
+  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: cpf });
+  if(loginErr) {
+    errEl.textContent='Conta criada! Faça login agora com seu CPF e senha.';
+    errEl.style.display='block'; return;
+  }
+
+  // 6. Criar/atualizar perfil e vínculo com sessão autenticada
+  const { error: p1 } = await sb.from('profiles').upsert({ id: loginData.user.id, full_name: preReg.full_name, phone: preReg.phone||null, role: 'student' }, { onConflict: 'id' });
+  const { error: s1 } = await sb.from('students').upsert({ id: loginData.user.id, professor_id: preReg.professor_id }, { onConflict: 'id' });
+  if(p1) console.error('Erro ao criar perfil:', p1);
+  if(s1) console.error('Erro ao vincular aluno:', s1);
+
+  errEl.style.display='none';
+  await loadUserAndRedirect(loginData.user);
+}
+
+async function loginProfessor() {
+  if(!sb) { alert('Sistema indisponível.'); return; }
+  const email = document.getElementById('login-email-prof').value.trim();
+  const senha = document.getElementById('login-senha-prof').value;
+  const errEl = document.getElementById('auth-err-prof');
+  errEl.style.display='none';
+  if(!email||!senha) { errEl.textContent='Preencha e-mail e senha.'; errEl.style.display='block'; return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password:senha });
+  if(error) { errEl.textContent='E-mail ou senha inválidos.'; errEl.style.display='block'; return; }
+  await loadUserAndRedirect(data.user);
+}
+
+async function loadUserAndRedirect(user) {
+  currentUser = user;
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+
+  // Auto-recuperação via RPC (bypassa RLS)
+  const needsRecovery = user.email?.endsWith('@alunos.lb') && (!profile || !profile.full_name);
+  if(needsRecovery) {
+    const { error: recErr } = await sb.rpc('recover_student_profile');
+    if(recErr) console.error('Erro recover_student_profile:', recErr);
+    const { data: recovered } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    profile = recovered;
+  }
+
+  currentProfile = profile;
+  updateNavAvatar();
+  if(profile?.role==='professor') { await loadProfDashboard(); showPage('dashboard-prof'); }
+  else if(profile?.role==='student') { await loadAlunoDashboard(); showPage('dashboard-aluno'); }
+  else { showPage('home'); }
+}
+
+async function logout() {
+  if(sb) await sb.auth.signOut();
+  currentUser=null; currentProfile=null;
+  updateNavAvatar();
+  showPage('home');
+}
+
+const FRASES = [
+  'A consistência supera a intensidade.',
+  'Cada treino é um passo. Cada passo é progresso.',
+  'Seu único adversário é a versão de ontem.',
+  'O corpo conquista o que a mente acredita.',
+  'Descanso faz parte do plano. Continue.',
+  'Movimento é remédio. Você já tomou o seu hoje.',
+  'Resultados não mentem. Compromisso também não.',
+  'Um dia ruim de treino bate um dia sem treino.',
+];
+async function getMotivationalPhrase() {
+  if(sb) try {
+    const { data } = await sb.from('motivational_phrases').select('text').eq('active',true);
+    if(data?.length) return data[Math.floor(Math.random()*data.length)].text;
+  } catch(_){}
+  return FRASES[Math.floor(Math.random()*FRASES.length)];
+}
+
+function formatDate(dateStr) {
+  const [y,m,d]=dateStr.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  return `${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()]}, ${d}/${String(m).padStart(2,'0')}`;
+}
+
+async function loadAlunoDashboard() {
+  if(!currentUser||!sb) return;
+  const name = currentProfile?.full_name||'Aluno';
+  document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+  const phrase = await getMotivationalPhrase();
+  document.getElementById('dash-phrase').textContent = `💪 "${phrase}"`;
+  const today = new Date().toISOString().slice(0,10);
+  const { data: bookings } = await sb.from('bookings').select('*')
+    .eq('student_id',currentUser.id).gte('date',today).eq('status','confirmed').order('date').order('time').limit(8);
+  if(bookings?.length) {
+    const next = bookings[0];
+    document.getElementById('dash-proximo-treino').innerHTML = `
+      <div class="dash-booking-date">${formatDate(next.date)} às ${next.time}</div>
+      <div class="dash-booking-meta">✅ Confirmado</div>`;
+    document.getElementById('dash-historico').innerHTML = bookings.map(b=>`
+      <div class="dash-booking-item">
+        <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}</div>
+        <div class="dash-booking-meta">✅ Confirmado
+          <button onclick="cancelarAgendamento('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
+        </div>
+      </div>`).join('');
+  }
+  const { data: student } = await sb.from('students').select('professor_id, training_plan_url').eq('id',currentUser.id).single();
+  currentStudentData = student;
+  if(student?.professor_id) {
+    const { data: pp } = await sb.from('profiles').select('full_name').eq('id',student.professor_id).single();
+    const { data: pd } = await sb.from('professors').select('whatsapp').eq('id',student.professor_id).single();
+    if(pp) document.getElementById('dash-professor').innerHTML = `<strong>${pp.full_name||'Professor'}</strong>`;
+    if(pd?.whatsapp) {
+      const wa = document.getElementById('dash-wa-prof');
+      wa.href=`https://wa.me/55${pd.whatsapp.replace(/\D/g,'')}`;
+      wa.style.display='inline-flex';
+    }
+  }
+  if(student?.training_plan_url) {
+    document.getElementById('dash-plano').innerHTML = `<a href="${student.training_plan_url}" target="_blank" class="btn-primary" style="font-size:.88rem;padding:10px 20px">Ver meu treino →</a>`;
+  }
+  fillProfileCard();
+}
+
+async function loadProfDashboard() {
+  if(!currentUser||!sb) return;
+  const name = currentProfile?.full_name||'Professor';
+  document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+  document.getElementById('dash-prof-title').textContent = name;
+  // Atualiza avatar na nav
+  updateNavAvatar();
+  const today = new Date().toISOString().slice(0,10);
+
+  const { data: hoje } = await sb.from('bookings').select('*')
+    .eq('professor_id',currentUser.id).eq('date',today).eq('status','confirmed').order('time');
+  if(hoje?.length) {
+    const names = await Promise.all(hoje.map(b=>sb.from('profiles').select('full_name,phone').eq('id',b.student_id).single()));
+    document.getElementById('prof-agenda-hoje').innerHTML = hoje.map((b,i)=>`
+      <div class="dash-booking-item">
+        <div class="dash-booking-date">${b.time} — ${names[i].data?.full_name||'Aluno'}</div>
+        <div class="dash-booking-meta">${names[i].data?.phone||''}</div>
+      </div>`).join('');
+  }
+
+  const { data: alunos } = await sb.from('students').select('id, training_plan_url').eq('professor_id',currentUser.id);
+  if(alunos?.length) {
+    const ap = await Promise.all(alunos.map(a=>sb.from('profiles').select('full_name').eq('id',a.id).single()));
+    document.getElementById('prof-alunos-lista').innerHTML = alunos.map((a,i)=>`
+      <div class="prof-student-row">
+        <div>
+          <div class="prof-student-name">${ap[i].data?.full_name||'Aluno'}</div>
+          <div class="prof-student-plan">${a.training_plan_url?'✓ Treino vinculado':'Sem treino vinculado'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  const { data: proximos } = await sb.from('bookings').select('*')
+    .eq('professor_id',currentUser.id).gt('date',today).eq('status','confirmed')
+    .order('date').order('time').limit(8);
+  if(proximos?.length) {
+    const pn = await Promise.all(proximos.map(b=>sb.from('profiles').select('full_name').eq('id',b.student_id).single()));
+    document.getElementById('prof-proximos').innerHTML = proximos.map((b,i)=>`
+      <div class="dash-booking-item">
+        <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}</div>
+        <div class="dash-booking-meta">${pn[i].data?.full_name||'Aluno'}</div>
+      </div>`).join('');
+  }
+
+  const { data: fichas } = await sb.from('anamnese_responses').select('*')
+    .eq('professor_id',currentUser.id).order('created_at',{ascending:false}).limit(10);
+  if(fichas?.length) {
+    const fn = await Promise.all(fichas.map(f=>sb.from('profiles').select('full_name').eq('id',f.student_id).single()));
+    document.getElementById('prof-anamneses').innerHTML = fichas.map((f,i)=>`
+      <div class="anamnese-resp-card">
+        <div class="resp-name">${fn[i].data?.full_name||'Aluno'}</div>
+        <div class="resp-meta">${new Date(f.created_at).toLocaleDateString('pt-BR')}</div>
+      </div>`).join('');
+  }
+}
+
+/* ── Professor tabs ───────────────────────────────────────────── */
+function showProfTab(tab) {
+  ['visao','alunos','agendamentos','disponibilidade','anamnese','perfil','config'].forEach(t=>{
+    const el = document.getElementById('prof-tab-'+t);
+    const btn = document.getElementById('ptab-'+t);
+    if(el) el.hidden = t!==tab;
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  if(tab==='alunos') loadProfAlunos();
+  if(tab==='agendamentos') loadProfAllBookings();
+  if(tab==='disponibilidade') renderProfDisponibilidade();
+  if(tab==='anamnese') renderProfAnamnese();
+  if(tab==='perfil') fillProfProfileCard();
+  if(tab==='config') renderProfConfig();
+}
+
+async function loadProfAllBookings() {
+  const el = document.getElementById('prof-all-bookings');
+  if(!el||!sb) return;
+  const { data: bookings } = await sb.from('bookings').select('*')
+    .eq('professor_id', currentUser.id).neq('status','cancelled')
+    .order('date').order('time');
+  if(!bookings?.length){ el.innerHTML='<p style="color:var(--muted);font-size:.88rem">Nenhum agendamento.</p>'; return; }
+  const names = await Promise.all(bookings.map(b=>sb.from('profiles').select('full_name,phone').eq('id',b.student_id).single()));
+  el.innerHTML=`<div style="overflow-x:auto"><table class="bookings-table">
+    <thead><tr><th>Data</th><th>Hora</th><th>Aluno</th><th>Tipo</th><th>Contato</th><th></th></tr></thead>
+    <tbody>${bookings.map((b,i)=>{
+      const d=new Date(b.date+'T12:00:00');
+      const ds=`${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
+      return `<tr>
+        <td>${ds}</td><td>${b.time}</td>
+        <td>${names[i].data?.full_name||'Aluno'}</td>
+        <td><span class="booking-tag ${b.type==='presencial'?'tag-presencial':'tag-online'}">${b.type||''}</span></td>
+        <td style="font-size:.82rem">${names[i].data?.phone||''}</td>
+        <td><button style="font-size:.75rem;color:#C0392B" onclick="profCancelBooking('${b.id}')">Cancelar</button></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+async function profCancelBooking(id) {
+  if(!confirm('Cancelar este agendamento?')) return;
+  await sb.from('bookings').update({status:'cancelled'}).eq('id',id);
+  loadProfAllBookings();
+}
+
+function renderProfDisponibilidade() {
+  const el = document.getElementById('prof-disponibilidade-content');
+  if(!el) return;
+  const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
+  const DAY_NAMES=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  el.innerHTML=`
+    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Clique nos horários para ativar/desativar.</p>
+    <div class="avail-grid">
+      ${DAY_NAMES.map((dn,di)=>`
+        <div class="avail-day-col">
+          <div class="avail-day-name">${dn}</div>
+          ${SLOT_OPTS.map(s=>{
+            const on=(state.availability[String(di)]||[]).includes(s);
+            return `<button class="avail-slot-toggle${on?' on':''}" onclick="toggleSlot(${di},'${s}',this)">${s}</button>`;
+          }).join('')}
+        </div>`).join('')}
+    </div>
+    <button class="btn-primary" style="margin-top:16px" onclick="saveAvailability()">Salvar disponibilidade</button>`;
+}
+
+async function renderProfAnamnese() {
+  const el = document.getElementById('prof-anamnese-content');
+  if(!el||!sb) return;
+  el.innerHTML=`<p style="color:var(--muted);font-size:.88rem">Carregando...</p>`;
+  const {data:codes} = await sb.from('anamnese_codes').select('*').eq('professor_id',currentUser.id).order('created_at',{ascending:false});
+  const {data:responses} = await sb.from('anamnese_responses').select('*').eq('professor_id',currentUser.id).order('submitted_at',{ascending:false});
+  const codesList=(codes||[]).map(c=>`
+    <div class="code-item">
+      <span>${c.student_name}</span>
+      <span class="code-val">${c.code}</span>
+      <span class="code-used">${c.used?'✓ Respondido':'Aguardando'}</span>
+    </div>`).join('')||'<p style="color:var(--muted);font-size:.88rem">Nenhum código gerado ainda.</p>';
+  const responsesList=(responses||[]).length===0
+    ?'<p style="color:var(--muted);font-size:.88rem">Nenhuma ficha preenchida ainda.</p>'
+    :(responses||[]).map(r=>`
+      <div class="anamnese-resp-card" onclick="viewProfResponse('${r.id}')" style="cursor:pointer;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px">
+        <div style="font-weight:700;font-size:.92rem">${r.student_name||'Aluno'}</div>
+        <div style="font-size:.8rem;color:var(--muted)">Código: ${r.code} · ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</div>
+      </div>`).join('');
+  el.innerHTML=`
+    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Gere um código único por aluno. O aluno usa o código para preencher a anamnese.</p>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <input type="text" id="new-code-name" placeholder="Nome do aluno" style="flex:1;min-width:180px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem">
+      <button class="btn-primary" onclick="generateCode()" style="white-space:nowrap">Gerar código</button>
+    </div>
+    <div id="codes-list">${codesList}</div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
+    <h4 style="font-family:var(--font-d);font-size:.95rem;margin-bottom:14px">Fichas preenchidas</h4>
+    <div id="responses-list">${responsesList}</div>`;
+}
+
+async function viewProfResponse(id){
+  if(!sb) return;
+  const {data:r} = await sb.from('anamnese_responses').select('*').eq('id',id).single();
+  if(!r) return;
+  const el = document.getElementById('prof-anamnese-content');
+  if(!el) return;
+  const rows=Object.entries(r.data||{}).map(([k,v])=>
+    `<tr><td style="padding:6px 10px;font-weight:600;font-size:.82rem;color:var(--muted);white-space:nowrap;vertical-align:top">${k}</td>
+     <td style="padding:6px 10px;font-size:.88rem">${Array.isArray(v)?v.join(', '):(v||'—')}</td></tr>`
+  ).join('');
+  el.innerHTML=`
+    <button class="btn-ghost" style="margin-bottom:16px" onclick="renderProfAnamnese()">← Voltar</button>
+    <h4 style="font-family:var(--font-d);margin-bottom:14px">${r.student_name||'Aluno'} — ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</h4>
+    <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:.88rem">
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+function renderProfConfig() {
+  const el = document.getElementById('prof-config-content');
+  if(!el) return;
+  const ejs = state.admin?.emailjs||{};
+  el.innerHTML=`
+    <div style="max-width:480px;display:flex;flex-direction:column;gap:16px">
+      <div class="form-row">
+        <label style="font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.05em">E-mail de notificação</label>
+        <input type="email" id="cfg-email" value="${state.admin?.email||''}" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+      </div>
+      <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:4px">📧 EmailJS — configuração geral</div>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Crie conta grátis em <a href="https://www.emailjs.com" target="_blank" style="color:var(--pine)">emailjs.com</a> → Email Services → Add Service → cole os dados abaixo.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Service ID</label>
+            <input id="cfg-ejs-service" value="${ejs.serviceId||''}" placeholder="service_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Template ID — Confirmação de agendamento</label>
+            <input id="cfg-ejs-template" value="${ejs.templateId||''}" placeholder="template_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Template ID — Cancelamento (notificação ao professor)</label>
+            <input id="cfg-ejs-cancel-template" value="${ejs.cancelTemplateId||''}" placeholder="template_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Public Key</label>
+            <input id="cfg-ejs-pubkey" value="${ejs.publicKey||''}" placeholder="xxxxxxxxxxxxxxxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:fit-content" onclick="saveConfig()">Salvar configurações</button>
+    </div>`;
+}
+
+async function cancelarAgendamento(id) {
+  if(!sb||!confirm('Cancelar este agendamento?')) return;
+  // Busca dados do agendamento antes de cancelar
+  const {data:booking} = await sb.from('bookings').select('*').eq('id',id).single();
+  await sb.from('bookings').update({status:'cancelled'}).eq('id',id).eq('student_id',currentUser.id);
+  // Notifica o professor por email
+  const ejsCfg = state.admin?.emailjs;
+  if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && booking) {
+    try {
+      emailjs.init(ejsCfg.publicKey);
+      const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const d = new Date(booking.date+'T12:00:00');
+      const dateStr = `${d.getDate()} de ${meses[d.getMonth()]}`;
+      await emailjs.send(ejsCfg.serviceId, ejsCfg.cancelTemplateId, {
+        to_email:     state.admin.email,
+        to_name:      'Lucas',
+        student_name: currentProfile?.full_name||'Aluno',
+        date_full:    dateStr,
+        time:         booking.time,
+        message:      `${currentProfile?.full_name||'Um aluno'} cancelou o agendamento de ${dateStr} às ${booking.time}.`
+      });
+    } catch(e){ console.warn('Falha ao notificar professor:',e); }
+  }
+  await loadAlunoDashboard();
+}
+
+async function checkExistingSession() {
+  if(!sb) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if(session?.user) await loadUserAndRedirect(session.user);
+  } catch(_){}
+}
+
+/* ── NAV AVATAR & DROPDOWN ───────────────────────────────────── */
+function getInitials(name) {
+  const parts = (name||'').trim().split(' ').filter(Boolean);
+  if(parts.length>=2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  return parts[0]?.[0]?.toUpperCase()||'?';
+}
+
+function loadAvatarFromStorage() {
+  if(!currentUser) return null;
+  try { return localStorage.getItem('avatar_'+currentUser.id) || null; } catch(_){ return null; }
+}
+
+function updateNavAvatar() {
+  const circle = document.getElementById('nav-avatar-circle');
+  if(!circle) return;
+  if(currentUser && currentProfile) {
+    const avatarDataUrl = loadAvatarFromStorage();
+    if(avatarDataUrl) {
+      circle.innerHTML = `<img src="${avatarDataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      circle.textContent = getInitials(currentProfile.full_name||'');
+    }
+    circle.classList.remove('guest');
+  } else {
+    circle.innerHTML = '👤';
+    circle.classList.add('guest');
+  }
+}
+
+function toggleProfileDrop() {
+  const drop = document.getElementById('nav-profile-drop');
+  if(drop.hidden) { renderNavDrop(); drop.hidden = false; }
+  else { drop.hidden = true; }
+}
+
+function renderNavDrop() {
+  const el = document.getElementById('nav-drop-content');
+  if(currentUser && currentProfile) {
+    const name = currentProfile.full_name || 'Usuário';
+    const role = currentProfile.role;
+    const page = role==='professor' ? 'dashboard-prof' : 'dashboard-aluno';
+    const avatarDataUrl = loadAvatarFromStorage();
+    const avatarHTML = avatarDataUrl
+      ? `<img src="${avatarDataUrl}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+      : `<div style="width:42px;height:42px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:.9rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getInitials(name)}</div>`;
+    const profileBtn = role==='student' ? `
+      <button class="nav-profile-drop-item" onclick="showPage('dashboard-aluno');setTimeout(()=>document.getElementById('dash-profile-card')?.scrollIntoView({behavior:'smooth'}),120);document.getElementById('nav-profile-drop').hidden=true">
+        <span>👤</span> Meu perfil
+      </button>` : '';
+    el.innerHTML = `
+      <div class="nav-profile-drop-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          ${avatarHTML}
+          <div>
+            <div class="nav-profile-drop-name">${name}</div>
+            <div class="nav-profile-drop-email">${role==='professor'?'Professor':'Aluno'}</div>
+          </div>
+        </div>
+      </div>
+      <button class="nav-profile-drop-item" onclick="showPage('${page}');document.getElementById('nav-profile-drop').hidden=true">
+        <span>📊</span> Meu painel
+      </button>
+      ${profileBtn}
+      <button class="nav-profile-drop-item danger" onclick="logout();document.getElementById('nav-profile-drop').hidden=true">
+        <span>🚪</span> Sair
+      </button>`;
+  } else {
+    el.innerHTML = `
+      <div class="nav-profile-drop-header">
+        <div class="nav-profile-drop-name">Entrar</div>
+        <div class="nav-profile-drop-email">Acesse sua conta</div>
+      </div>
+      <button class="nav-profile-drop-item" onclick="showPage('login');document.getElementById('nav-profile-drop').hidden=true">
+        <span>👤</span> Área do Aluno
+      </button>
+      <button class="nav-profile-drop-item" onclick="showPage('login');document.getElementById('login-tab-prof')?.click();document.getElementById('nav-profile-drop').hidden=true">
+        <span>🏋️</span> Área do Professor
+      </button>`;
+  }
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('nav-avatar-wrap');
+  const drop = document.getElementById('nav-profile-drop');
+  if(drop && !drop.hidden && wrap && !wrap.contains(e.target)) drop.hidden = true;
+});
+
+/* ── PERFIL DO ALUNO ──────────────────────────────────────────── */
+function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  // Compress to max 400px and save as JPEG for storage efficiency
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxSize = 400;
+      const scale = Math.min(1, maxSize/Math.max(img.width,img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale; canvas.height = img.height*scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      try { if(currentUser) localStorage.setItem('avatar_'+currentUser.id, dataUrl); } catch(_){}
+      applyAvatar(dataUrl);
+      updateNavAvatar();
+      showToast('✅ Foto atualizada!');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyAvatar(dataUrl) {
+  // Aluno
+  const sImg  = document.getElementById('dash-avatar-img');
+  const sInit = document.getElementById('dash-avatar-initials');
+  if(sImg && sInit) {
+    if(dataUrl){ sImg.src=dataUrl; sImg.style.display='block'; sInit.style.display='none'; }
+    else { sImg.style.display='none'; sInit.style.display=''; }
+  }
+  // Professor
+  const pImg  = document.getElementById('prof-avatar-img');
+  const pInit = document.getElementById('prof-avatar-initials');
+  if(pImg && pInit) {
+    if(dataUrl){ pImg.src=dataUrl; pImg.style.display='block'; pInit.style.display='none'; }
+    else { pImg.style.display='none'; pInit.style.display=''; }
+  }
+}
+
+function fillProfileCard() {
+  if(!currentProfile) return;
+  const nameEl  = document.getElementById('profile-name');
+  const emailEl = document.getElementById('profile-email');
+  const phoneEl = document.getElementById('profile-phone');
+  const cpfEl   = document.getElementById('profile-cpf');
+  const initEl  = document.getElementById('dash-avatar-initials');
+  if(nameEl)  nameEl.value  = currentProfile.full_name || '';
+  if(phoneEl) phoneEl.value = currentProfile.phone || '';
+  if(emailEl && currentUser) {
+    // Tenta carregar e-mail de contato salvo; NÃO mostra o e-mail interno @alunos.lb
+    try {
+      const saved = localStorage.getItem('contact_email_'+currentUser.id) || '';
+      emailEl.value = saved;
+    } catch(_){ emailEl.value=''; }
+  }
+  if(cpfEl && currentUser) {
+    const digits = (currentUser.email||'').replace(/@alunos\.lb$/,'').replace(/\D/g,'');
+    cpfEl.value = digits.length===11
+      ? digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')
+      : (currentUser.email||'').replace(/@alunos\.lb$/,'');
+  }
+  if(initEl) initEl.textContent = getInitials(currentProfile.full_name||'');
+  applyAvatar(loadAvatarFromStorage());
+}
+
+async function saveStudentProfile() {
+  if(!currentUser||!sb) return;
+  const name  = document.getElementById('profile-name')?.value.trim();
+  const phone = document.getElementById('profile-phone')?.value.trim();
+  const email = document.getElementById('profile-email')?.value.trim();
+  const btn   = document.getElementById('profile-save-btn');
+  if(!name) { showToast('❌ Nome não pode ser vazio.'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  const { error } = await sb.from('profiles').update({ full_name:name, phone }).eq('id',currentUser.id);
+  btn.disabled=false; btn.textContent='Salvar alterações';
+  if(error) {
+    showToast('❌ Erro ao salvar: '+error.message);
+  } else {
+    // Save contact email in localStorage (it's not the auth email)
+    try { if(email) localStorage.setItem('contact_email_'+currentUser.id, email); } catch(_){}
+    currentProfile = { ...currentProfile, full_name:name, phone };
+    document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+    updateNavAvatar();
+    showToast('✅ Perfil atualizado com sucesso!');
+  }
+}
+
+/* ── CADASTRO DE ALUNOS ───────────────────────────────────────── */
+// Usamos fetch direto na REST API para evitar bloqueio do SDK no browser
+const SUPABASE_SERVICE_KEY = 'sb_secret_aQHmhhtm1NueNrFdy6A6ug_E691Htpc';
+
+async function adminFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+      'apikey':        SUPABASE_SERVICE_KEY,
+      'Prefer':        'resolution=merge-duplicates,return=representation'
+    }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPABASE_URL + path, opts);
+  const data = await res.json().catch(()=>null);
+  return { ok: res.ok, status: res.status, data };
+}
+
+function maskCPF(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,11);
+  if(v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  else if(v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+  else if(v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+  input.value = v;
+}
+
+async function cadastrarAluno() {
+  const nome   = (document.getElementById('new-aluno-nome')?.value||'').trim();
+  const cpfRaw = (document.getElementById('new-aluno-cpf')?.value||'').replace(/\D/g,'');
+  const phone  = (document.getElementById('new-aluno-phone')?.value||'').trim();
+  const btn    = document.getElementById('cadastrar-aluno-btn');
+  const result = document.getElementById('cadastrar-aluno-result');
+
+  if(!nome)              { showToast('❌ Informe o nome do aluno.'); return; }
+  if(cpfRaw.length!==11) { showToast('❌ CPF inválido — 11 dígitos obrigatórios.'); return; }
+
+  btn.disabled=true; btn.textContent='Salvando…';
+  result.hidden=true;
+
+  // Pré-cadastro: salva na fila. A conta é criada no primeiro login do aluno.
+  const { error } = await sb.from('pending_registrations').insert({
+    cpf: cpfRaw,
+    full_name: nome,
+    phone: phone || null,
+    professor_id: currentUser.id
+  });
+
+  btn.disabled=false; btn.textContent='Cadastrar Aluno';
+
+  if(error) {
+    const jaExiste = error.code==='23505'; // unique_violation (CPF duplicado)
+    showToast(jaExiste ? '⚠️ CPF já cadastrado.' : '❌ Erro: '+error.message);
+    return;
+  }
+
+  // Limpar campos
+  document.getElementById('new-aluno-nome').value  = '';
+  document.getElementById('new-aluno-cpf').value   = '';
+  document.getElementById('new-aluno-phone').value = '';
+
+  const cpfFmt = cpfRaw.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+  result.hidden = false;
+  result.innerHTML = `
+    <div style="background:var(--surface-alt);border-radius:var(--radius-sm);padding:18px;border:1.5px solid var(--border)">
+      <div style="font-weight:700;margin-bottom:10px">✅ Aluno pré-cadastrado!</div>
+      <div style="font-size:.88rem;line-height:2.2;color:var(--ink-2)">
+        <b>Nome:</b> ${nome}<br>
+        <b>Login (CPF):</b> ${cpfFmt}<br>
+        <b>Senha inicial:</b> ${cpfRaw}<br>
+        <b>Acesso:</b> Menu → Área do Aluno
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-top:10px">
+        Passe essas credenciais ao aluno. No primeiro acesso, a conta é criada automaticamente.
+      </p>
+    </div>`;
+
+  showToast('✅ Aluno cadastrado!');
+  await loadProfAlunos();
+}
+
+async function loadProfAlunos() {
+  const el = document.getElementById('prof-alunos-list');
+  if(!el||!sb) return;
+  el.innerHTML='<p style="color:var(--muted);font-size:.88rem">Carregando…</p>';
+
+  // Alunos ativos (já fizeram o primeiro login)
+  const { data: students } = await sb.from('students')
+    .select('id').eq('professor_id', currentUser.id);
+
+  // Alunos pendentes (cadastrados mas nunca logaram)
+  const { data: pending } = await sb.from('pending_registrations')
+    .select('cpf,full_name,phone').eq('professor_id', currentUser.id);
+
+  // CPFs já ativos (para excluir do pending)
+  const activeProfileIds = new Set((students||[]).map(s=>s.id));
+
+  // Buscar perfis dos ativos
+  const profiles = students?.length
+    ? await Promise.all(students.map(s => sb.from('profiles').select('full_name,phone').eq('id',s.id).single()))
+    : [];
+
+  const activeRows = (students||[]).map((s,i) => {
+    const p = profiles[i]?.data;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;
+        padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm)">
+      <div>
+        <div style="font-weight:600;font-size:.92rem">${p?.full_name||'—'}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${p?.phone||'Sem telefone'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:.75rem;color:var(--pine);font-weight:700;
+          background:rgba(52,106,172,.12);padding:4px 10px;border-radius:20px">Ativo</span>
+        <button onclick="deleteActiveStudent('${s.id}')"
+          title="Remover aluno"
+          style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
+            color:#e05050;font-size:.8rem;line-height:1;transition:background .15s"
+          onmouseover="this.style.background='rgba(224,80,80,.1)'"
+          onmouseout="this.style.background='none'">✕</button>
+      </div>
+    </div>`;
+  });
+
+  const pendingRows = (pending||[]).map(pr => {
+    const cpfFmt = pr.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;
+        padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm);
+        border:1.5px dashed var(--border)">
+      <div>
+        <div style="font-weight:600;font-size:.92rem">${pr.full_name}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${pr.phone||'Sem telefone'} · CPF ${cpfFmt}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:.75rem;color:var(--muted);font-weight:700;
+          background:var(--surface);padding:4px 10px;border-radius:20px;border:1px solid var(--border)">Pendente</span>
+        <button onclick="deletePendingStudent('${pr.cpf}')"
+          title="Remover aluno"
+          style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
+            color:#e05050;font-size:.8rem;line-height:1;transition:background .15s"
+          onmouseover="this.style.background='rgba(224,80,80,.1)'"
+          onmouseout="this.style.background='none'">✕</button>
+      </div>
+    </div>`;
+  });
+
+  const total = activeRows.length + pendingRows.length;
+  if(!total) {
+    el.innerHTML='<p style="color:var(--muted);font-size:.88rem">Nenhum aluno cadastrado ainda.</p>';
+    return;
+  }
+
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+    ${[...activeRows,...pendingRows].join('')}
+  </div>
+  <p style="font-size:.78rem;color:var(--muted);margin-top:12px">
+    ${activeRows.length} ativo${activeRows.length!==1?'s':''} · ${pendingRows.length} aguardando primeiro acesso
+  </p>`;
+}
+
+/* ── DELETAR ALUNOS ──────────────────────────────────────────── */
+async function deleteActiveStudent(studentId) {
+  if(!confirm('Remover este aluno? Ele perderá acesso ao sistema.')) return;
+  const { error } = await sb.rpc('delete_active_student', { p_student_id: studentId });
+  if(error) { alert('Erro ao remover aluno: ' + error.message); return; }
+  await loadProfAlunos();
+}
+
+async function deletePendingStudent(cpf) {
+  if(!confirm('Remover este cadastro pendente?')) return;
+  const { error } = await sb.rpc('delete_pending_student', { p_cpf: cpf });
+  if(error) { alert('Erro ao remover pendente: ' + error.message); return; }
+  await loadProfAlunos();
+}
+
+/* ── PERFIL DO PROFESSOR ──────────────────────────────────────── */
+function handleProfAvatarUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxSize = 400;
+      const scale = Math.min(1, maxSize/Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale; canvas.height = img.height*scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      try { if(currentUser) localStorage.setItem('avatar_'+currentUser.id, dataUrl); } catch(_){}
+      applyAvatar(dataUrl);
+      updateNavAvatar();
+      showToast('✅ Foto atualizada!');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function fillProfProfileCard() {
+  if(!currentProfile) return;
+  const nameEl  = document.getElementById('prof-profile-name');
+  const emailEl = document.getElementById('prof-profile-email');
+  const phoneEl = document.getElementById('prof-profile-phone');
+  const initEl  = document.getElementById('prof-avatar-initials');
+  if(nameEl)  nameEl.value  = currentProfile.full_name || '';
+  if(emailEl && currentUser) emailEl.value = currentUser.email || '';
+  if(phoneEl) phoneEl.value = currentProfile.phone || '';
+  if(initEl)  initEl.textContent = getInitials(currentProfile.full_name||'');
+  applyAvatar(loadAvatarFromStorage());
+}
+
+async function saveProfProfile() {
+  if(!currentUser||!sb) return;
+  const name  = document.getElementById('prof-profile-name')?.value.trim();
+  const phone = document.getElementById('prof-profile-phone')?.value.trim();
+  const btn   = document.getElementById('prof-profile-save-btn');
+  if(!name) { showToast('❌ Nome não pode ser vazio.'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  const { error } = await sb.from('profiles').update({ full_name:name, phone }).eq('id',currentUser.id);
+  btn.disabled=false; btn.textContent='Salvar alterações';
+  if(error) {
+    showToast('❌ Erro ao salvar: '+error.message);
+  } else {
+    currentProfile = { ...currentProfile, full_name:name, phone };
+    document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+    document.getElementById('dash-prof-title').textContent = name;
+    updateNavAvatar();
+    showToast('✅ Perfil atualizado!');
+  }
+}
+
+/* ── Init ─────────────────────────────────────────────────────── */
+async function init(){
+  initSupabase();
+  await initArtifact();
+  checkPendingConfirm();
+  checkURLParams();
+  renderHomeAccordion();
+  await checkExistingSession();
+}
+init();
+</script>
