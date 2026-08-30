@@ -2493,13 +2493,13 @@ async function loadProfDashboard() {
   }
 
   const { data: fichas } = await sb.from('anamnese_responses').select('*')
-    .eq('professor_id',currentUser.id).order('created_at',{ascending:false}).limit(10);
+    .eq('professor_id',currentUser.id).order('submitted_at',{ascending:false}).limit(10);
   if(fichas?.length) {
     const fn = await Promise.all(fichas.map(f=>sb.from('profiles').select('full_name').eq('id',f.student_id).single()));
     document.getElementById('prof-anamneses').innerHTML = fichas.map((f,i)=>`
       <div class="anamnese-resp-card">
         <div class="resp-name">${fn[i].data?.full_name||'Aluno'}</div>
-        <div class="resp-meta">${new Date(f.created_at).toLocaleDateString('pt-BR')}</div>
+        <div class="resp-meta">${new Date(f.submitted_at).toLocaleDateString('pt-BR')}</div>
       </div>`).join('');
   }
 }
