@@ -158,24 +158,6 @@ img { max-width: 100%; display: block; }
 .nav-profile-drop-item:hover { background: var(--surface-alt); }
 .nav-profile-drop-item.danger { color: #C0392B; }
 
-/* ─── THEME TOGGLE ───────────────────────────────────────────── */
-.theme-toggle-wrap { position: relative; }
-.theme-popover {
-  position: absolute; top: calc(100% + 8px); right: 0;
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,.12);
-  padding: 8px; z-index: 500; display: flex; gap: 6px;
-}
-.theme-opt {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 10px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border);
-  font-size: .74rem; font-weight: 600; color: var(--ink-2); background: var(--ground);
-  transition: border-color .15s, color .15s;
-}
-.theme-opt-icon { font-size: 1.1rem; }
-.theme-opt:hover { border-color: var(--pine); }
-.theme-opt.active { border-color: var(--pine); color: var(--pine); background: var(--surface-alt); }
-
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
   z-index: 950; opacity: 0; pointer-events: none; transition: opacity .25s; }
@@ -596,22 +578,9 @@ img { max-width: 100%; display: block; }
   </button>
   <div class="nav-logo" onclick="showPage('home')">Lucas<span>.</span></div>
   <div style="display:flex;align-items:center;gap:4px">
-    <div class="theme-toggle-wrap" id="theme-toggle-wrap">
-      <button class="nav-btn" id="theme-toggle-btn" aria-label="Tema" onclick="toggleThemePop()">
-        <span id="theme-toggle-icon">🌓</span>
-      </button>
-      <div class="theme-popover" id="theme-popover" hidden>
-        <button class="theme-opt" data-mode="light" onclick="setTheme('light')">
-          <span class="theme-opt-icon">☀️</span><span>Claro</span>
-        </button>
-        <button class="theme-opt" data-mode="dark" onclick="setTheme('dark')">
-          <span class="theme-opt-icon">🌙</span><span>Escuro</span>
-        </button>
-        <button class="theme-opt" data-mode="system" onclick="setTheme('system')">
-          <span class="theme-opt-icon">🖥️</span><span>Sistema</span>
-        </button>
-      </div>
-    </div>
+    <button class="nav-btn" id="theme-toggle-btn" aria-label="Alternar tema" onclick="toggleTheme()">
+      <span id="theme-toggle-icon">🌙</span>
+    </button>
     <button class="nav-btn nav-search-icon" id="nav-search-btn" aria-label="Buscar" onclick="openSearch()">🔍</button>
     <div class="nav-avatar-btn" id="nav-avatar-wrap">
       <button class="nav-btn" style="padding:5px" aria-label="Perfil" onclick="toggleProfileDrop()">
@@ -1367,36 +1336,23 @@ function showPage(id) {
   if(id==='home') renderHomeAccordion();
 }
 
-/* ── Tema (claro/escuro/sistema) ─────────────────────────────────── */
-function getStoredTheme(){
-  try { return localStorage.getItem('lb_theme') || 'system'; } catch(e){ return 'system'; }
+/* ── Tema (claro/escuro) ─────────────────────────────────── */
+function currentEffectiveTheme(){
+  const attr = document.documentElement.getAttribute('data-theme');
+  if(attr === 'light' || attr === 'dark') return attr;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
-function toggleThemePop(){
-  const pop = document.getElementById('theme-popover');
-  pop.hidden = !pop.hidden;
-  if(!pop.hidden) updateThemePopUI();
+function updateThemeIcon(){
+  const el = document.getElementById('theme-toggle-icon');
+  if(el) el.textContent = currentEffectiveTheme() === 'dark' ? '☀️' : '🌙';
 }
-function updateThemePopUI(){
-  const current = getStoredTheme();
-  document.querySelectorAll('.theme-opt').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.mode === current);
-  });
-  document.getElementById('theme-toggle-icon').textContent =
-    current === 'light' ? '☀️' : current === 'dark' ? '🌙' : '🌓';
+function toggleTheme(){
+  const next = currentEffectiveTheme() === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('lb_theme', next); } catch(e){}
+  document.documentElement.setAttribute('data-theme', next);
+  updateThemeIcon();
 }
-function setTheme(mode){
-  try {
-    if(mode === 'system'){ localStorage.removeItem('lb_theme'); document.documentElement.removeAttribute('data-theme'); }
-    else { localStorage.setItem('lb_theme', mode); document.documentElement.setAttribute('data-theme', mode); }
-  } catch(e){}
-  updateThemePopUI();
-  document.getElementById('theme-popover').hidden = true;
-}
-document.addEventListener('click', (e)=>{
-  const wrap = document.getElementById('theme-toggle-wrap');
-  if(wrap && !wrap.contains(e.target)) { const pop = document.getElementById('theme-popover'); if(pop) pop.hidden = true; }
-});
-document.addEventListener('DOMContentLoaded', updateThemePopUI);
+document.addEventListener('DOMContentLoaded', updateThemeIcon);
 
 /* ── Menu ─────────────────────────────────────────────────────── */
 function openMenu() {
