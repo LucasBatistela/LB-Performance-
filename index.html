@@ -2032,17 +2032,26 @@ async function anamSubmit(){
     data: {...anamData}
   };
   // Salva no Supabase
+  let saveError = null;
   if(sb){
     try {
       const {data:codeRow} = await sb.from('anamnese_codes').select('professor_id').eq('code',anamCode).single();
-      await sb.from('anamnese_responses').insert({
+      const {error:insErr} = await sb.from('anamnese_responses').insert({
         code: anamCode,
         student_name: anamData.nome||'Aluno',
         professor_id: codeRow?.professor_id||null,
         data: {...anamData}
       });
-      await sb.from('anamnese_codes').update({used:true}).eq('code',anamCode);
-    } catch(e){ console.error('Erro ao salvar anamnese:',e); }
+      if(insErr){ saveError = insErr; console.error('Erro ao salvar anamnese:',insErr); }
+      else {
+        const {error:updErr} = await sb.from('anamnese_codes').update({used:true}).eq('code',anamCode);
+        if(updErr) console.error('Erro ao marcar código como usado:',updErr);
+      }
+    } catch(e){ saveError = e; console.error('Erro ao salvar anamnese:',e); }
+  }
+  if(saveError){
+    alert('Não foi possível salvar sua ficha. Avise seu professor (código: '+(saveError.code||'?')+' — '+(saveError.message||'erro desconhecido')+').');
+    return;
   }
   // Send to Formspree if configured
   if(state.admin.formspree){
