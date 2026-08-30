@@ -2722,8 +2722,9 @@ async function saveWeeklySchedule(){
     }
   }
   if(!sb || !currentUser){ alert('Faça login novamente.'); return; }
-  const { error } = await sb.from('professors').update({ weekly_schedule: sched }).eq('id', currentUser.id);
+  const { data, error } = await sb.from('professors').update({ weekly_schedule: sched }).eq('id', currentUser.id).select();
   if(error){ alert('Erro ao salvar: ' + error.message); return; }
+  if(!data || !data.length){ alert('Não foi possível salvar: nenhuma linha foi atualizada no banco (provável permissão faltando). Fale com o suporte técnico.'); return; }
   profWeeklySchedule = sched;
   alert('Horário semanal salvo! Já vale para todos os alunos, toda semana, automaticamente.');
 }
@@ -2764,16 +2765,18 @@ async function addException(){
     end=document.getElementById('exc-end').value;
     if(!start || !end || start>=end){ alert('Defina um horário de início e fim válidos.'); return; }
   }
-  const { error } = await sb.from('schedule_exceptions').upsert({
+  const { data, error } = await sb.from('schedule_exceptions').upsert({
     professor_id: currentUser.id, date, type, start_time: start, end_time: end
-  }, { onConflict: 'professor_id,date' });
+  }, { onConflict: 'professor_id,date' }).select();
   if(error){ alert('Erro ao salvar exceção: ' + error.message); return; }
+  if(!data || !data.length){ alert('Não foi possível salvar: nenhuma linha foi criada/atualizada no banco (provável permissão faltando). Fale com o suporte técnico.'); return; }
   document.getElementById('exc-date').value='';
   await loadExceptions();
 }
 async function removeException(id){
   if(!confirm('Remover esta exceção?')) return;
-  await sb.from('schedule_exceptions').delete().eq('id', id);
+  const { error } = await sb.from('schedule_exceptions').delete().eq('id', id);
+  if(error){ alert('Erro ao remover: ' + error.message); return; }
   await loadExceptions();
 }
 
