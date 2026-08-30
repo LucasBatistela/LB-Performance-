@@ -2381,6 +2381,12 @@ async function loadUserAndRedirect(user) {
     profile = recovered;
   }
 
+  // Limpa pré-cadastro pendente sempre que o aluno já tem perfil ativo (cobre logins normais, não só o primeiro acesso)
+  if(profile?.role==='student' && user.email?.endsWith('@alunos.lb')) {
+    const loginCpf = user.email.replace('@alunos.lb','');
+    await sb.from('pending_registrations').delete().eq('cpf', loginCpf);
+  }
+
   currentProfile = profile;
   updateNavAvatar();
   if(profile?.role==='professor') { await loadProfDashboard(); showPage('dashboard-prof'); }
