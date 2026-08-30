@@ -124,9 +124,12 @@ img { max-width: 100%; display: block; }
 /* ─── NAV ─────────────────────────────────────────────────────── */
 .nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 900;
-  height: var(--nav-h); display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; background: var(--ground);
+  height: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding-left: 20px; padding-right: 20px; background: var(--ground);
   border-bottom: 1px solid var(--border); transition: box-shadow .2s;
+  box-sizing: border-box;
 }
 .nav.scrolled { box-shadow: 0 2px 16px rgba(0,0,0,.08); }
 .nav-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
@@ -175,7 +178,8 @@ img { max-width: 100%; display: block; }
 .menu-panel {
   position: fixed; top: 0; left: 0; bottom: 0; width: min(320px, 85vw);
   background: var(--surface); z-index: 960; display: flex; flex-direction: column;
-  padding: 24px; transform: translateX(-100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 24px 24px;
+  transform: translateX(-100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
   box-shadow: 4px 0 32px rgba(0,0,0,.12);
 }
 .menu-panel.open { transform: translateX(0); }
@@ -198,7 +202,8 @@ img { max-width: 100%; display: block; }
 .search-overlay {
   position: fixed; inset: 0; background: var(--surface); z-index: 980;
   display: flex; flex-direction: column; transform: translateY(-100%);
-  transition: transform .3s cubic-bezier(.4,0,.2,1); padding-top: var(--nav-h);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
 }
 .search-overlay.open { transform: translateY(0); }
 .search-bar { display: flex; align-items: center; gap: 12px; padding: 20px 24px;
@@ -218,7 +223,7 @@ img { max-width: 100%; display: block; }
 .search-empty { color: var(--muted); padding: 24px 0; font-size: .95rem; }
 
 /* ─── PAGES CONTAINER ─────────────────────────────────────────── */
-.pages-wrap { padding-top: var(--nav-h); }
+.pages-wrap { padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px)); }
 .page { display: none; min-height: calc(100vh - var(--nav-h)); }
 .page.active { display: block; animation: fadeUp .3s ease both; }
 @keyframes fadeUp {
@@ -445,7 +450,7 @@ img { max-width: 100%; display: block; }
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  position: fixed; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(20px);
   background: #1a2e4a; color: #fff; padding: 14px 28px; border-radius: 50px;
   font-size: .92rem; font-weight: 600; z-index: 9999;
   opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none;
@@ -657,7 +662,7 @@ img { max-width: 100%; display: block; }
   <div class="page active" id="page-home">
     <section class="hero">
       <div class="hero-inner">
-        <h1 class="hero-headline">O TREINAMENTO<br>CERTO GERA<br><em>O RESULTADO CERTO.</em></h1>
+        <h1 class="hero-headline">O&nbsp;TREINAMENTO<br>CERTO GERA<br><em>O&nbsp;RESULTADO CERTO.</em></h1>
         <p class="hero-sub">Treinamento personalizado presencial e online para quem leva saúde a sério.</p>
         <div class="hero-ctas">
           <button class="btn-primary" onclick="showPage('sobre')">Quem sou eu</button>
