@@ -218,19 +218,19 @@ img { max-width: 100%; display: block; }
 
 /* ─── HOME: HERO ──────────────────────────────────────────────── */
 .hero {
-  background: var(--hero-bg); color: #fff; min-height: 92vh;
+  background: var(--hero-bg); color: #fff; min-height: 100vh;
   display: flex; align-items: center;
-  background-image: radial-gradient(ellipse 60% 60% at 80% 50%, rgba(52,106,172,.35) 0%, transparent 70%);
+  background-image: radial-gradient(ellipse 65% 65% at 82% 45%, rgba(52,106,172,.4) 0%, transparent 70%);
 }
 .hero-inner { max-width: var(--max-w); margin: 0 auto; padding: 80px 24px; }
-.hero-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--hero-citrus); opacity: .85; margin-bottom: 24px; }
-.hero-headline { font-family: var(--font-d); font-size: clamp(3.4rem,9vw,7rem);
-  font-weight: 800; line-height: 1.0; letter-spacing: -.02em;
-  color: #fff; margin-bottom: 28px; }
+.hero-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--hero-citrus); opacity: .9; margin-bottom: 28px; }
+.hero-headline { font-family: var(--font-d); font-size: clamp(2.5rem,11vw,8.2rem);
+  font-weight: 800; line-height: .96; letter-spacing: -.03em;
+  color: #fff; margin-bottom: 32px; text-wrap: balance; }
 .hero-headline em { color: var(--hero-citrus); font-style: normal; }
-.hero-sub { font-size: 1.1rem; color: rgba(255,255,255,.65); max-width: 440px;
-  line-height: 1.6; margin-bottom: 40px; }
+.hero-sub { font-size: 1.2rem; color: rgba(255,255,255,.68); max-width: 460px;
+  line-height: 1.6; margin-bottom: 44px; }
 .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
 .hero-ctas .btn-primary { background: var(--hero-citrus); color: #000000; font-weight: 700; }
 .hero-ctas .btn-primary:hover { background: #6e88ac; }
@@ -239,32 +239,34 @@ img { max-width: 100%; display: block; }
 
 /* ─── HOME: IMPACT SECTION ────────────────────────────────────── */
 .impact {
-  background: var(--pine); color: #fff; padding: 100px 24px; text-align: center;
-  background-image: radial-gradient(ellipse 80% 80% at 50% 100%, rgba(135,156,187,.15) 0%, transparent 70%);
+  background: var(--pine); color: #fff; padding: 130px 24px; text-align: center;
+  background-image: radial-gradient(ellipse 80% 80% at 50% 100%, rgba(135,156,187,.18) 0%, transparent 70%);
 }
-.impact-phrase { font-family: var(--font-d); font-size: clamp(1.8rem,4.5vw,3rem);
-  font-weight: 800; line-height: 1.2; max-width: 700px; margin: 0 auto 36px;
+.impact-phrase { font-family: var(--font-d); font-size: clamp(1.7rem,7vw,3.4rem);
+  font-weight: 800; line-height: 1.15; letter-spacing: -.01em; max-width: 720px; margin: 0 auto 40px;
   text-wrap: balance; }
 .impact-phrase em { color: var(--hero-citrus); font-style: normal; }
 
 /* ─── HOME: PLANS ACCORDION ───────────────────────────────────── */
-.plans-preview { padding: 80px 0; }
+.plans-preview { padding: 120px 0; background: var(--surface-alt); }
 .plans-preview-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
-.plans-preview-inner h2 { font-size: 2rem; margin-bottom: 36px; }
+.plans-preview-inner h2 { font-family: var(--font-d); font-size: clamp(1.7rem,6vw,2.6rem);
+  font-weight: 800; letter-spacing: -.01em; margin-bottom: 44px; }
 .accordion-item { border: 1.5px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 10px; overflow: hidden; transition: border-color .2s; }
-.accordion-item:hover { border-color: var(--pine); }
+  margin-bottom: 12px; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s;
+  background: var(--surface); }
+.accordion-item:hover { border-color: var(--pine); box-shadow: 0 8px 28px rgba(13,26,46,.08); transform: translateY(-1px); }
 .accordion-trigger {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 22px; background: var(--surface); width: 100%; text-align: left;
+  padding: 22px 24px; background: var(--surface); width: 100%; text-align: left;
   gap: 16px; cursor: pointer;
 }
 .acc-info { display: flex; flex-direction: column; gap: 3px; }
-.acc-name { font-weight: 700; font-size: 1.05rem; }
+.acc-name { font-weight: 700; font-size: 1.08rem; }
 .acc-price { font-size: .88rem; color: var(--muted); }
 .acc-arrow { font-size: 1.2rem; color: var(--pine); transition: transform .25s; flex-shrink: 0; }
 .accordion-item.open .acc-arrow { transform: rotate(180deg); }
-.accordion-body { display: none; padding: 0 22px 20px; background: var(--surface); }
+.accordion-body { display: none; padding: 0 24px 22px; background: var(--surface); }
 .accordion-item.open .accordion-body { display: block; }
 .accordion-body ul { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 18px; }
 .accordion-body li { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; }
@@ -514,7 +516,7 @@ img { max-width: 100%; display: block; }
 .modal-actions { display: flex; flex-direction: column; gap: 10px; }
 
 /* ─── FOOTER ──────────────────────────────────────────────────── */
-.footer { border-top: 1px solid var(--border); padding: 32px 24px; }
+.footer { border-top: 1px solid var(--border); padding: 44px 24px; background: var(--ground); }
 .footer-inner { max-width: var(--max-w); margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .footer-logo { font-family: var(--font-d); font-size: 1.2rem; font-weight: 800; }
@@ -527,6 +529,20 @@ img { max-width: 100%; display: block; }
 .footer-admin:hover { color: var(--pine); }
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .hero { min-height: 92vh; }
+  .hero-inner { padding: 60px 20px; }
+  .hero-eyebrow { font-size: .7rem; letter-spacing: .1em; margin-bottom: 20px; }
+  .hero-headline { margin-bottom: 24px; }
+  .hero-sub { font-size: 1.02rem; margin-bottom: 32px; }
+  .impact { padding: 80px 20px; }
+  .impact-phrase { margin-bottom: 28px; }
+  .plans-preview { padding: 70px 0; }
+  .plans-preview-inner { padding: 0 20px; }
+  .plans-preview-inner h2 { margin-bottom: 32px; }
+  .accordion-trigger { padding: 18px 18px; }
+  .accordion-body { padding: 0 18px 18px; }
+}
 @media (max-width: 480px) {
   .form-row-2 { grid-template-columns: 1fr; }
   .sobre-photos { grid-template-columns: 1fr; }
