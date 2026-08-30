@@ -453,6 +453,16 @@ img { max-width: 100%; display: block; }
 .avail-slot-toggle { padding: 5px 4px; border-radius: 6px; border: 1.5px solid var(--border);
   font-size: .72rem; font-weight: 600; text-align: center; transition: all .15s; }
 .avail-slot-toggle.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.sched-week { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.sched-day-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.sched-day-name { font-weight: 700; font-size: .85rem; min-width: 90px; }
+.sched-time-label { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--ink-2); }
+.sched-time-label input[type="time"] { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: .85rem; }
+.exception-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.exception-form input, .exception-form select { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: .85rem; }
+.exception-item { display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: .85rem; margin-bottom: 6px; }
 .bookings-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .bookings-table th { text-align: left; padding: 8px 12px; font-size: .75rem;
   text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
@@ -1245,10 +1255,41 @@ function getNext5Days() {
   }
   return days;
 }
+const SESSION_DURATION_MIN = 45;
+function generateSlotsForWindow(startStr, endStr, durationMin){
+  if(!startStr || !endStr) return [];
+  const [sh,sm]=startStr.split(':').map(Number);
+  const [eh,em]=endStr.split(':').map(Number);
+  if([sh,sm,eh,em].some(n=>Number.isNaN(n))) return [];
+  let cur=sh*60+sm; const end=eh*60+em;
+  const slots=[];
+  while(cur+durationMin<=end){
+    slots.push(`${String(Math.floor(cur/60)).padStart(2,'0')}:${String(cur%60).padStart(2,'0')}`);
+    cur+=durationMin;
+  }
+  return slots;
+}
 function getAvailableSlots(date) {
   const dow=date.getDay();
-  const allSlots=[...(state.availability[String(dow)]||[])].sort();
-  const dateStr=dateToStr(date); const now=new Date();
+  const dateStr=dateToStr(date);
+  const now=new Date();
+  let windowStart=null, windowEnd=null;
+  const exception = profExceptionsMap[dateStr];
+  if(exception){
+    if(exception.type==='closed') return [];
+    windowStart=(exception.start_time||'').slice(0,5);
+    windowEnd=(exception.end_time||'').slice(0,5);
+  } else if(sb && profBookingsProfId) {
+    if(dow===0||dow===6) return [];
+    if(profHolidaysSet.has(dateStr)) return [];
+    const w = profWeeklySchedule?.[String(dow)];
+    if(!w || !w.start || !w.end) return [];
+    windowStart=w.start; windowEnd=w.end;
+  } else {
+    // Fluxo legado sem professor definido — mantém compatibilidade com o formato antigo
+    windowStart=null; windowEnd=null;
+  }
+  const allSlots = (windowStart && windowEnd) ? generateSlotsForWindow(windowStart, windowEnd, SESSION_DURATION_MIN) : [];
   return allSlots.filter(time=>{
     const [h,m]=time.split(':').map(Number);
     const slotDt=new Date(date.getFullYear(),date.getMonth(),date.getDate(),h,m);
@@ -1256,11 +1297,7 @@ function getAvailableSlots(date) {
     if(sb && profBookingsProfId){
       return !profBookingsCache.some(b=> b.date===dateStr && b.time===time);
     }
-    return !state.bookings.some(b=>{
-      if(b.date===dateStr && b.time===time) return true;
-      if(b.isFixed && b.time===time){ const bd=strToDate(b.date); if(bd.getDay()===dow) return true; }
-      return false;
-    });
+    return true;
   });
 }
 
@@ -1486,23 +1523,53 @@ function toggleAcc(i){
 /* ── Calendar ─────────────────────────────────────────────────── */
 let selDate=null, selTime=null, isFixed=false;
 let profBookingsCache=[]; let profBookingsProfId=null;
-async function refreshProfBookingsAndAvailability(){
+let profWeeklySchedule={}; let profExceptionsMap={}; let profHolidaysSet=new Set();
+const holidayYearCache={};
+async function fetchHolidaysForYear(year){
+  if(holidayYearCache[year]) return holidayYearCache[year];
+  try{
+    const res=await fetch(`https://brasilapi.com.br/api/feriados/v1/${year}`);
+    const data=await res.json();
+    const set=new Set((data||[]).map(h=>h.date));
+    holidayYearCache[year]=set;
+    return set;
+  } catch(e){
+    console.warn('Não foi possível carregar feriados nacionais', e);
+    const empty=new Set(); holidayYearCache[year]=empty; return empty;
+  }
+}
+async function refreshScheduleData(){
   let profId=null;
   if(currentUser && currentProfile?.role==='student'){ profId = currentStudentData?.professor_id; }
   else if(currentUser && currentProfile?.role==='professor'){ profId = currentUser.id; }
   profBookingsProfId = profId;
-  if(!sb || !profId){ profBookingsCache=[]; return; }
-  const { data: prof } = await sb.from('professors').select('availability').eq('id', profId).single();
-  if(prof?.availability) state.availability = prof.availability;
+  if(!sb || !profId){ profBookingsCache=[]; profWeeklySchedule={}; profExceptionsMap={}; profHolidaysSet=new Set(); return; }
+
+  const { data: prof } = await sb.from('professors').select('weekly_schedule').eq('id', profId).single();
+  profWeeklySchedule = prof?.weekly_schedule || {};
+
   const { data: bookings } = await sb.from('bookings').select('date,time')
     .eq('professor_id', profId).eq('status','confirmed');
   profBookingsCache = bookings || [];
+
+  const today=new Date();
+  const todayStr=dateToStr(today);
+  const future=new Date(today); future.setDate(future.getDate()+9);
+  const futureStr=dateToStr(future);
+  const { data: exceptions } = await sb.from('schedule_exceptions').select('*')
+    .eq('professor_id', profId).gte('date', todayStr).lte('date', futureStr);
+  profExceptionsMap={};
+  (exceptions||[]).forEach(e=>{ profExceptionsMap[e.date]=e; });
+
+  const years=[...new Set([today.getFullYear(), future.getFullYear()])];
+  const sets=await Promise.all(years.map(fetchHolidaysForYear));
+  profHolidaysSet=new Set(sets.flatMap(s=>[...s]));
 }
 async function renderCalendar(){
   const root=document.getElementById('calendar-root');
   if(!root) return;
   root.innerHTML=`<p style="color:var(--muted);font-size:.88rem">Carregando horários...</p>`;
-  await refreshProfBookingsAndAvailability();
+  await refreshScheduleData();
   const days=getNext5Days();
   root.innerHTML=`
     <p class="slots-label">Selecione o dia</p>
@@ -1524,7 +1591,7 @@ async function renderCalendar(){
 async function selectDay(i){
   const days=getNext5Days(); selDate=days[i]; selTime=null;
   document.querySelectorAll('.day-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
-  await refreshProfBookingsAndAvailability();
+  await refreshScheduleData();
   renderSlots();
 }
 function renderSlots(){
@@ -2599,29 +2666,115 @@ async function profCancelBooking(id) {
   loadProfAllBookings();
 }
 
+const DIAS_UTEIS=['Segunda','Terça','Quarta','Quinta','Sexta']; // di=0..4 → dow=1..5
 async function renderProfDisponibilidade() {
   const el = document.getElementById('prof-disponibilidade-content');
   if(!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
   if(sb && currentUser){
-    const { data: prof } = await sb.from('professors').select('availability').eq('id', currentUser.id).single();
-    if(prof?.availability) state.availability = prof.availability;
+    const { data: prof } = await sb.from('professors').select('weekly_schedule').eq('id', currentUser.id).single();
+    profWeeklySchedule = prof?.weekly_schedule || {};
   }
-  const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
-  const DAY_NAMES=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   el.innerHTML=`
-    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Clique nos horários para ativar/desativar.</p>
-    <div class="avail-grid">
-      ${DAY_NAMES.map((dn,di)=>`
-        <div class="avail-day-col">
-          <div class="avail-day-name">${dn}</div>
-          ${SLOT_OPTS.map(s=>{
-            const on=(state.availability[String(di)]||[]).includes(s);
-            return `<button class="avail-slot-toggle${on?' on':''}" onclick="toggleSlot(${di},'${s}',this)">${s}</button>`;
-          }).join('')}
-        </div>`).join('')}
+    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Defina o horário de início e fim de cada dia útil. Os horários de atendimento (${SESSION_DURATION_MIN} min cada) são gerados automaticamente dentro dessa janela, toda semana, sem precisar mexer de novo.</p>
+    <div class="sched-week">
+      ${DIAS_UTEIS.map((dn,di)=>{
+        const dow=di+1;
+        const w=profWeeklySchedule[String(dow)]||{};
+        return `<div class="sched-day-row">
+          <span class="sched-day-name">${dn}</span>
+          <label class="sched-time-label">Início <input type="time" id="sched-start-${di}" value="${w.start||''}"></label>
+          <label class="sched-time-label">Fim <input type="time" id="sched-end-${di}" value="${w.end||''}"></label>
+        </div>`;
+      }).join('')}
     </div>
-    <button class="btn-primary" style="margin-top:16px" onclick="saveAvailability()">Salvar disponibilidade</button>`;
+    <p style="font-size:.78rem;color:var(--muted);margin-top:8px">Deixe início e fim em branco pra fechar o dia inteiro. Fins de semana ficam fechados por padrão — use as exceções abaixo pra abrir um dia específico.</p>
+    <button class="btn-primary" style="margin-top:16px" onclick="saveWeeklySchedule()">Salvar horário semanal</button>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:28px 0">
+    <h4 style="font-family:var(--font-d);margin-bottom:8px">Exceções de data</h4>
+    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:14px">Feriados nacionais já bloqueiam a agenda automaticamente. Use aqui pra fechar um dia útil (folga, imprevisto) ou abrir um dia normalmente fechado (fim de semana, ou um feriado em que você quer atender).</p>
+    <div class="exception-form">
+      <input type="date" id="exc-date">
+      <select id="exc-type" onchange="toggleExcTimeFields()">
+        <option value="closed">Fechar este dia</option>
+        <option value="open">Abrir este dia</option>
+      </select>
+      <span id="exc-time-fields" hidden style="display:flex;gap:8px;align-items:center">
+        <input type="time" id="exc-start" value="08:00">
+        <span>até</span>
+        <input type="time" id="exc-end" value="12:00">
+      </span>
+      <button class="btn-primary" style="padding:8px 16px" onclick="addException()">Adicionar</button>
+    </div>
+    <div id="exceptions-list" style="margin-top:14px"></div>`;
+  await loadExceptions();
+}
+async function saveWeeklySchedule(){
+  const sched={};
+  for(let di=0; di<DIAS_UTEIS.length; di++){
+    const dow=di+1;
+    const s=document.getElementById(`sched-start-${di}`).value;
+    const e=document.getElementById(`sched-end-${di}`).value;
+    if(s && e){
+      if(s>=e){ alert(`Em ${DIAS_UTEIS[di]}, o horário de início precisa ser antes do horário de fim.`); return; }
+      sched[String(dow)]={start:s,end:e};
+    }
+  }
+  if(!sb || !currentUser){ alert('Faça login novamente.'); return; }
+  const { error } = await sb.from('professors').update({ weekly_schedule: sched }).eq('id', currentUser.id);
+  if(error){ alert('Erro ao salvar: ' + error.message); return; }
+  profWeeklySchedule = sched;
+  alert('Horário semanal salvo! Já vale para todos os alunos, toda semana, automaticamente.');
+}
+function toggleExcTimeFields(){
+  const type=document.getElementById('exc-type').value;
+  document.getElementById('exc-time-fields').hidden = type!=='open';
+}
+async function loadExceptions(){
+  if(!sb || !currentUser) return;
+  const todayStr=dateToStr(new Date());
+  const { data } = await sb.from('schedule_exceptions').select('*')
+    .eq('professor_id', currentUser.id).gte('date', todayStr).order('date');
+  profExceptionsMap={};
+  (data||[]).forEach(e=>{ profExceptionsMap[e.date]=e; });
+  renderExceptionsList(data||[]);
+}
+function renderExceptionsList(list){
+  const el=document.getElementById('exceptions-list');
+  if(!el) return;
+  if(!list.length){ el.innerHTML='<p style="color:var(--muted);font-size:.85rem">Nenhuma exceção cadastrada.</p>'; return; }
+  el.innerHTML = list.map(e=>{
+    const d=new Date(e.date+'T12:00:00');
+    const ds=`${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = e.type==='closed' ? 'Fechado' : `Aberto (${(e.start_time||'').slice(0,5)}–${(e.end_time||'').slice(0,5)})`;
+    return `<div class="exception-item">
+      <span>${ds} — ${label}</span>
+      <button style="font-size:.75rem;color:#C0392B" onclick="removeException('${e.id}')">Remover</button>
+    </div>`;
+  }).join('');
+}
+async function addException(){
+  const date=document.getElementById('exc-date').value;
+  if(!date){ alert('Escolha uma data.'); return; }
+  const type=document.getElementById('exc-type').value;
+  let start=null, end=null;
+  if(type==='open'){
+    start=document.getElementById('exc-start').value;
+    end=document.getElementById('exc-end').value;
+    if(!start || !end || start>=end){ alert('Defina um horário de início e fim válidos.'); return; }
+  }
+  const { error } = await sb.from('schedule_exceptions').upsert({
+    professor_id: currentUser.id, date, type, start_time: start, end_time: end
+  }, { onConflict: 'professor_id,date' });
+  if(error){ alert('Erro ao salvar exceção: ' + error.message); return; }
+  document.getElementById('exc-date').value='';
+  await loadExceptions();
+}
+async function removeException(id){
+  if(!confirm('Remover esta exceção?')) return;
+  await sb.from('schedule_exceptions').delete().eq('id', id);
+  await loadExceptions();
 }
 
 async function renderProfAnamnese() {
