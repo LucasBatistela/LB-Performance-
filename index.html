@@ -290,38 +290,69 @@ img { max-width: 100%; display: block; }
 .acc-cta { font-size: .88rem; }
 
 /* ─── SOBRE ───────────────────────────────────────────────────── */
-.page-header { background: var(--hero-bg); color: #fff; padding: 64px 24px 56px; }
-.page-header-inner { max-width: var(--max-w); margin: 0 auto; }
-.page-header .eyebrow { color: var(--hero-citrus); }
-.page-header h1 { font-size: clamp(2rem,5vw,3.2rem); font-weight: 800; margin-top: 8px; }
-.sobre-body { max-width: var(--max-w); margin: 0 auto; padding: 60px 24px; }
-.sobre-photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 56px; }
-.photo-ph {
-  background: var(--surface-alt); border: 2px dashed var(--border);
-  border-radius: var(--radius); aspect-ratio: 4/5; display: flex;
-  flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; color: var(--muted); font-size: .82rem; text-align: center; padding: 16px;
+.page-header {
+  background: var(--hero-bg); color: #fff; padding: 96px 24px 72px; position: relative; overflow: hidden;
+  background-image: radial-gradient(ellipse 60% 90% at 12% 0%, rgba(52,106,172,.35) 0%, transparent 65%);
 }
-.photo-ph svg { width: 32px; height: 32px; opacity: .4; }
-.sobre-text { max-width: 680px; margin-bottom: 60px; }
-.sobre-text h2 { font-size: 1.8rem; margin-bottom: 24px; }
-.sobre-text p { color: var(--ink-2); margin-bottom: 16px; line-height: 1.75; }
-.timeline { border-left: 3px solid var(--pine); padding-left: 28px;
-  display: flex; flex-direction: column; gap: 32px; }
-.tl-item { position: relative; }
-.tl-dot { position: absolute; left: -38px; top: 4px; width: 14px; height: 14px;
-  background: var(--pine); border-radius: 50%; border: 3px solid var(--ground); }
+.page-header-inner { max-width: var(--max-w); margin: 0 auto; position: relative; }
+.page-header .eyebrow { color: var(--hero-citrus); }
+.page-header h1 { font-family: var(--font-d); font-size: clamp(2.1rem,4.4vw,3.4rem);
+  font-weight: 800; line-height: 1.08; letter-spacing: -.02em; margin-top: 10px; max-width: 760px; text-wrap: balance; }
+
+.sobre-body { max-width: var(--max-w); margin: 0 auto; padding: 72px 24px; }
+
+.sobre-photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 64px; }
+.photo-ph {
+  background: linear-gradient(155deg, var(--surface-alt) 0%, var(--surface) 100%);
+  border: 1.5px dashed var(--border); border-radius: calc(var(--radius) + 4px);
+  aspect-ratio: 4/5; display: flex;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; color: var(--muted); font-size: .82rem; font-weight: 600; text-align: center; padding: 16px;
+  transition: border-color .2s, transform .2s;
+}
+.photo-ph:hover { border-color: var(--pine); transform: translateY(-2px); }
+.photo-ph svg { width: 30px; height: 30px; opacity: .45; }
+
+.sobre-text { max-width: 680px; margin-bottom: 72px; }
+.sobre-text h2 { font-family: var(--font-d); font-size: clamp(1.5rem,2.6vw,2rem); font-weight: 800;
+  letter-spacing: -.01em; margin-bottom: 22px; }
+.sobre-text p { color: var(--ink-2); margin-bottom: 16px; line-height: 1.75; font-size: 1.02rem; }
+
+.timeline-label { font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--pine); margin-bottom: 28px; }
+.timeline { position: relative; padding-left: 30px;
+  display: flex; flex-direction: column; gap: 30px; }
+.timeline::before {
+  content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px;
+  background: linear-gradient(180deg, var(--border) 0%, var(--pine) 85%, var(--pine) 100%);
+}
+.tl-item { position: relative; padding: 2px 0; transition: transform .2s; }
+.tl-dot { position: absolute; left: -30px; top: 5px; width: 12px; height: 12px;
+  background: var(--ground); border-radius: 50%; border: 2px solid var(--pine); box-sizing: border-box; }
+.tl-item.is-now .tl-dot { background: var(--pine); box-shadow: 0 0 0 4px rgba(52,106,172,.22); }
 .tl-year { font-size: .78rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--pine); margin-bottom: 4px; }
-.tl-role { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
-.tl-desc { font-size: .9rem; color: var(--ink-2); line-height: 1.6; }
-.creds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
-  gap: 14px; margin-top: 48px; }
+  letter-spacing: .1em; color: var(--pine); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.tl-now-badge { font-size: .66rem; font-weight: 800; letter-spacing: .06em; color: #fff;
+  background: var(--pine); padding: 2px 8px; border-radius: 20px; text-transform: uppercase; }
+.tl-role { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+.tl-desc { font-size: .92rem; color: var(--ink-2); line-height: 1.6; max-width: 560px; }
+.tl-item.is-now { background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; margin-left: -20px; }
+.tl-item.is-now .tl-dot { left: -10px; }
+
+.creds-label { font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--pine); margin: 64px 0 20px; }
+.creds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 14px; }
 .cred-card { background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--radius); padding: 20px 22px; }
-.cred-label { font-size: .75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted); margin-bottom: 6px; }
-.cred-val { font-weight: 600; font-size: .95rem; }
+  border-radius: var(--radius); padding: 20px 22px; display: flex; gap: 14px; align-items: flex-start;
+  transition: transform .2s, border-color .2s, box-shadow .2s; }
+.cred-card:hover { transform: translateY(-3px); border-color: var(--pine); box-shadow: 0 12px 28px -14px rgba(13,26,46,.25); }
+.cred-icon { flex: none; width: 38px; height: 38px; border-radius: 10px; background: var(--surface-alt);
+  color: var(--pine); display: flex; align-items: center; justify-content: center; }
+.cred-icon svg { width: 20px; height: 20px; }
+.cred-label { font-size: .74rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: 4px; }
+.cred-val { font-weight: 700; font-size: .96rem; line-height: 1.3; }
 
 /* ─── AGENDAR ─────────────────────────────────────────────────── */
 .agendar-body { max-width: var(--max-w); margin: 0 auto; padding: 60px 24px; }
@@ -559,6 +590,14 @@ img { max-width: 100%; display: block; }
   .plans-preview-inner h2 { margin-bottom: 32px; }
   .accordion-trigger { padding: 18px 18px; }
   .accordion-body { padding: 0 18px 18px; }
+  .page-header { padding: 76px 20px 52px; }
+  .sobre-body { padding: 56px 20px; }
+  .timeline { padding-left: 24px; }
+  .timeline::before { left: 4px; }
+  .tl-dot { left: -24px; }
+  .tl-item.is-now { margin-left: -14px; padding: 16px 16px; }
+  .tl-item.is-now .tl-dot { left: -8px; }
+  .cred-card { padding: 18px; }
 }
 @media (max-width: 480px) {
   .form-row-2 { grid-template-columns: 1fr; }
@@ -734,6 +773,7 @@ img { max-width: 100%; display: block; }
         <p>Minha abordagem é direta: entendo quem você é, onde está e para onde quer ir. Cada treino é uma aula — você sai sabendo mais sobre o seu corpo. E o ambiente? Sempre o mais acolhedor e animado possível.</p>
       </div>
 
+      <p class="timeline-label">Trajetória</p>
       <div class="timeline">
         <div class="tl-item">
           <div class="tl-dot"></div>
@@ -765,30 +805,51 @@ img { max-width: 100%; display: block; }
           <div class="tl-role">Treinamento personalizado</div>
           <div class="tl-desc">Transição para o atendimento individualizado, desenvolvendo a escuta ativa e a capacidade de montar programas totalmente adaptados ao aluno.</div>
         </div>
-        <div class="tl-item">
+        <div class="tl-item is-now">
           <div class="tl-dot"></div>
-          <div class="tl-year">Hoje</div>
+          <div class="tl-year">Hoje <span class="tl-now-badge">Atual</span></div>
           <div class="tl-role">Studio10 · Personal Trainer</div>
           <div class="tl-desc">Instrutor de treinamento funcional no Studio10 e personal trainer em formação, com foco em saúde, qualidade de vida e performance — para jovens, adultos e idosos.</div>
         </div>
       </div>
 
-      <div class="creds-grid" style="margin-top:48px">
+      <p class="creds-label">Formação &amp; atuação</p>
+      <div class="creds-grid">
         <div class="cred-card">
-          <div class="cred-label">Formação</div>
-          <div class="cred-val">Educação Física — Bacharelado</div>
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>
+          </div>
+          <div>
+            <div class="cred-label">Formação</div>
+            <div class="cred-val">Educação Física — Bacharelado</div>
+          </div>
         </div>
         <div class="cred-card">
-          <div class="cred-label">Pós-graduação</div>
-          <div class="cred-val">Fisiologia do Exercício e do Esporte</div>
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+          </div>
+          <div>
+            <div class="cred-label">Pós-graduação</div>
+            <div class="cred-val">Fisiologia do Exercício e do Esporte</div>
+          </div>
         </div>
         <div class="cred-card">
-          <div class="cred-label">Pós-graduação</div>
-          <div class="cred-val">Preparação Física e Treinamento Personalizado</div>
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+          </div>
+          <div>
+            <div class="cred-label">Pós-graduação</div>
+            <div class="cred-val">Preparação Física e Treinamento Personalizado</div>
+          </div>
         </div>
         <div class="cred-card">
-          <div class="cred-label">Atuação atual</div>
-          <div class="cred-val">Funcional em grupo · Studio10, SJC</div>
+          <div class="cred-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5"/><path d="m21 8-3-3 1.5-1.5a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1L21 8Z"/><path d="M8 21l-3-3 1.5-1.5a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1L8 21Z"/><path d="m3 21 3-3"/><path d="m16 3 3-3"/></svg>
+          </div>
+          <div>
+            <div class="cred-label">Atuação atual</div>
+            <div class="cred-val">Funcional em grupo · Studio10, SJC</div>
+          </div>
         </div>
       </div>
     </div>
