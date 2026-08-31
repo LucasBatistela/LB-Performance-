@@ -141,7 +141,6 @@ img { max-width: 100%; display: block; }
 .nav-logo { font-family: var(--font-d); font-size: 1.5rem; font-weight: 800;
   color: var(--ink); cursor: pointer; }
 .nav-logo span { color: var(--pine); }
-.nav-search-icon { font-size: 1.1rem; }
 .nav-avatar-btn { position: relative; }
 .nav-avatar-circle {
   width: 34px; height: 34px; border-radius: 50%;
@@ -197,30 +196,6 @@ img { max-width: 100%; display: block; }
 .menu-footer button { font-size: .82rem; color: var(--muted); padding: 8px;
   transition: color .15s; }
 .menu-footer button:hover { color: var(--pine); }
-
-/* ─── SEARCH OVERLAY ──────────────────────────────────────────── */
-.search-overlay {
-  position: fixed; inset: 0; background: var(--surface); z-index: 980;
-  display: flex; flex-direction: column; transform: translateY(-100%);
-  transition: transform .3s cubic-bezier(.4,0,.2,1);
-  padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
-}
-.search-overlay.open { transform: translateY(0); }
-.search-bar { display: flex; align-items: center; gap: 12px; padding: 20px 24px;
-  border-bottom: 1px solid var(--border); }
-.search-bar input { border: none; font-size: 1.2rem; font-weight: 500; background: transparent; }
-.search-bar input:focus { border: none; }
-.search-close { font-size: 1.6rem; color: var(--muted); flex-shrink: 0; padding: 4px 10px;
-  border-radius: 8px; }
-.search-close:hover { background: var(--surface-alt); color: var(--ink); }
-.search-results { flex: 1; overflow-y: auto; padding: 20px 24px; }
-.search-result-item { padding: 14px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
-.search-result-item:hover .sr-title { color: var(--pine); }
-.sr-section { font-size: .75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted); margin-bottom: 4px; }
-.sr-title { font-weight: 600; transition: color .15s; }
-.sr-snippet { font-size: .88rem; color: var(--ink-2); margin-top: 4px; }
-.search-empty { color: var(--muted); padding: 24px 0; font-size: .95rem; }
 
 /* ─── PAGES CONTAINER ─────────────────────────────────────────── */
 .pages-wrap { padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px)); }
@@ -716,10 +691,12 @@ img { max-width: 100%; display: block; }
   </button>
   <div class="nav-logo" onclick="showPage('home')">Lucas<span>.</span></div>
   <div style="display:flex;align-items:center;gap:4px">
+    <button class="nav-btn" id="nav-back-btn" aria-label="Voltar" onclick="goBack()" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    </button>
     <button class="nav-btn" id="theme-toggle-btn" aria-label="Alternar tema" onclick="toggleTheme()">
       <span id="theme-toggle-icon">🌙</span>
     </button>
-    <button class="nav-btn nav-search-icon" id="nav-search-btn" aria-label="Buscar" onclick="openSearch()">🔍</button>
     <div class="nav-avatar-btn" id="nav-avatar-wrap">
       <button class="nav-btn" style="padding:5px" aria-label="Perfil" onclick="toggleProfileDrop()">
         <div class="nav-avatar-circle guest" id="nav-avatar-circle">👤</div>
@@ -742,21 +719,9 @@ img { max-width: 100%; display: block; }
     <a onclick="showPage('home');closeMenu()">Início</a>
     <a onclick="showPage('sobre');closeMenu()">Sobre</a>
     <a onclick="showPage('planos');closeMenu()">Planos</a>
-    <a onclick="showPage('login');closeMenu()" id="menu-login-link">Área do Aluno</a>
   </nav>
   <div class="menu-footer">
-    <button onclick="showPage('login');closeMenu()">Área do Professor</button>
-  </div>
-</div>
-
-<!-- ─── SEARCH OVERLAY ──────────────────────────────────────────── -->
-<div class="search-overlay" id="search-overlay">
-  <div class="search-bar">
-    <input type="text" id="search-input" placeholder="O que você está procurando?" oninput="doSearch(this.value)" autofocus>
-    <button class="search-close" onclick="closeSearch()">×</button>
-  </div>
-  <div class="search-results" id="search-results">
-    <p class="search-empty">Digite uma palavra ou frase para buscar.</p>
+    <button onclick="showPage('login');closeMenu()">Entrar</button>
   </div>
 </div>
 
@@ -1567,7 +1532,9 @@ window.addEventListener('scroll', ()=>{
 
 /* ── Page routing ─────────────────────────────────────────────── */
 let currentPage = 'home';
-function showPage(id) {
+let pageHistory = [];
+function showPage(id, opts) {
+  opts = opts || {};
   // Proteção de rota: dashboards exigem login
   const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor' };
   if(protectedRoutes[id]) {
@@ -1575,6 +1542,7 @@ function showPage(id) {
     if(!currentUser || !currentProfile) { showPage('login'); return; }
     if(currentProfile.role !== requiredRole) { showPage('home'); return; }
   }
+  if(!opts.isBack && currentPage && currentPage !== id) pageHistory.push(currentPage);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const el = document.getElementById('page-'+id);
   if(el){ el.classList.add('active'); currentPage=id; }
@@ -1582,6 +1550,12 @@ function showPage(id) {
   if(id==='agendar') renderCalendar();
   if(id==='planos') renderPlans();
   if(id==='home') renderHomeAccordion();
+  const backBtn = document.getElementById('nav-back-btn');
+  if(backBtn) backBtn.hidden = (id==='home');
+}
+function goBack() {
+  const prev = pageHistory.pop();
+  showPage(prev || 'home', { isBack:true });
 }
 
 /* ── Tema (claro/escuro) ─────────────────────────────────── */
@@ -1612,44 +1586,7 @@ function closeMenu() {
   document.getElementById('menu-backdrop').classList.remove('open');
 }
 
-/* ── Search ───────────────────────────────────────────────────── */
-const SEARCH_INDEX = [
-  { section:'Início', title:'Personal Trainer', snippet:'Treinamento personalizado presencial e online em São José dos Campos.', page:'home' },
-  { section:'Início', title:'Agendamento online', snippet:'Agende sua aula com até 5 dias de antecedência.', page:'agendar' },
-  { section:'Sobre', title:'Lucas Batistela', snippet:'Formado em Educação Física, pós-graduando em Fisiologia do Exercício e Preparação Física.', page:'sobre' },
-  { section:'Sobre', title:'Studio10', snippet:'Instrutor de treinamento funcional no Studio10 em São José dos Campos.', page:'sobre' },
-  { section:'Planos', title:'Plano de Entrada Online', snippet:'R$ 99,99/mês. Treino personalizado no MFIT com suporte por WhatsApp.', page:'planos' },
-  { section:'Planos', title:'Consultoria Online', snippet:'R$ 179,99/mês. Suporte WhatsApp e 2 videochamadas por mês.', page:'planos' },
-  { section:'Planos', title:'Personal Presencial', snippet:'A partir de R$ 85/sessão em São José dos Campos.', page:'planos' },
-  { section:'Planos', title:'Híbrido Presencial + Online', snippet:'R$ 449,99/mês. Sessão presencial semanal + suporte online completo.', page:'planos' },
-  { section:'Agendar', title:'Reservar horário', snippet:'Escolha o dia, o horário e agende sua sessão presencial ou online.', page:'agendar' },
-  { section:'Agendar', title:'Política de cancelamento', snippet:'Cancele com pelo menos 1 hora de antecedência para não ser cobrado.', page:'agendar' },
-];
-function openSearch() {
-  document.getElementById('search-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('search-input').focus(), 50);
-}
-function closeSearch() {
-  document.getElementById('search-overlay').classList.remove('open');
-  document.getElementById('search-input').value='';
-  document.getElementById('search-results').innerHTML='<p class="search-empty">Digite uma palavra ou frase para buscar.</p>';
-}
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeSearch(); closeMenu(); } });
-function doSearch(q) {
-  const el=document.getElementById('search-results');
-  if(!q.trim()){ el.innerHTML='<p class="search-empty">Digite uma palavra ou frase para buscar.</p>'; return; }
-  const lq=q.toLowerCase();
-  const res=SEARCH_INDEX.filter(r=>
-    r.title.toLowerCase().includes(lq)||r.snippet.toLowerCase().includes(lq)||r.section.toLowerCase().includes(lq)
-  );
-  if(!res.length){ el.innerHTML='<p class="search-empty">Nenhum resultado encontrado.</p>'; return; }
-  el.innerHTML=res.map(r=>`
-    <div class="search-result-item" onclick="closeSearch();showPage('${r.page}')">
-      <div class="sr-section">${r.section}</div>
-      <div class="sr-title">${r.title}</div>
-      <div class="sr-snippet">${r.snippet}</div>
-    </div>`).join('');
-}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMenu(); });
 
 /* ── Plans data ───────────────────────────────────────────────── */
 const PLANS = [
@@ -3114,6 +3051,8 @@ function updateNavAvatar() {
 }
 
 function toggleProfileDrop() {
+  // Deslogado: vai direto pra tela de login, sem menu intermediário — só existe uma opção mesmo.
+  if(!currentUser || !currentProfile) { showPage('login'); return; }
   const drop = document.getElementById('nav-profile-drop');
   if(drop.hidden) { renderNavDrop(); drop.hidden = false; }
   else { drop.hidden = true; }
@@ -3150,19 +3089,8 @@ function renderNavDrop() {
       <button class="nav-profile-drop-item danger" onclick="logout();document.getElementById('nav-profile-drop').hidden=true">
         <span>🚪</span> Sair
       </button>`;
-  } else {
-    el.innerHTML = `
-      <div class="nav-profile-drop-header">
-        <div class="nav-profile-drop-name">Entrar</div>
-        <div class="nav-profile-drop-email">Acesse sua conta</div>
-      </div>
-      <button class="nav-profile-drop-item" onclick="showPage('login');document.getElementById('nav-profile-drop').hidden=true">
-        <span>👤</span> Área do Aluno
-      </button>
-      <button class="nav-profile-drop-item" onclick="showPage('login');document.getElementById('tab-prof')?.click();document.getElementById('nav-profile-drop').hidden=true">
-        <span>🏋️</span> Área do Professor
-      </button>`;
   }
+  // Deslogado: toggleProfileDrop() já leva direto pro login, esse dropdown não chega a abrir.
 }
 
 document.addEventListener('click', function(e) {
