@@ -1050,8 +1050,15 @@ img { max-width: 100%; display: block; }
           <div class="form-row"><label>CPF</label>
             <input type="text" id="login-cpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"></div>
           <div class="form-row"><label>Senha</label>
-            <input type="password" id="login-senha-aluno" placeholder="••••••••"
-              onkeydown="if(event.key==='Enter')loginAluno()"></div>
+            <div class="pwd-field">
+              <input type="password" id="login-senha-aluno" placeholder="••••••••"
+                onkeydown="if(event.key==='Enter')loginAluno()">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('login-senha-aluno', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="auth-error" id="auth-err-aluno"></div>
           <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginAluno()">Entrar</button>
         </div>
@@ -1059,8 +1066,15 @@ img { max-width: 100%; display: block; }
           <div class="form-row"><label>E-mail</label>
             <input type="email" id="login-email-prof" placeholder="seu@email.com"></div>
           <div class="form-row"><label>Senha</label>
-            <input type="password" id="login-senha-prof" placeholder="••••••••"
-              onkeydown="if(event.key==='Enter')loginProfessor()"></div>
+            <div class="pwd-field">
+              <input type="password" id="login-senha-prof" placeholder="••••••••"
+                onkeydown="if(event.key==='Enter')loginProfessor()">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('login-senha-prof', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="auth-error" id="auth-err-prof"></div>
           <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginProfessor()">Entrar</button>
         </div>
