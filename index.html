@@ -1203,6 +1203,32 @@ img { max-width: 100%; display: block; }
           <div id="profile-save-msg" style="font-size:.82rem;text-align:center;display:none"></div>
         </div>
       </div>
+
+      <!-- SEGURANÇA — ALTERAR SENHA -->
+      <div class="dash-card" id="dash-security-card">
+        <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          Alterar senha
+        </div>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">
+          Escolha uma nova senha de acesso ao seu painel.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label>Nova senha</label>
+            <input type="password" id="new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          </div>
+          <div>
+            <label>Confirmar nova senha</label>
+            <input type="password" id="confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
+              onkeydown="if(event.key==='Enter')changeStudentPassword()">
+          </div>
+          <button class="btn-primary" onclick="changeStudentPassword()"
+            style="justify-content:center;margin-top:4px" id="password-save-btn">
+            Alterar senha
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3194,6 +3220,32 @@ async function saveStudentProfile() {
     document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
     updateNavAvatar();
     showToast('✅ Perfil atualizado com sucesso!');
+  }
+}
+
+async function changeStudentPassword() {
+  if(!currentUser||!sb) return;
+  const passInput    = document.getElementById('new-password');
+  const confirmInput = document.getElementById('confirm-password');
+  const pass    = (passInput?.value||'');
+  const confirm = (confirmInput?.value||'');
+  const btn     = document.getElementById('password-save-btn');
+
+  if(pass.length < 6) { showToast('❌ A senha deve ter pelo menos 6 caracteres.'); return; }
+  if(pass !== confirm) { showToast('❌ As senhas não coincidem.'); return; }
+
+  const ok = await showAppConfirm('Alterar sua senha de acesso agora?');
+  if(!ok) return;
+
+  btn.disabled=true; btn.textContent='Salvando…';
+  const { error } = await sb.auth.updateUser({ password: pass });
+  btn.disabled=false; btn.textContent='Alterar senha';
+
+  if(error) {
+    showToast('❌ Erro ao alterar senha: '+error.message);
+  } else {
+    passInput.value=''; confirmInput.value='';
+    showToast('✅ Senha alterada com sucesso!');
   }
 }
 
