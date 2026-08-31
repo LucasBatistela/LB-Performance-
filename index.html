@@ -529,24 +529,12 @@ img { max-width: 100%; display: block; }
   align-items: flex-start; justify-content: center; background: rgba(0,0,0,.5);
   overflow-y: auto; padding: 40px 16px; }
 .overlay[hidden] { display: none; }
-.overlay-panel { background: var(--surface); border-radius: var(--radius);
-  width: 100%; max-width: 720px; padding: 32px; position: relative; }
-.overlay-close { position: absolute; top: 16px; right: 16px; font-size: 1.5rem;
-  color: var(--muted); padding: 4px 10px; border-radius: 8px; }
-.overlay-close:hover { background: var(--surface-alt); color: var(--ink); }
 .admin-tabs { display: flex; gap: 4px; margin-bottom: 28px; flex-wrap: wrap;
   background: var(--surface-alt); padding: 6px; border-radius: calc(var(--radius) + 4px); }
 .admin-tab { padding: 10px 16px; font-weight: 600; font-size: .84rem; color: var(--muted);
   border-radius: var(--radius); transition: color .15s, background .15s; }
 .admin-tab:hover { color: var(--ink); }
 .admin-tab.active { color: #fff; background: var(--pine); }
-.avail-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 20px; }
-.avail-day-col { display: flex; flex-direction: column; gap: 6px; }
-.avail-day-name { font-size: .72rem; font-weight: 700; text-align: center;
-  text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.avail-slot-toggle { padding: 5px 4px; border-radius: 6px; border: 1.5px solid var(--border);
-  font-size: .72rem; font-weight: 600; text-align: center; transition: all .15s; }
-.avail-slot-toggle.on { background: var(--pine); border-color: var(--pine); color: #fff; }
 .sched-week { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
 .sched-day-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
@@ -568,17 +556,11 @@ img { max-width: 100%; display: block; }
 .tag-presencial { background: rgba(52,106,172,.12); color: var(--pine); }
 .tag-online { background: rgba(135,156,187,.15); color: #346aac; }
 .tag-fixo { background: rgba(80,80,200,.1); color: #3A3AB0; }
-.pin-screen { text-align: center; }
-.pin-screen h3 { margin-bottom: 20px; }
-.pin-screen input { max-width: 200px; margin: 0 auto 16px; font-size: 1.5rem;
-  text-align: center; letter-spacing: .3em; font-family: var(--font-d); }
 .anamnese-resp-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   padding: 16px; margin-bottom: 12px; cursor: pointer; transition: border-color .15s; }
 .anamnese-resp-card:hover { border-color: var(--pine); }
 .resp-name { font-weight: 700; margin-bottom: 4px; }
 .resp-meta { font-size: .82rem; color: var(--muted); }
-.code-gen-row { display: flex; gap: 10px; margin-bottom: 16px; }
-.code-gen-row input { flex: 1; }
 .code-item { display: flex; justify-content: space-between; align-items: center;
   padding: 10px 14px; background: var(--surface-alt); border-radius: var(--radius-sm);
   margin-bottom: 8px; font-size: .88rem; }
@@ -674,7 +656,6 @@ img { max-width: 100%; display: block; }
 @media (max-width: 480px) {
   .form-row-2 { grid-template-columns: 1fr; }
   .sobre-photos { grid-template-columns: 1fr; }
-  .avail-grid { grid-template-columns: repeat(4, 1fr); }
   .plans-grid { grid-template-columns: 1fr; }
   .footer-inner { flex-direction: column; text-align: center; }
   .footer-nav { justify-content: center; }
@@ -1455,14 +1436,6 @@ img { max-width: 100%; display: block; }
   </div>
 
 </div><!-- /pages-wrap -->
-
-<!-- ─── ADMIN OVERLAY ─────────────────────────────────────────────── -->
-<div id="admin-overlay" class="overlay" hidden>
-  <div class="overlay-panel">
-    <button class="overlay-close" onclick="closeAdmin()">×</button>
-    <div id="admin-content"></div>
-  </div>
-</div>
 
 <!-- ─── CONFIRM OVERLAY ───────────────────────────────────────────── -->
 <div id="confirm-overlay" class="overlay" hidden>
@@ -2547,161 +2520,6 @@ async function anamSubmit(){
   if(submittedEl && formEl){ submittedEl.hidden=false; formEl.hidden=true; }
 }
 
-/* ── Admin panel ──────────────────────────────────────────────── */
-let adminUnlocked=false;
-function openAdmin(){
-  document.getElementById('admin-overlay').hidden=false;
-  if(!adminUnlocked) renderAdminPin();
-  else renderAdminPanel();
-}
-function closeAdmin(){
-  document.getElementById('admin-overlay').hidden=true;
-}
-document.getElementById('admin-overlay').addEventListener('click',e=>{
-  if(e.target===document.getElementById('admin-overlay')) closeAdmin();
-});
-
-function renderAdminPin(){
-  document.getElementById('admin-content').innerHTML=`
-    <div class="pin-screen">
-      <h3>Área do treinador</h3>
-      <input type="password" id="admin-pin-input" placeholder="PIN" maxlength="8"
-        onkeydown="if(event.key==='Enter')checkAdminPin()">
-      <div id="admin-pin-err" style="color:#C0392B;font-size:.85rem;margin-bottom:12px;display:none">PIN incorreto.</div>
-      <button class="btn-primary" onclick="checkAdminPin()" style="width:100%;justify-content:center">Entrar</button>
-    </div>`;
-  setTimeout(()=>document.getElementById('admin-pin-input').focus(),100);
-}
-function checkAdminPin(){
-  const v=document.getElementById('admin-pin-input').value;
-  if(v===state.admin.pin){ adminUnlocked=true; renderAdminPanel(); }
-  else { document.getElementById('admin-pin-err').style.display='block'; }
-}
-
-function renderAdminPanel(tab){
-  tab=tab||'agendamentos';
-  const tabs=['agendamentos','disponibilidade','anamnese','config'];
-  const labels={'agendamentos':'Agendamentos','disponibilidade':'Disponibilidade','anamnese':'Anamnese','config':'Configurações'};
-  document.getElementById('admin-content').innerHTML=`
-    <h3 style="margin-bottom:16px;font-family:var(--font-d)">Painel do Treinador</h3>
-    <div class="admin-tabs">
-      ${tabs.map(t=>`<button class="admin-tab${t===tab?' active':''}" onclick="renderAdminPanel('${t}')">${labels[t]}</button>`).join('')}
-    </div>
-    <div id="admin-tab-content"></div>`;
-  renderAdminTab(tab);
-}
-
-function renderAdminTab(tab){
-  const el=document.getElementById('admin-tab-content');
-  if(tab==='agendamentos'){
-    const sorted=[...state.bookings].sort((a,b)=>a.date.localeCompare(b.date));
-    if(!sorted.length){ el.innerHTML='<p style="color:var(--muted)">Nenhum agendamento ainda.</p>'; return; }
-    el.innerHTML=`<div style="overflow-x:auto"><table class="bookings-table">
-      <thead><tr><th>Data</th><th>Hora</th><th>Aluno</th><th>Tipo</th><th>Contato</th><th></th></tr></thead>
-      <tbody>${sorted.map(b=>{
-        const d=strToDate(b.date);
-        const dateStr=`${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
-        return `<tr>
-          <td>${dateStr}${b.isFixed?` <span class="booking-tag tag-fixo">Fixo</span>`:''}</td>
-          <td>${b.time}</td><td>${b.name}</td>
-          <td><span class="booking-tag ${b.type==='presencial'?'tag-presencial':'tag-online'}">${b.type}</span></td>
-          <td style="font-size:.82rem">${b.phone||b.email||''}</td>
-          <td><button style="font-size:.75rem;color:var(--muted)" onclick="deleteBooking('${b.id}')">Remover</button></td>
-        </tr>`;
-      }).join('')}</tbody></table></div>`;
-  } else if(tab==='disponibilidade'){
-    const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
-    const DAY_NAMES=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-    el.innerHTML=`
-      <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Clique nos horários para ativar/desativar.</p>
-      <div class="avail-grid">
-        ${DAY_NAMES.map((dn,di)=>`
-          <div class="avail-day-col">
-            <div class="avail-day-name">${dn}</div>
-            ${SLOT_OPTS.map(s=>{
-              const on=(state.availability[String(di)]||[]).includes(s);
-              return `<button class="avail-slot-toggle${on?' on':''}" onclick="toggleSlot(${di},'${s}',this)">${s}</button>`;
-            }).join('')}
-          </div>`).join('')}
-      </div>
-      <button class="btn-primary" style="margin-top:16px" onclick="saveAvailability()">Salvar disponibilidade</button>`;
-  } else if(tab==='anamnese'){
-    el.innerHTML=`
-      <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Gere um código único por aluno. Após o preenchimento, as respostas aparecem abaixo.</p>
-      <div class="code-gen-row">
-        <input id="new-code-name" placeholder="Nome do aluno">
-        <button class="btn-primary" onclick="generateCode()" style="white-space:nowrap">Gerar código</button>
-      </div>
-      <div id="codes-list"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
-      <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
-      <h4 style="font-family:var(--font-d);margin-bottom:14px">Respostas recebidas</h4>
-      <div id="responses-list"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>`;
-    loadAdminAnamneseTab();
-  } else if(tab==='config'){
-    el.innerHTML=`
-      <div class="form-row"><label>PIN do admin</label><input id="cfg-pin" type="password" value="${state.admin.pin}"></div>
-      <div class="form-row"><label>E-mail de notificação</label><input id="cfg-email" type="email" value="${state.admin.email}"></div>
-      <div class="form-row"><label>Endpoint Formspree (para anamnese)</label>
-        <input id="cfg-formspree" value="${state.admin.formspree}" placeholder="https://formspree.io/f/xxxxxxxx">
-        <p style="font-size:.78rem;color:var(--muted);margin-top:6px">Crie sua conta em formspree.io e cole o endpoint aqui.</p>
-      </div>
-      <button class="btn-primary" style="margin-top:8px" onclick="saveConfig()">Salvar configurações</button>`;
-  }
-}
-
-function toggleSlot(di,slot,btn){
-  btn.classList.toggle('on');
-}
-async function saveAvailability(){
-  const SLOT_OPTS=['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'];
-  const newAvail={};
-  for(let di=0;di<7;di++){
-    newAvail[String(di)]=SLOT_OPTS.filter((_,si)=>{
-      const btns=document.querySelectorAll(`.avail-day-col:nth-child(${di+1}) .avail-slot-toggle`);
-      return btns[si]&&btns[si].classList.contains('on');
-    });
-  }
-  if(sb && currentUser && currentProfile?.role==='professor'){
-    const { error } = await sb.from('professors').update({ availability: newAvail }).eq('id', currentUser.id);
-    if(error){ alert('Erro ao salvar: ' + error.message); return; }
-    state.availability = newAvail;
-    alert('Disponibilidade salva com sucesso! Já vale para todos os alunos.');
-    return;
-  }
-  const res=await publishState({...state,availability:newAvail});
-  if(res.ok) alert('Disponibilidade salva com sucesso!');
-  else alert('Erro ao salvar.');
-}
-async function deleteBooking(id){
-  if(!(await showAppConfirm('Remover este agendamento?'))) return;
-  const res=await publishState({...state,bookings:state.bookings.filter(b=>b.id!==id)});
-  if(res.ok) renderAdminPanel('agendamentos');
-}
-async function loadAdminAnamneseTab(){
-  if(!sb||!currentUser) return;
-  const {data:codes} = await sb.from('anamnese_codes').select('*').eq('professor_id',currentUser.id).order('created_at',{ascending:false});
-  const {data:responses} = await sb.from('anamnese_responses').select('*').eq('professor_id',currentUser.id).order('submitted_at',{ascending:false});
-  const codesList=document.getElementById('codes-list');
-  const responsesList=document.getElementById('responses-list');
-  if(codesList){
-    codesList.innerHTML=(codes||[]).map(c=>`
-      <div class="code-item">
-        <span>${c.student_name}</span>
-        <span class="code-val">${c.code}</span>
-        <span class="code-used">${c.used?'✓ Preenchido':'Aguardando'}</span>
-      </div>`).join('')||'<p style="color:var(--muted);font-size:.88rem">Nenhum código gerado ainda.</p>';
-  }
-  if(responsesList){
-    responsesList.innerHTML=(responses||[]).length===0
-      ?'<p style="color:var(--muted);font-size:.88rem">Nenhuma ficha preenchida ainda.</p>'
-      :(responses||[]).map(r=>`
-        <div class="anamnese-resp-card" onclick="viewResponse('${r.id}')">
-          <div class="resp-name">${r.student_name||'Aluno'}</div>
-          <div class="resp-meta">Código: ${r.code} · ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</div>
-        </div>`).join('');
-  }
-}
-
 async function generateCode(){
   const name=document.getElementById('new-code-name').value.trim();
   if(!name){ alert('Informe o nome do aluno.'); return; }
@@ -2732,21 +2550,6 @@ async function saveConfig(){
   const res=await publishState({...state,admin:{...state.admin,email,emailjs}});
   if(res.ok){ state.admin.email=email; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
   else showToast('Erro ao salvar.');
-}
-async function viewResponse(id){
-  if(!sb){ alert('Erro de conexão.'); return; }
-  const {data:r} = await sb.from('anamnese_responses').select('*').eq('id',id).single();
-  if(!r) return;
-  const rows=Object.entries(r.data||{}).map(([k,v])=>
-    `<tr><td style="padding:6px 10px;font-weight:600;font-size:.82rem;color:var(--muted);white-space:nowrap">${k}</td>
-     <td style="padding:6px 10px;font-size:.88rem">${Array.isArray(v)?v.join(', '):v}</td></tr>`
-  ).join('');
-  document.getElementById('admin-tab-content').innerHTML=`
-    <button class="btn-ghost" style="margin-bottom:16px" onclick="renderAdminTab('anamnese')">← Voltar</button>
-    <h4 style="font-family:var(--font-d);margin-bottom:14px">${r.student_name||'Aluno'} — ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</h4>
-    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">
-      ${rows}
-    </table></div>`;
 }
 
 /* ── Expose anamnese page via URL param ───────────────────────── */
@@ -3454,25 +3257,6 @@ async function saveStudentProfile() {
 }
 
 /* ── CADASTRO DE ALUNOS ───────────────────────────────────────── */
-// Usamos fetch direto na REST API para evitar bloqueio do SDK no browser
-const SUPABASE_SERVICE_KEY = 'sb_secret_aQHmhhtm1NueNrFdy6A6ug_E691Htpc';
-
-async function adminFetch(path, method='GET', body=null) {
-  const opts = {
-    method,
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'apikey':        SUPABASE_SERVICE_KEY,
-      'Prefer':        'resolution=merge-duplicates,return=representation'
-    }
-  };
-  if(body) opts.body = JSON.stringify(body);
-  const res = await fetch(SUPABASE_URL + path, opts);
-  const data = await res.json().catch(()=>null);
-  return { ok: res.ok, status: res.status, data };
-}
-
 function maskCPF(input) {
   let v = input.value.replace(/\D/g,'').slice(0,11);
   if(v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
