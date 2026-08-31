@@ -684,16 +684,18 @@ img { max-width: 100%; display: block; }
 
 <!-- ─── NAV ─────────────────────────────────────────────────────── -->
 <nav class="nav" id="main-nav">
-  <button class="nav-btn" id="nav-menu-btn" aria-label="Menu" onclick="openMenu()">
-    <div class="hamburger-lines">
-      <span></span><span></span><span></span>
-    </div>
-  </button>
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="nav-btn" id="nav-menu-btn" aria-label="Menu" onclick="openMenu()">
+      <div class="hamburger-lines">
+        <span></span><span></span><span></span>
+      </div>
+    </button>
+    <button class="nav-btn" id="nav-back-btn" aria-label="Voltar" onclick="goBack()" hidden>
+      <span>←</span>
+    </button>
+  </div>
   <div class="nav-logo" onclick="showPage('home')">Lucas<span>.</span></div>
   <div style="display:flex;align-items:center;gap:4px">
-    <button class="nav-btn" id="nav-back-btn" aria-label="Voltar" onclick="goBack()" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-    </button>
     <button class="nav-btn" id="theme-toggle-btn" aria-label="Alternar tema" onclick="toggleTheme()">
       <span id="theme-toggle-icon">🌙</span>
     </button>
