@@ -104,6 +104,9 @@ fieldset { border: none; }
 .pwd-toggle .pwd-eye-closed { display: none; }
 .pwd-toggle.is-visible .pwd-eye-open { display: none; }
 .pwd-toggle.is-visible .pwd-eye-closed { display: block; }
+.forgot-pwd-link { display: block; text-align: right; font-size: .8rem; font-weight: 600;
+  color: var(--pine); margin: -6px 0 16px; cursor: pointer; }
+.forgot-pwd-link:hover { text-decoration: underline; }
 h1,h2,h3 { font-family: var(--font-d); line-height: 1.15; }
 img { max-width: 100%; display: block; }
 
@@ -1059,6 +1062,7 @@ img { max-width: 100%; display: block; }
               </button>
             </div>
           </div>
+          <span class="forgot-pwd-link" onclick="notifyStudentForgotPassword()">Esqueceu a senha?</span>
           <div class="auth-error" id="auth-err-aluno"></div>
           <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginAluno()">Entrar</button>
         </div>
@@ -1075,6 +1079,7 @@ img { max-width: 100%; display: block; }
               </button>
             </div>
           </div>
+          <span class="forgot-pwd-link" onclick="sendProfPasswordReset()">Esqueceu a senha?</span>
           <div class="auth-error" id="auth-err-prof"></div>
           <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginProfessor()">Entrar</button>
         </div>
@@ -2625,7 +2630,35 @@ function initSupabase() {
   try {
     const { createClient } = window.supabase;
     sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if(event === 'PASSWORD_RECOVERY' && session?.user) {
+        await loadUserAndRedirect(session.user);
+        if(currentProfile?.role === 'professor') {
+          showProfTab('config');
+          setTimeout(()=>document.getElementById('prof-security-card')?.scrollIntoView({behavior:'smooth'}), 250);
+        } else if(currentProfile?.role === 'student') {
+          showPage('dashboard-aluno');
+          setTimeout(()=>document.getElementById('dash-security-card')?.scrollIntoView({behavior:'smooth'}), 250);
+        }
+        showAppMessage('Link confirmado! Defina sua nova senha abaixo para concluir.', 'success', 5000);
+      }
+    });
   } catch(e) { console.error('Supabase init:', e); }
+}
+
+async function sendProfPasswordReset() {
+  if(!sb) return;
+  const email = (document.getElementById('login-email-prof')?.value||'').trim();
+  if(!email) { showToast('❌ Digite seu e-mail no campo acima e clique em "Esqueceu a senha?" de novo.'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if(error) showToast('❌ Erro ao enviar e-mail: '+error.message);
+  else showToast('✅ Enviamos um link de redefinição para '+email+'. Confira sua caixa de entrada (e o spam).');
+}
+
+async function notifyStudentForgotPassword() {
+  await showAppMessage('Por enquanto, peça pro seu professor redefinir sua senha diretamente com você. Em breve você vai poder fazer isso sozinho por aqui.', 'error', 5500);
 }
 
 function switchAuthTab(tab) {
