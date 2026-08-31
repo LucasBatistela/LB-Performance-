@@ -153,6 +153,14 @@ img { max-width: 100%; display: block; }
   background: var(--surface-alt); color: var(--muted); font-size: 1rem;
 }
 .nav-avatar-circle:hover { opacity: .85; }
+.nav-back-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--surface-alt); color: var(--pine);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.nav-back-icon svg { width: 17px; height: 17px; }
+#nav-back-btn:hover .nav-back-icon { background: var(--pine); color: #fff; }
 .nav-profile-drop {
   position: absolute; top: calc(100% + 8px); right: 0;
   background: var(--surface); border: 1.5px solid var(--border);
@@ -691,7 +699,9 @@ img { max-width: 100%; display: block; }
       </div>
     </button>
     <button class="nav-btn" id="nav-back-btn" aria-label="Voltar" onclick="goBack()" hidden>
-      <span>←</span>
+      <span class="nav-back-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      </span>
     </button>
   </div>
   <div class="nav-logo" onclick="showPage('home')">Lucas<span>.</span></div>
