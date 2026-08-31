@@ -94,6 +94,16 @@ input:focus, textarea:focus, select:focus { border-color: var(--pine); }
 textarea { resize: vertical; min-height: 100px; }
 label { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
 fieldset { border: none; }
+.pwd-field { position: relative; }
+.pwd-field input { padding-right: 46px; }
+.pwd-toggle { position: absolute; right: 4px; top: 4px; bottom: 4px; width: 38px;
+  display: flex; align-items: center; justify-content: center; border-radius: 6px;
+  color: var(--muted); background: transparent; transition: color .15s, background .15s; }
+.pwd-toggle:hover { color: var(--pine); background: var(--surface-alt); }
+.pwd-toggle svg { width: 19px; height: 19px; }
+.pwd-toggle .pwd-eye-closed { display: none; }
+.pwd-toggle.is-visible .pwd-eye-open { display: none; }
+.pwd-toggle.is-visible .pwd-eye-closed { display: block; }
 h1,h2,h3 { font-family: var(--font-d); line-height: 1.15; }
 img { max-width: 100%; display: block; }
 
@@ -1222,12 +1232,24 @@ img { max-width: 100%; display: block; }
         <div style="display:flex;flex-direction:column;gap:14px">
           <div>
             <label>Nova senha</label>
-            <input type="password" id="new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+            <div class="pwd-field">
+              <input type="password" id="new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('new-password', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
           </div>
           <div>
             <label>Confirmar nova senha</label>
-            <input type="password" id="confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
-              onkeydown="if(event.key==='Enter')changeStudentPassword()">
+            <div class="pwd-field">
+              <input type="password" id="confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
+                onkeydown="if(event.key==='Enter')changeStudentPassword()">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('confirm-password', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
           </div>
           <button class="btn-primary" onclick="changeStudentPassword()"
             style="justify-content:center;margin-top:4px" id="password-save-btn">
@@ -1440,6 +1462,43 @@ img { max-width: 100%; display: block; }
             Configurações
           </div>
           <div id="prof-config-content"></div>
+        </div>
+
+        <div class="dash-card" id="prof-security-card" style="margin-top:20px">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+            Alterar senha
+          </div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">
+            Escolha uma nova senha de acesso ao seu painel.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:480px">
+            <div>
+              <label>Nova senha</label>
+              <div class="pwd-field">
+                <input type="password" id="prof-new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+                <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('prof-new-password', this)">
+                  <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label>Confirmar nova senha</label>
+              <div class="pwd-field">
+                <input type="password" id="prof-confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
+                  onkeydown="if(event.key==='Enter')changeProfPassword()">
+                <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('prof-confirm-password', this)">
+                  <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+                </button>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="changeProfPassword()"
+              style="justify-content:center;margin-top:4px" id="prof-password-save-btn">
+              Alterar senha
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -3229,13 +3288,22 @@ async function saveStudentProfile() {
   }
 }
 
-async function changeStudentPassword() {
+function togglePwdVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.classList.toggle('is-visible', show);
+  btn.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+}
+
+async function doChangePassword(passId, confirmId, btnId) {
   if(!currentUser||!sb) return;
-  const passInput    = document.getElementById('new-password');
-  const confirmInput = document.getElementById('confirm-password');
+  const passInput    = document.getElementById(passId);
+  const confirmInput = document.getElementById(confirmId);
   const pass    = (passInput?.value||'');
   const confirm = (confirmInput?.value||'');
-  const btn     = document.getElementById('password-save-btn');
+  const btn     = document.getElementById(btnId);
 
   if(pass.length < 6) { showToast('❌ A senha deve ter pelo menos 6 caracteres.'); return; }
   if(pass !== confirm) { showToast('❌ As senhas não coincidem.'); return; }
@@ -3253,6 +3321,14 @@ async function changeStudentPassword() {
     passInput.value=''; confirmInput.value='';
     showToast('✅ Senha alterada com sucesso!');
   }
+}
+
+function changeStudentPassword() {
+  return doChangePassword('new-password', 'confirm-password', 'password-save-btn');
+}
+
+function changeProfPassword() {
+  return doChangePassword('prof-new-password', 'prof-confirm-password', 'prof-password-save-btn');
 }
 
 /* ── CADASTRO DE ALUNOS ───────────────────────────────────────── */
