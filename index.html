@@ -598,9 +598,6 @@ img { max-width: 100%; display: block; }
   border-radius: var(--radius-sm); padding: 14px 16px; font-size: .85rem;
   color: #7A5800; line-height: 1.6; margin-bottom: 24px; }
 .modal-actions { display: flex; flex-direction: column; gap: 10px; }
-.overlay-center { align-items: center; }
-.app-modal-sm { max-width: 380px; text-align: center; animation: appModalIn .18s ease-out; }
-@keyframes appModalIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
 .modal-icon { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 16px; }
 .modal-icon:not(.app-modal-icon-warn) { display: flex; align-items: center; justify-content: center;
   background: rgba(52,106,172,.1); }
@@ -608,8 +605,34 @@ img { max-width: 100%; display: block; }
   background: rgba(220,150,0,.12); color: #B07A00; }
 .app-modal-icon-warn svg { width: 26px; height: 26px; }
 .modal-title { line-height: 1.4; }
-.modal-actions-row { flex-direction: row; }
-.modal-actions-row button { flex: 1; }
+
+/* ─── POP-UP INFERIOR (substitui alert()/confirm() nativos) ─────── */
+.bottom-popup-wrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1200;
+  display: flex; justify-content: center; pointer-events: none;
+  padding: 20px calc(16px + env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px)); }
+.bottom-popup-wrap[hidden] { display: none; }
+.bottom-popup { pointer-events: auto; max-width: 420px; width: 100%; display: flex; align-items: center; gap: 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid var(--border); border-radius: calc(var(--radius) + 6px);
+  padding: 16px 18px; box-shadow: 0 20px 45px -14px rgba(13,26,46,.4);
+  transform: translateY(140%); opacity: 0;
+  transition: transform .34s cubic-bezier(.16,1,.3,1), opacity .28s; cursor: pointer; }
+.bottom-popup.show { transform: translateY(0); opacity: 1; }
+.bottom-popup-confirm { flex-direction: column; align-items: stretch; gap: 14px; cursor: default; }
+.bottom-popup-row { display: flex; align-items: center; gap: 12px; }
+.bottom-popup-icon { flex: none; width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(52,106,172,.12); color: var(--pine); }
+.bottom-popup-icon.app-modal-icon-warn { background: rgba(220,150,0,.16); color: #B07A00; }
+.bottom-popup-icon svg { width: 19px; height: 19px; }
+.bottom-popup-text { margin: 0; font-size: .92rem; font-weight: 600; color: var(--ink); line-height: 1.4; flex: 1; }
+.bottom-popup-actions { display: flex; gap: 10px; }
+.bottom-popup-actions button { flex: 1; justify-content: center; }
+@media (max-width: 480px) {
+  .bottom-popup-wrap { padding-left: 12px; padding-right: 12px; }
+  .bottom-popup { max-width: 100%; }
+}
 
 /* ─── FOOTER ──────────────────────────────────────────────────── */
 .footer { border-top: 1px solid var(--border); padding: 44px 24px; background: var(--ground); }
@@ -1448,27 +1471,26 @@ img { max-width: 100%; display: block; }
   </div>
 </div>
 
-<!-- ─── APP MESSAGE (substitui alert()) ───────────────────────────── -->
-<div id="app-msg-overlay" class="overlay overlay-center" hidden>
-  <div class="modal-box app-modal-sm">
-    <div class="modal-icon" id="app-msg-icon">✅</div>
-    <div class="modal-title" id="app-msg-title"></div>
-    <div class="modal-actions" style="margin-top:22px">
-      <button class="btn-primary" id="app-msg-ok" style="justify-content:center">OK</button>
-    </div>
+<!-- ─── APP MESSAGE (substitui alert()) — pop-up inferior ─────────── -->
+<div id="app-msg-overlay" class="bottom-popup-wrap" hidden>
+  <div class="bottom-popup" id="app-msg-popup">
+    <span class="bottom-popup-icon" id="app-msg-icon"></span>
+    <p class="bottom-popup-text" id="app-msg-title"></p>
   </div>
 </div>
 
-<!-- ─── APP CONFIRM (substitui confirm()) ─────────────────────────── -->
-<div id="app-confirm-overlay" class="overlay overlay-center" hidden>
-  <div class="modal-box app-modal-sm">
-    <div class="modal-icon app-modal-icon-warn" id="app-confirm-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+<!-- ─── APP CONFIRM (substitui confirm()) — pop-up inferior ───────── -->
+<div id="app-confirm-overlay" class="bottom-popup-wrap" hidden>
+  <div class="bottom-popup bottom-popup-confirm" id="app-confirm-popup">
+    <div class="bottom-popup-row">
+      <span class="bottom-popup-icon app-modal-icon-warn" id="app-confirm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+      </span>
+      <p class="bottom-popup-text" id="app-confirm-title"></p>
     </div>
-    <div class="modal-title" id="app-confirm-title"></div>
-    <div class="modal-actions modal-actions-row" style="margin-top:22px">
-      <button class="btn-ghost" id="app-confirm-cancel" style="justify-content:center">Cancelar</button>
-      <button class="btn-primary" id="app-confirm-ok" style="justify-content:center">Confirmar</button>
+    <div class="bottom-popup-actions">
+      <button class="btn-ghost" id="app-confirm-cancel">Cancelar</button>
+      <button class="btn-primary" id="app-confirm-ok">Confirmar</button>
     </div>
   </div>
 </div>
@@ -2069,50 +2091,56 @@ function showToast(msg){
   showAppMessage(msg.replace(/^(✅|❌|⚠️)\s*/,''), type);
 }
 
-/* ── Mensagens centrais (substituem alert()/confirm() nativos) ──── */
-function showAppMessage(message, type='success'){
+/* ── Pop-up inferior (substitui alert()/confirm() nativos) ──────── */
+const APP_ICON_CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg>';
+const APP_ICON_WARN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>';
+function showAppMessage(message, type='success', duration=3200){
   return new Promise(resolve=>{
     const overlay=document.getElementById('app-msg-overlay');
+    const popup=document.getElementById('app-msg-popup');
     const iconEl=document.getElementById('app-msg-icon');
     iconEl.classList.toggle('app-modal-icon-warn', type==='error');
-    iconEl.innerHTML = type==='error'
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg>';
+    iconEl.innerHTML = type==='error' ? APP_ICON_WARN : APP_ICON_CHECK;
     document.getElementById('app-msg-title').textContent = message;
     overlay.hidden=false;
-    const okBtn=document.getElementById('app-msg-ok');
-    const close=()=>{ overlay.hidden=true; okBtn.removeEventListener('click',close);
-      overlay.removeEventListener('click',onBackdrop); document.removeEventListener('keydown',onKey); resolve(); };
-    const onBackdrop=e=>{ if(e.target===overlay) close(); };
-    const onKey=e=>{ if(e.key==='Enter'||e.key==='Escape') close(); };
-    okBtn.addEventListener('click',close);
-    overlay.addEventListener('click',onBackdrop);
-    document.addEventListener('keydown',onKey);
-    okBtn.focus();
+    popup.classList.remove('show');
+    void popup.offsetWidth; // reinicia a transição mesmo se já houver um pop-up visível
+    requestAnimationFrame(()=>popup.classList.add('show'));
+    let done=false;
+    const finish=()=>{ if(done) return; done=true; clearTimeout(timer);
+      popup.classList.remove('show'); popup.removeEventListener('click',finish);
+      setTimeout(()=>{ overlay.hidden=true; }, 340); resolve(); };
+    popup.addEventListener('click',finish);
+    const timer=setTimeout(finish, duration);
   });
 }
 function showAppConfirm(message){
   return new Promise(resolve=>{
     const overlay=document.getElementById('app-confirm-overlay');
+    const popup=document.getElementById('app-confirm-popup');
     document.getElementById('app-confirm-title').textContent = message;
     overlay.hidden=false;
+    popup.classList.remove('show');
+    void popup.offsetWidth;
+    requestAnimationFrame(()=>popup.classList.add('show'));
     const okBtn=document.getElementById('app-confirm-ok');
     const cancelBtn=document.getElementById('app-confirm-cancel');
-    const cleanup=val=>{ overlay.hidden=true;
+    const cleanup=val=>{
+      popup.classList.remove('show');
       okBtn.removeEventListener('click',onOk); cancelBtn.removeEventListener('click',onCancel);
-      overlay.removeEventListener('click',onBackdrop); document.removeEventListener('keydown',onKey); resolve(val); };
+      document.removeEventListener('keydown',onKey);
+      setTimeout(()=>{ overlay.hidden=true; }, 340);
+      resolve(val);
+    };
     const onOk=()=>cleanup(true);
     const onCancel=()=>cleanup(false);
-    const onBackdrop=e=>{ if(e.target===overlay) cleanup(false); };
     const onKey=e=>{ if(e.key==='Escape') cleanup(false); else if(e.key==='Enter') cleanup(true); };
     okBtn.addEventListener('click',onOk);
     cancelBtn.addEventListener('click',onCancel);
-    overlay.addEventListener('click',onBackdrop);
     document.addEventListener('keydown',onKey);
-    okBtn.focus();
   });
 }
-// Substitui os diálogos nativos do navegador (alert/confirm) pelas versões centrais do site.
+// Substitui os diálogos nativos do navegador (alert/confirm) pelo pop-up inferior do site.
 window.alert = (msg)=>{ showAppMessage(String(msg), /erro|não|inválid|indispon|falha|selecione|preencha|informe|defina|escolha/i.test(String(msg)) ? 'error' : 'success'); };
 window.confirm = (msg)=>{ console.warn('confirm() nativo chamado — troque por "await showAppConfirm(mensagem)":', msg); return false; };
 
