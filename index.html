@@ -176,6 +176,9 @@ img { max-width: 100%; display: block; }
   background: var(--surface-alt); color: var(--muted); font-size: 1rem;
 }
 .nav-avatar-circle:hover { opacity: .85; }
+.nav-avatar-circle svg { width: 17px; height: 17px; }
+#theme-toggle-icon svg { width: 19px; height: 19px; display: block; }
+.nav-profile-drop-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 .nav-back-icon {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--surface-alt); color: var(--pine);
@@ -576,7 +579,8 @@ img { max-width: 100%; display: block; }
   background: transparent; border: none; width: 100%; text-align: left; font-family: inherit; color: inherit; }
 .anam-mcard-head:focus-visible { outline: 2px solid var(--pine); outline-offset: -2px; }
 .anam-mcard-ico { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex;
-  align-items: center; justify-content: center; font-size: 1.15rem; background: var(--surface-alt); }
+  align-items: center; justify-content: center; background: var(--surface-alt); color: var(--pine); }
+.anam-mcard-ico svg { width: 20px; height: 20px; }
 .anam-mcard-mid { flex: 1; min-width: 0; }
 .anam-mcard-mid .lbl { font-size: .76rem; font-weight: 700; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
 .anam-mcard-mid .val-row { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
@@ -778,11 +782,11 @@ img { max-width: 100%; display: block; }
   <div class="nav-logo" onclick="showPage('home')">Lucas<span>.</span></div>
   <div style="display:flex;align-items:center;gap:4px">
     <button class="nav-btn" id="theme-toggle-btn" aria-label="Alternar tema" onclick="toggleTheme()">
-      <span id="theme-toggle-icon">🌙</span>
+      <span id="theme-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
     </button>
     <div class="nav-avatar-btn" id="nav-avatar-wrap">
       <button class="nav-btn" style="padding:5px" aria-label="Perfil" onclick="toggleProfileDrop()">
-        <div class="nav-avatar-circle guest" id="nav-avatar-circle">👤</div>
+        <div class="nav-avatar-circle guest" id="nav-avatar-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg></div>
       </button>
       <div class="nav-profile-drop" id="nav-profile-drop" hidden>
         <div id="nav-drop-content"></div>
@@ -1898,7 +1902,7 @@ function currentEffectiveTheme(){
 }
 function updateThemeIcon(){
   const el = document.getElementById('theme-toggle-icon');
-  if(el) el.textContent = currentEffectiveTheme() === 'dark' ? '☀️' : '🌙';
+  if(el) el.innerHTML = currentEffectiveTheme() === 'dark' ? UI_ICONS.sun : UI_ICONS.moon;
 }
 function toggleTheme(){
   const next = currentEffectiveTheme() === 'dark' ? 'light' : 'dark';
@@ -1989,6 +1993,17 @@ const PLAN_ICONS = {
   chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>',
   dumbbell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v4"/><path d="M22 10v4"/><rect x="4" y="7" width="3.5" height="10" rx="1"/><rect x="16.5" y="7" width="3.5" height="10" rx="1"/><path d="M7.5 12h9"/></svg>',
   star: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.7 5.9 21l1.4-6.8-5.1-4.7 6.9-.7L12 2.5Z"/></svg>',
+};
+/* Ícones do site (padrão PLAN_ICONS) — usados no menu, tema, avatar e cards de anamnese */
+const UI_ICONS = {
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/></svg>',
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
+  zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>',
+  activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
 };
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
@@ -2450,8 +2465,8 @@ const ANAMNESE_SECTIONS = [
       <div class="form-row"><label>Telefone/WhatsApp *</label><input name="telefone" type="tel" required></div>
     </div>
     <div class="form-row-2">
-      <div class="form-row"><label>Contato de emergência (nome)</label><input name="emerg_nome"></div>
-      <div class="form-row"><label>Telefone de emergência</label><input name="emerg_tel" type="tel"></div>
+      <div class="form-row"><label>Nome — Contato de emergência</label><input name="emerg_nome"></div>
+      <div class="form-row"><label>Telefone — Contato de emergência</label><input name="emerg_tel" type="tel"></div>
     </div>`
   },
   { num:2, title:'Dados físicos', fields:`
@@ -2564,7 +2579,13 @@ const ANAMNESE_SECTIONS = [
         <select name="personal_ant"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
       <div class="form-row"><label>Se sim, por quanto tempo?</label><input name="personal_tempo" placeholder="Ex: 6 meses, 2 anos…"></div>
     </div>
-    <div class="form-row"><label>Tipo de treino preferido (marque todos que gosta)</label>
+    <div class="form-row-2">
+      <div class="form-row"><label>Modalidade esportiva que pratica ou gostaria de praticar</label>
+        <input name="modalidade_esportiva" placeholder="Ex: corrida, futebol, natação…"></div>
+      <div class="form-row"><label>Há quanto tempo pratica essa atividade?</label>
+        <input name="modalidade_esportiva_tempo" placeholder="Ex: 1 ano, ainda não pratico…"></div>
+    </div>
+    <div class="form-row" style="margin-top:16px"><label>Tipo de treino preferido (marque todos que gosta)</label>
       <div class="check-group" style="margin-top:8px">
         <label class="check-opt"><input type="checkbox" name="pref" value="Funcional"> Funcional</label>
         <label class="check-opt"><input type="checkbox" name="pref" value="Musculação"> Musculação</label>
@@ -2620,7 +2641,7 @@ const ANAMNESE_SECTIONS = [
           <option>Manhã (6h–12h)</option><option>Tarde (12h–18h)</option><option>Noite (18h–22h)</option><option>Flexível</option></select></div>
       <div class="form-row"><label>Modalidade desejada</label>
         <select name="modalidade_pref"><option value="">Selecione…</option>
-          <option>Presencial</option><option>Online</option><option>Não tenho preferência</option></select></div>
+          <option>Presencial</option><option>Online</option><option>Não tenho certeza</option></select></div>
     </div>`
   },
   { num:9, title:'Afinidades pessoais', fields:`
@@ -3461,7 +3482,7 @@ async function renderProfAnamnese() {
 /* ── Relatório de anamnese: rótulos das perguntas, agrupados por seção ── */
 const QUESTION_LABELS = {
   nome:'Nome completo', nascimento:'Data de nascimento', sexo:'Sexo', profissao:'Profissão',
-  email:'E-mail', telefone:'Telefone/WhatsApp', emerg_nome:'Contato de emergência (nome)', emerg_tel:'Telefone de emergência',
+  email:'E-mail', telefone:'Telefone/WhatsApp', emerg_nome:'Nome — Contato de emergência', emerg_tel:'Telefone — Contato de emergência',
   peso:'Peso atual (kg)', altura:'Altura (cm)',
   obj:'Objetivo principal com o treinamento', obj_outro:'Outro objetivo ou detalhes adicionais',
   parq1:'PAR-Q — problema cardíaco com recomendação de supervisão médica', parq2:'PAR-Q — dor no peito durante atividade física',
@@ -3475,6 +3496,7 @@ const QUESTION_LABELS = {
   nivel_atv:'Nível atual de atividade física', exer_atual:'Pratica exercício atualmente?', exer_qual:'Qual atividade pratica',
   exp_muscu:'Experiência com musculação/funcional', personal_ant:'Já treinou com personal trainer?',
   personal_tempo:'Por quanto tempo treinou com personal', pref:'Tipo de treino preferido',
+  modalidade_esportiva:'Modalidade esportiva que pratica ou gostaria de praticar', modalidade_esportiva_tempo:'Há quanto tempo pratica essa atividade',
   sono:'Qualidade do sono', horas_sono:'Horas de sono por noite', estresse:'Nível de estresse', agua:'Hidratação diária',
   alcool:'Consumo de álcool', fumo:'Fuma?', alimentacao:'Como avalia sua alimentação?', suplementos:'Usa suplementos?',
   dias:'Dias disponíveis para treinar', horario_pref:'Horário preferido', modalidade_pref:'Modalidade desejada',
@@ -3487,7 +3509,7 @@ const QA_GROUPS = [
   { title:'Objetivo', fields:['obj','obj_outro'] },
   { title:'PAR-Q', fields:['parq1','parq2','parq3','parq4','parq5','parq6','parq7'] },
   { title:'Histórico de saúde', fields:['dc','dc_outro','reab','reab_desc','cirurgia','cirurgia_desc','lesoes','medicamentos','alergias','restricoes','menopausa','liberacao'] },
-  { title:'Histórico de atividade física', fields:['nivel_atv','exer_atual','exer_qual','exp_muscu','personal_ant','personal_tempo','pref'] },
+  { title:'Histórico de atividade física', fields:['nivel_atv','exer_atual','exer_qual','exp_muscu','personal_ant','personal_tempo','modalidade_esportiva','modalidade_esportiva_tempo','pref'] },
   { title:'Estilo de vida', fields:['sono','horas_sono','estresse','agua','alcool','fumo','alimentacao','suplementos'] },
   { title:'Disponibilidade', fields:['dias','horario_pref','modalidade_pref'] },
   { title:'Afinidades pessoais', fields:['afin_musica','afin_filmes','afin_series'] },
@@ -3522,7 +3544,7 @@ function buildAnamMetricCards(data){
     const level = sonoLevelMap[sIdx];
     const pct = Math.round(((sIdx+1)/sonoScale.length)*100);
     cards.push({
-      ico:'🌙', label:'Qualidade do sono', val:d.sono, level, pct, marker:72,
+      ico:UI_ICONS.moon, label:'Qualidade do sono', val:d.sono, level, pct, marker:72,
       body:`Cerca de <strong>72% dos brasileiros relatam algum tipo de alteração no sono</strong> — o traço na barra marca essa referência. A resposta deste aluno (${d.sono}) ${level==='good'?'está em um patamar bom, vale reforçar como ponto forte.':'indica espaço de melhora — sono é um dos pilares de recuperação entre os treinos.'}`,
       source:'Ministério da Saúde / Fiocruz, 2023.'
     });
@@ -3536,7 +3558,7 @@ function buildAnamMetricCards(data){
     const level = estresseLevelMap[eIdx];
     const pct = Math.round(((eIdx+1)/estresseScale.length)*100);
     cards.push({
-      ico:'⚡', label:'Nível de estresse', val:d.estresse, level, pct, marker:42,
+      ico:UI_ICONS.zap, label:'Nível de estresse', val:d.estresse, level, pct, marker:42,
       body:`Uma pesquisa internacional (Ipsos, 2024) aponta que <strong>42% dos brasileiros relatam estresse alto</strong> que afeta a rotina — o traço na barra marca essa referência. A resposta deste aluno (${d.estresse}) ${level==='good'?'está abaixo desse patamar, bom sinal.':'está nesse patamar ou acima — vale conversar sobre rotina e recuperação antes de aumentar carga de treino.'}`,
       source:'Ipsos, 2024 (pesquisa de mercado, amostra com viés urbano).',
       weak:'Sem levantamento nacional representativo disponível para esse indicador — leia com essa ressalva.'
@@ -3551,7 +3573,7 @@ function buildAnamMetricCards(data){
     const level = atvLevelMap[aIdx];
     const pct = Math.round(((aIdx+1)/atvScale.length)*100);
     cards.push({
-      ico:'🏃', label:'Atividade física', val:d.nivel_atv, level, pct, marker:37,
+      ico:UI_ICONS.activity, label:'Atividade física', val:d.nivel_atv, level, pct, marker:37,
       body:`<strong>37% dos adultos brasileiros são insuficientemente ativos</strong> — o traço na barra marca essa faixa. A resposta deste aluno (${d.nivel_atv}) ${level==='good'?'está bem acima dessa faixa de atenção.':'está próxima ou dentro dessa faixa de atenção.'}`,
       source:'Vigitel, Ministério da Saúde, 2023.'
     });
@@ -3562,7 +3584,7 @@ function buildAnamMetricCards(data){
   if(Array.isArray(d.dc)){
     if(dcList.length===0){
       cards.push({
-        ico:'❤️', label:'Doenças crônicas', val:'Nenhuma relatada', level:'good', pct:12, marker:null,
+        ico:UI_ICONS.heart, label:'Doenças crônicas', val:'Nenhuma relatada', level:'good', pct:12, marker:null,
         body:`Aluno não relatou nenhuma condição crônica da lista.`, source:null
       });
     } else {
@@ -3572,7 +3594,7 @@ function buildAnamMetricCards(data){
         return `<strong>${cond}</strong>: ${st.pct} dos adultos brasileiros${st.note?` (${st.note})`:''}. <span style="font-size:.72rem;color:var(--muted)">${st.source}${st.weak?' — estimativa, sem estudo com metodologia pública':''}</span>`;
       }).join('<br><br>');
       cards.push({
-        ico:'❤️', label:'Doenças crônicas', val:dcList.join(', '), level: dcList.length>1?'crit':'warn', pct:100, marker:null,
+        ico:UI_ICONS.heart, label:'Doenças crônicas', val:dcList.join(', '), level: dcList.length>1?'crit':'warn', pct:100, marker:null,
         body:lines, source:null, noSourceLine:true
       });
     }
@@ -3759,7 +3781,7 @@ function updateNavAvatar() {
     }
     circle.classList.remove('guest');
   } else {
-    circle.innerHTML = '👤';
+    circle.innerHTML = UI_ICONS.user;
     circle.classList.add('guest');
   }
 }
@@ -3784,7 +3806,7 @@ function renderNavDrop() {
       : `<div style="width:42px;height:42px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:.9rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getInitials(name)}</div>`;
     const profileBtn = role==='student' ? `
       <button class="nav-profile-drop-item" onclick="showPage('dashboard-aluno');setTimeout(()=>document.getElementById('dash-profile-card')?.scrollIntoView({behavior:'smooth'}),120);document.getElementById('nav-profile-drop').hidden=true">
-        <span>👤</span> Meu perfil
+        <span>${UI_ICONS.user}</span> Meu perfil
       </button>` : '';
     el.innerHTML = `
       <div class="nav-profile-drop-header">
@@ -3797,11 +3819,11 @@ function renderNavDrop() {
         </div>
       </div>
       <button class="nav-profile-drop-item" onclick="showPage('${page}');document.getElementById('nav-profile-drop').hidden=true">
-        <span>📊</span> Meu painel
+        <span>${UI_ICONS.grid}</span> Meu painel
       </button>
       ${profileBtn}
       <button class="nav-profile-drop-item danger" onclick="logout();document.getElementById('nav-profile-drop').hidden=true">
-        <span>🚪</span> Sair
+        <span>${UI_ICONS.logout}</span> Sair
       </button>`;
   }
   // Deslogado: toggleProfileDrop() já leva direto pro login, esse dropdown não chega a abrir.
