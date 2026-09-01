@@ -3398,15 +3398,23 @@ async function signInWithGoogle() {
 }
 
 function checkOAuthError() {
-  const hash = window.location.hash || '';
-  if(!hash.includes('error')) return;
-  const params = new URLSearchParams(hash.replace(/^#/,''));
-  const desc = params.get('error_description');
-  showAppMessage(
-    desc ? decodeURIComponent(desc.replace(/\+/g,' ')) : 'Não foi possível entrar com essa conta Google. Entre com sua senha e vincule o Google pelo painel.',
-    'error', 6500
-  );
-  history.replaceState(null, '', window.location.pathname + window.location.search);
+  // Supabase às vezes manda o erro no hash (#error=...), às vezes na query string (?error=...)
+  const hash = (window.location.hash || '').replace(/^#/,'');
+  const search = (window.location.search || '').replace(/^\?/,'');
+  const hasHashError = hash.includes('error');
+  const hasSearchError = search.includes('error');
+  if(!hasHashError && !hasSearchError) return;
+  const params = new URLSearchParams(hasHashError ? hash : search);
+  let desc = params.get('error_description');
+  desc = desc ? decodeURIComponent(desc.replace(/\+/g,' ')) : '';
+  // "Database error saving new user" é a mensagem genérica que o Supabase mostra
+  // quando a trigger de bloqueio de cadastro novo via Google barra a criação da conta
+  const isBlockedSignup = /database error saving new user/i.test(desc);
+  const finalMsg = isBlockedSignup
+    ? 'Conta Google não vinculada. Entre com sua senha primeiro e vincule o Google pelo seu painel.'
+    : (desc || 'Não foi possível entrar com essa conta Google. Entre com sua senha e vincule o Google pelo painel.');
+  showAppMessage(finalMsg, 'error', 6500);
+  history.replaceState(null, '', window.location.pathname);
   showPage('login');
 }
 
