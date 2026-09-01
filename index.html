@@ -62,18 +62,27 @@
   --max-w:       1060px;
   --font-d:      'Syne', sans-serif;
   --font-b:      'Plus Jakarta Sans', sans-serif;
+  --good:        #227a4f; --good-bg: #E4F3EB;
+  --warn:        #9a6a12; --warn-bg: #FBF0DC;
+  --crit:        #a83a33; --crit-bg: #FBE7E5;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --ground:      #070D18; --surface: #0E1A2E; --surface-alt: #162337;
     --ink:         #DCE5F0; --ink-2: #8BA5C8; --pine: #5b8fc7; --pine-h: #6fa0d4;
     --citrus:      #879cbb; --border: #1E2E47; --muted: #5070A0;
+    --good:        #4fbf88; --good-bg: #0f2a1e;
+    --warn:        #e0a83e; --warn-bg: #2c220e;
+    --crit:        #e07068; --crit-bg: #2c1512;
   }
 }
 :root[data-theme="dark"] {
   --ground:      #070D18; --surface: #0E1A2E; --surface-alt: #162337;
   --ink:         #DCE5F0; --ink-2: #8BA5C8; --pine: #5b8fc7; --pine-h: #6fa0d4;
   --citrus:      #879cbb; --border: #1E2E47; --muted: #5070A0;
+  --good:        #4fbf88; --good-bg: #0f2a1e;
+  --warn:        #e0a83e; --warn-bg: #2c220e;
+  --crit:        #e07068; --crit-bg: #2c1512;
 }
 
 /* ─── RESET ───────────────────────────────────────────────────── */
@@ -558,6 +567,46 @@ img { max-width: 100%; display: block; }
 .anamnese-resp-card:hover { border-color: var(--pine); }
 .resp-name { font-weight: 700; margin-bottom: 4px; }
 .resp-meta { font-size: .82rem; color: var(--muted); }
+
+/* ─── Relatório de anamnese — cards de métrica + Q&A ─────────────── */
+.anam-rep-metrics { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
+@media (max-width: 620px) { .anam-rep-metrics { grid-template-columns: 1fr; } }
+.anam-mcard { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.anam-mcard-head { display: flex; align-items: center; gap: 12px; padding: 16px; cursor: pointer;
+  background: transparent; border: none; width: 100%; text-align: left; font-family: inherit; color: inherit; }
+.anam-mcard-head:focus-visible { outline: 2px solid var(--pine); outline-offset: -2px; }
+.anam-mcard-ico { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 1.15rem; background: var(--surface-alt); }
+.anam-mcard-mid { flex: 1; min-width: 0; }
+.anam-mcard-mid .lbl { font-size: .76rem; font-weight: 700; color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
+.anam-mcard-mid .val-row { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+.anam-mcard-mid .val { font-family: var(--font-d); font-weight: 800; font-size: 1rem; }
+.anam-pill { font-size: .68rem; font-weight: 700; padding: 2px 9px; border-radius: 99px; letter-spacing: .02em; white-space: nowrap; }
+.anam-pill.good { color: var(--good); background: var(--good-bg); }
+.anam-pill.warn { color: var(--warn); background: var(--warn-bg); }
+.anam-pill.crit { color: var(--crit); background: var(--crit-bg); }
+.anam-chev { width: 20px; height: 20px; flex-shrink: 0; color: var(--muted); transition: transform .2s; }
+.anam-mcard.open .anam-chev { transform: rotate(180deg); }
+.anam-mcard-track { height: 6px; border-radius: 99px; background: var(--surface-alt); margin: 0 16px 14px; overflow: hidden; position: relative; }
+.anam-mcard-track .fill { height: 100%; border-radius: 99px; }
+.anam-mcard-track .fill.good { background: var(--good); }
+.anam-mcard-track .fill.warn { background: var(--warn); }
+.anam-mcard-track .fill.crit { background: var(--crit); }
+.anam-mcard-track .marker { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--ink-2); opacity: .55; }
+.anam-mcard-body { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+.anam-mcard.open .anam-mcard-body { max-height: 400px; }
+.anam-mcard-body-in { padding: 0 16px 18px; font-size: .85rem; line-height: 1.55; color: var(--ink-2); }
+.anam-mcard-body-in strong { color: var(--ink); }
+.anam-src { display: block; margin-top: 10px; font-size: .72rem; color: var(--muted); }
+.anam-src .weak { color: var(--warn); font-weight: 600; }
+.anam-qa-section { margin-bottom: 24px; }
+.anam-qa-section-title { font-family: var(--font-d); font-weight: 800; font-size: .92rem; margin: 0 0 10px; color: var(--ink); }
+.anam-qa-list { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.anam-qa-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.2fr); gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.anam-qa-row:last-child { border-bottom: none; }
+.anam-qa-row .q { font-size: .82rem; color: var(--muted); line-height: 1.4; }
+.anam-qa-row .a { font-size: .86rem; color: var(--ink); font-weight: 600; line-height: 1.4; }
+@media (max-width: 560px) { .anam-qa-row { grid-template-columns: 1fr; gap: 3px; } .anam-qa-row .q { font-size: .74rem; } }
 .code-item { display: flex; justify-content: space-between; align-items: center;
   padding: 10px 14px; background: var(--surface-alt); border-radius: var(--radius-sm);
   margin-bottom: 8px; font-size: .88rem; }
@@ -2407,10 +2456,12 @@ const ANAMNESE_SECTIONS = [
   },
   { num:2, title:'Dados físicos', fields:`
     <div class="form-row-2">
-      <div class="form-row"><label>Peso atual (kg) *</label><input name="peso" type="number" step="0.1" required></div>
-      <div class="form-row"><label>Altura (cm) *</label><input name="altura" type="number" required></div>
+      <div class="form-row"><label>Peso atual (kg) *</label><input name="peso" type="number" step="0.1" required>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:4px">Não sabe o peso exato? Pode estimar — ajustamos na primeira avaliação.</p></div>
+      <div class="form-row"><label>Altura (cm) *</label><input name="altura" type="number" required>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:4px">Pensa em metros? Ex: 1,70m = 170cm.</p></div>
     </div>
-    <p style="font-size:.82rem;color:var(--muted);margin-top:-10px">O percentual de gordura será medido pelo treinador na avaliação física.</p>`
+    <p style="font-size:.82rem;color:var(--muted);margin-top:6px">O percentual de gordura será medido pelo treinador na avaliação física.</p>`
   },
   { num:3, title:'Objetivo', fields:`
     <div class="form-row">
@@ -2561,6 +2612,7 @@ const ANAMNESE_SECTIONS = [
         <label class="check-opt"><input type="checkbox" name="dias" value="Quinta"> Quinta-feira</label>
         <label class="check-opt"><input type="checkbox" name="dias" value="Sexta"> Sexta-feira</label>
         <label class="check-opt"><input type="checkbox" name="dias" value="Sábado"> Sábado</label>
+        <label class="check-opt"><input type="checkbox" name="dias" value="Domingo"> Domingo</label>
       </div></div>
     <div class="form-row-2" style="margin-top:16px">
       <div class="form-row"><label>Horário preferido</label>
@@ -2568,15 +2620,24 @@ const ANAMNESE_SECTIONS = [
           <option>Manhã (6h–12h)</option><option>Tarde (12h–18h)</option><option>Noite (18h–22h)</option><option>Flexível</option></select></div>
       <div class="form-row"><label>Modalidade desejada</label>
         <select name="modalidade_pref"><option value="">Selecione…</option>
-          <option>Presencial</option><option>Online (videochamada)</option><option>Indiferente</option></select></div>
+          <option>Presencial</option><option>Online</option><option>Não tenho preferência</option></select></div>
     </div>`
   },
-  { num:9, title:'Observações livres', fields:`
+  { num:9, title:'Afinidades pessoais', fields:`
+    <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:20px">Só pra gente se conhecer melhor — não influencia o treino.</p>
+    <div class="form-row"><label>3 bandas ou artistas favoritos</label>
+      <input name="afin_musica" placeholder="Ex: Legião Urbana, Djavan, Charlie Brown Jr."></div>
+    <div class="form-row" style="margin-top:16px"><label>3 filmes favoritos</label>
+      <input name="afin_filmes" placeholder="Ex: Cidade de Deus, Interestelar, Clube da Luta"></div>
+    <div class="form-row" style="margin-top:16px"><label>3 séries favoritas</label>
+      <input name="afin_series" placeholder="Ex: Breaking Bad, Round 6, Chernobyl"></div>`
+  },
+  { num:10, title:'Observações livres', fields:`
     <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:16px">Escreva qualquer informação que considere importante para o seu treinador saber. Pode ser algo sobre sua rotina, seu histórico, suas preocupações ou expectativas.</p>
     <div class="form-row"><label>Observações</label>
       <textarea name="observacoes" rows="5" placeholder="Escreva à vontade…"></textarea></div>`
   },
-  { num:10, title:'Contexto', fields:`
+  { num:11, title:'Contexto', fields:`
     <div class="form-row"><label>Como você conheceu o Lucas?</label>
       <select name="origem"><option value="">Selecione…</option>
         <option>Instagram</option><option>Indicação de amigo ou familiar</option>
@@ -3397,22 +3458,198 @@ async function renderProfAnamnese() {
     <div id="responses-list">${responsesList}</div>`;
 }
 
+/* ── Relatório de anamnese: rótulos das perguntas, agrupados por seção ── */
+const QUESTION_LABELS = {
+  nome:'Nome completo', nascimento:'Data de nascimento', sexo:'Sexo', profissao:'Profissão',
+  email:'E-mail', telefone:'Telefone/WhatsApp', emerg_nome:'Contato de emergência (nome)', emerg_tel:'Telefone de emergência',
+  peso:'Peso atual (kg)', altura:'Altura (cm)',
+  obj:'Objetivo principal com o treinamento', obj_outro:'Outro objetivo ou detalhes adicionais',
+  parq1:'PAR-Q — problema cardíaco com recomendação de supervisão médica', parq2:'PAR-Q — dor no peito durante atividade física',
+  parq3:'PAR-Q — dor no peito no último mês sem atividade física', parq4:'PAR-Q — perda de equilíbrio ou consciência por tontura',
+  parq5:'PAR-Q — problema ósseo/articular que pode se agravar', parq6:'PAR-Q — medicação para pressão ou coração',
+  parq7:'PAR-Q — outra razão para não praticar atividade física',
+  dc:'Doenças crônicas', dc_outro:'Outras doenças crônicas não listadas', reab:'Está em processo de reabilitação?',
+  reab_desc:'Descrição da reabilitação', cirurgia:'Pós-cirúrgico?', cirurgia_desc:'Qual cirurgia e quando',
+  lesoes:'Lesões atuais ou recentes', medicamentos:'Medicamentos em uso', alergias:'Alergias conhecidas',
+  restricoes:'Restrições físicas', menopausa:'Está na menopausa?', liberacao:'Tem liberação médica para atividade física?',
+  nivel_atv:'Nível atual de atividade física', exer_atual:'Pratica exercício atualmente?', exer_qual:'Qual atividade pratica',
+  exp_muscu:'Experiência com musculação/funcional', personal_ant:'Já treinou com personal trainer?',
+  personal_tempo:'Por quanto tempo treinou com personal', pref:'Tipo de treino preferido',
+  sono:'Qualidade do sono', horas_sono:'Horas de sono por noite', estresse:'Nível de estresse', agua:'Hidratação diária',
+  alcool:'Consumo de álcool', fumo:'Fuma?', alimentacao:'Como avalia sua alimentação?', suplementos:'Usa suplementos?',
+  dias:'Dias disponíveis para treinar', horario_pref:'Horário preferido', modalidade_pref:'Modalidade desejada',
+  afin_musica:'Bandas/artistas favoritos', afin_filmes:'Filmes favoritos', afin_series:'Séries favoritas',
+  observacoes:'Observações', origem:'Como conheceu o Lucas?', origem_det:'Detalhe de como conheceu'
+};
+const QA_GROUPS = [
+  { title:'Identificação', fields:['nome','nascimento','sexo','profissao','email','telefone','emerg_nome','emerg_tel'] },
+  { title:'Dados físicos', fields:['peso','altura'] },
+  { title:'Objetivo', fields:['obj','obj_outro'] },
+  { title:'PAR-Q', fields:['parq1','parq2','parq3','parq4','parq5','parq6','parq7'] },
+  { title:'Histórico de saúde', fields:['dc','dc_outro','reab','reab_desc','cirurgia','cirurgia_desc','lesoes','medicamentos','alergias','restricoes','menopausa','liberacao'] },
+  { title:'Histórico de atividade física', fields:['nivel_atv','exer_atual','exer_qual','exp_muscu','personal_ant','personal_tempo','pref'] },
+  { title:'Estilo de vida', fields:['sono','horas_sono','estresse','agua','alcool','fumo','alimentacao','suplementos'] },
+  { title:'Disponibilidade', fields:['dias','horario_pref','modalidade_pref'] },
+  { title:'Afinidades pessoais', fields:['afin_musica','afin_filmes','afin_series'] },
+  { title:'Observações', fields:['observacoes'] },
+  { title:'Contexto', fields:['origem','origem_det'] },
+];
+const DISEASE_STATS = {
+  'Hipertensão': { pct:'23,9%', note:'dado mais recente do Vigitel aponta ~30%', source:'Pesquisa Nacional de Saúde (IBGE), 2019 / Vigitel' },
+  'Diabetes': { pct:'7,7%', note:'Vigitel 2024: 12,9%, em alta', source:'PNS 2019 / Vigitel 2024' },
+  'Doenças cardíacas': { pct:'5,3%', source:'PNS 2019 (IBGE)' },
+  'Osteoporose': { pct:'6%', note:'autorreferida; estudo aponta que o real é maior, entre 13-15%', source:'Estudo BRAZOS, 2006' },
+  'Artrite ou artrose': { pct:'~20%', source:'Sociedade Brasileira de Ortopedia e Traumatologia', weak:true },
+  'Asma ou problemas respiratórios': { pct:'4,4%', source:'PNS 2013 (IBGE)' },
+  'Ansiedade ou depressão': { pct:'Ansiedade: 9,3% · Depressão: 10,2%', source:'OMS 2019 / PNS 2019 (IBGE)' },
+};
+
+function anamLevelBar(scaleIdx, total, level){
+  const pct = Math.round(((scaleIdx+1)/total)*100);
+  return { pct, level };
+}
+function esc(v){ return (v===undefined||v===null||v==='') ? '' : String(v); }
+
+function buildAnamMetricCards(data){
+  const d = data||{};
+  const cards = [];
+
+  // 1) Sono
+  const sonoScale = ['Muito ruim','Ruim','Regular','Boa','Excelente'];
+  const sonoLevelMap = ['crit','crit','warn','good','good'];
+  const sIdx = sonoScale.indexOf(d.sono);
+  if(sIdx>-1){
+    const level = sonoLevelMap[sIdx];
+    const pct = Math.round(((sIdx+1)/sonoScale.length)*100);
+    cards.push({
+      ico:'🌙', label:'Qualidade do sono', val:d.sono, level, pct, marker:72,
+      body:`Cerca de <strong>72% dos brasileiros relatam algum tipo de alteração no sono</strong> — o traço na barra marca essa referência. A resposta deste aluno (${d.sono}) ${level==='good'?'está em um patamar bom, vale reforçar como ponto forte.':'indica espaço de melhora — sono é um dos pilares de recuperação entre os treinos.'}`,
+      source:'Ministério da Saúde / Fiocruz, 2023.'
+    });
+  }
+
+  // 2) Estresse
+  const estresseScale = ['Baixo','Moderado','Alto','Muito alto'];
+  const estresseLevelMap = ['good','warn','crit','crit'];
+  const eIdx = estresseScale.indexOf(d.estresse);
+  if(eIdx>-1){
+    const level = estresseLevelMap[eIdx];
+    const pct = Math.round(((eIdx+1)/estresseScale.length)*100);
+    cards.push({
+      ico:'⚡', label:'Nível de estresse', val:d.estresse, level, pct, marker:42,
+      body:`Uma pesquisa internacional (Ipsos, 2024) aponta que <strong>42% dos brasileiros relatam estresse alto</strong> que afeta a rotina — o traço na barra marca essa referência. A resposta deste aluno (${d.estresse}) ${level==='good'?'está abaixo desse patamar, bom sinal.':'está nesse patamar ou acima — vale conversar sobre rotina e recuperação antes de aumentar carga de treino.'}`,
+      source:'Ipsos, 2024 (pesquisa de mercado, amostra com viés urbano).',
+      weak:'Sem levantamento nacional representativo disponível para esse indicador — leia com essa ressalva.'
+    });
+  }
+
+  // 3) Atividade física
+  const atvScale = ['Sedentário (sem atividade regular)','Levemente ativo (1–2x/semana)','Moderadamente ativo (3–4x/semana)','Muito ativo (5+ vezes/semana)'];
+  const atvLevelMap = ['crit','warn','good','good'];
+  const aIdx = atvScale.indexOf(d.nivel_atv);
+  if(aIdx>-1){
+    const level = atvLevelMap[aIdx];
+    const pct = Math.round(((aIdx+1)/atvScale.length)*100);
+    cards.push({
+      ico:'🏃', label:'Atividade física', val:d.nivel_atv, level, pct, marker:37,
+      body:`<strong>37% dos adultos brasileiros são insuficientemente ativos</strong> — o traço na barra marca essa faixa. A resposta deste aluno (${d.nivel_atv}) ${level==='good'?'está bem acima dessa faixa de atenção.':'está próxima ou dentro dessa faixa de atenção.'}`,
+      source:'Vigitel, Ministério da Saúde, 2023.'
+    });
+  }
+
+  // 4) Doenças crônicas
+  const dcList = Array.isArray(d.dc) ? d.dc.filter(x=>x && x!=='Nenhuma das acima') : [];
+  if(Array.isArray(d.dc)){
+    if(dcList.length===0){
+      cards.push({
+        ico:'❤️', label:'Doenças crônicas', val:'Nenhuma relatada', level:'good', pct:12, marker:null,
+        body:`Aluno não relatou nenhuma condição crônica da lista.`, source:null
+      });
+    } else {
+      const lines = dcList.map(cond=>{
+        const st = DISEASE_STATS[cond];
+        if(!st) return `<strong>${cond}</strong> — sem dado de comparação disponível.`;
+        return `<strong>${cond}</strong>: ${st.pct} dos adultos brasileiros${st.note?` (${st.note})`:''}. <span style="font-size:.72rem;color:var(--muted)">${st.source}${st.weak?' — estimativa, sem estudo com metodologia pública':''}</span>`;
+      }).join('<br><br>');
+      cards.push({
+        ico:'❤️', label:'Doenças crônicas', val:dcList.join(', '), level: dcList.length>1?'crit':'warn', pct:100, marker:null,
+        body:lines, source:null, noSourceLine:true
+      });
+    }
+  }
+
+  return cards.map((c,i)=>`
+    <div class="anam-mcard" data-anam-card>
+      <button class="anam-mcard-head" onclick="toggleAnamCard(this)">
+        <div class="anam-mcard-ico">${c.ico}</div>
+        <div class="anam-mcard-mid">
+          <div class="lbl">${c.label}</div>
+          <div class="val-row"><span class="val">${esc(c.val)}</span><span class="anam-pill ${c.level}">${c.level==='good'?'Sem alerta':c.level==='warn'?'Atenção':'Alerta'}</span></div>
+        </div>
+        <svg class="anam-chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="anam-mcard-track"><div class="fill ${c.level}" style="width:${c.pct}%"></div>${c.marker!=null?`<div class="marker" style="left:${c.marker}%"></div>`:''}</div>
+      <div class="anam-mcard-body"><div class="anam-mcard-body-in">
+        ${c.body}
+        ${c.noSourceLine ? '' : (c.source ? `<span class="anam-src">Fonte: ${c.source}${c.weak?` <span class="weak">${c.weak}</span>`:''}</span>` : '')}
+      </div></div>
+    </div>`).join('');
+}
+
+function buildAnamQAGroups(data){
+  const d = data||{};
+  return QA_GROUPS.map(g=>{
+    const rows = g.fields.map(f=>{
+      const v = d[f];
+      if(v===undefined || v===null || v==='' || (Array.isArray(v)&&v.length===0)) return '';
+      const label = QUESTION_LABELS[f]||f;
+      const val = Array.isArray(v)?v.join(', '):v;
+      return `<div class="anam-qa-row"><div class="q">${label}</div><div class="a">${esc(val)}</div></div>`;
+    }).join('');
+    if(!rows) return '';
+    return `<div class="anam-qa-section">
+      <h3 class="anam-qa-section-title">${g.title}</h3>
+      <div class="anam-qa-list">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAnamCard(btn){
+  const card = btn.closest('[data-anam-card]');
+  card.classList.toggle('open');
+  syncAnamToggleAllLabel();
+}
+function toggleAnamAllCards(){
+  const cards = document.querySelectorAll('[data-anam-card]');
+  const anyClosed = Array.from(cards).some(c=>!c.classList.contains('open'));
+  cards.forEach(c=>c.classList.toggle('open', anyClosed));
+  syncAnamToggleAllLabel();
+}
+function syncAnamToggleAllLabel(){
+  const cards = document.querySelectorAll('[data-anam-card]');
+  const btn = document.getElementById('anam-toggle-all-btn');
+  if(!btn || !cards.length) return;
+  const allOpen = Array.from(cards).every(c=>c.classList.contains('open'));
+  btn.textContent = allOpen ? 'Recolher tudo' : 'Expandir tudo';
+}
+
 async function viewProfResponse(id){
   if(!sb) return;
   const {data:r} = await sb.from('anamnese_responses').select('*').eq('id',id).single();
   if(!r) return;
   const el = document.getElementById('prof-anamnese-content');
   if(!el) return;
-  const rows=Object.entries(r.data||{}).map(([k,v])=>
-    `<tr><td style="padding:6px 10px;font-weight:600;font-size:.82rem;color:var(--muted);white-space:nowrap;vertical-align:top">${k}</td>
-     <td style="padding:6px 10px;font-size:.88rem">${Array.isArray(v)?v.join(', '):(v||'—')}</td></tr>`
-  ).join('');
+  const data = r.data||{};
+  const metricCards = buildAnamMetricCards(data);
+  const qaGroups = buildAnamQAGroups(data);
   el.innerHTML=`
     <button class="btn-ghost" style="margin-bottom:16px" onclick="renderProfAnamnese()">← Voltar</button>
-    <h4 style="font-family:var(--font-d);margin-bottom:14px">${r.student_name||'Aluno'} — ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</h4>
-    <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:.88rem">
-      <tbody>${rows}</tbody>
-    </table></div>`;
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+      <h4 style="font-family:var(--font-d)">${r.student_name||'Aluno'} — ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</h4>
+      ${metricCards ? `<button class="btn-ghost" id="anam-toggle-all-btn" onclick="toggleAnamAllCards()" style="white-space:nowrap">Expandir tudo</button>` : ''}
+    </div>
+    ${metricCards ? `<div class="anam-rep-metrics">${metricCards}</div>` : ''}
+    ${qaGroups}`;
 }
 
 function renderProfConfig() {
