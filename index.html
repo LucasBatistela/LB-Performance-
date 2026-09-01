@@ -2710,6 +2710,7 @@ async function anamSubmit(){
       const {data:codeRow} = await sb.from('anamnese_codes').select('professor_id').eq('code',anamCode).single();
       const {error:insErr} = await sb.from('anamnese_responses').insert({
         code: anamCode,
+        student_id: currentUser?.id||null,
         student_name: anamData.nome||'Aluno',
         professor_id: codeRow?.professor_id||null,
         data: {...anamData}
