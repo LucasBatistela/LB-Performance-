@@ -203,6 +203,19 @@ img { max-width: 100%; display: block; }
 }
 .nav-profile-drop-item:hover { background: var(--surface-alt); }
 .nav-profile-drop-item.danger { color: #C0392B; }
+.nav-bell-btn { position: relative; }
+.nav-bell-badge { position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px; border-radius: 8px;
+  background: #C0392B; color: #fff; font-size: .62rem; font-weight: 800; display: flex; align-items: center;
+  justify-content: center; padding: 0 4px; line-height: 1; }
+.nav-notif-item { display: block; width: 100%; text-align: left; padding: 12px 16px;
+  border-bottom: 1px solid var(--border); transition: background .12s; cursor: pointer; }
+.nav-notif-item:last-child { border-bottom: none; }
+.nav-notif-item:hover { background: var(--surface-alt); }
+.nav-notif-item.unread { background: rgba(52,106,172,.07); }
+.nav-notif-title { font-weight: 700; font-size: .85rem; color: var(--ink); }
+.nav-notif-body { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.nav-notif-time { font-size: .7rem; color: var(--muted); margin-top: 4px; }
+.nav-notif-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: .85rem; }
 
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -791,6 +804,16 @@ img { max-width: 100%; display: block; }
     <button class="nav-btn" id="theme-toggle-btn" aria-label="Alternar tema" onclick="toggleTheme()">
       <span id="theme-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg></span>
     </button>
+    <div class="nav-bell-btn" id="nav-bell-wrap" hidden>
+      <button class="nav-btn" aria-label="Notificações" onclick="toggleNotifDrop()">
+        <span class="icon-inline" style="width:20px;height:20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+        <span class="nav-bell-badge" id="nav-bell-badge" hidden>0</span>
+      </button>
+      <div class="nav-profile-drop" id="nav-notif-drop" hidden style="min-width:300px;max-width:340px;max-height:420px;overflow-y:auto">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:.85rem">Notificações</div>
+        <div id="nav-notif-content"></div>
+      </div>
+    </div>
     <div class="nav-avatar-btn" id="nav-avatar-wrap">
       <button class="nav-btn" style="padding:5px" aria-label="Perfil" onclick="toggleProfileDrop()">
         <div class="nav-avatar-circle guest" id="nav-avatar-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></svg></div>
@@ -2025,6 +2048,7 @@ const UI_ICONS = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
 };
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
@@ -2311,6 +2335,12 @@ async function submitBooking(dateStr, time){
     // Envia email de confirmação e volta ao dashboard (sem modal) — só se o aluno tiver e-mail de contato salvo
     if(booking.email) await sendBookingEmail(booking);
     else console.warn('Aluno sem e-mail de contato cadastrado — confirmação não enviada por email.');
+    sb.rpc('create_notification', {
+      p_recipient_id: professorId, p_type: 'booking_new',
+      p_title: `Novo agendamento de ${currentProfile.full_name||'aluno'}`,
+      p_body: `${formatDate(dateStr)} às ${time}`,
+      p_link: 'dashboard-prof'
+    }).then(()=>{}).catch(()=>{});
     await loadAlunoDashboard();
     showPage('dashboard-aluno');
     showToast('✅ Agendamento confirmado! Verifique seu e-mail.');
@@ -2812,17 +2842,23 @@ async function anamSubmit(){
   if(sb){
     try {
       const {data:codeRow} = await sb.from('anamnese_codes').select('professor_id').eq('code',anamCode).single();
-      const {error:insErr} = await sb.from('anamnese_responses').insert({
+      const {data:insRow, error:insErr} = await sb.from('anamnese_responses').insert({
         code: anamCode,
         student_id: currentUser?.id||null,
         student_name: anamData.nome||'Aluno',
         professor_id: codeRow?.professor_id||null,
         data: {...anamData}
-      });
+      }).select().single();
       if(insErr){ saveError = insErr; console.error('Erro ao salvar anamnese:',insErr); }
       else {
         const {error:updErr} = await sb.from('anamnese_codes').update({used:true}).eq('code',anamCode);
         if(updErr) console.error('Erro ao marcar código como usado:',updErr);
+        if(codeRow?.professor_id) sb.rpc('create_notification', {
+          p_recipient_id: codeRow.professor_id, p_type: 'anamnese_submitted',
+          p_title: `Nova ficha de anamnese: ${anamData.nome||'Aluno'}`,
+          p_body: 'Toque para analisar.',
+          p_link: 'dashboard-prof', p_related_id: insRow?.id||null
+        }).then(()=>{}).catch(()=>{});
       }
     } catch(e){ saveError = e; console.error('Erro ao salvar anamnese:',e); }
   }
@@ -3352,7 +3388,14 @@ async function loadProfAllBookings() {
 }
 async function profCancelBooking(id) {
   if(!(await showAppConfirm('Cancelar este agendamento?'))) return;
+  const { data: booking } = await sb.from('bookings').select('*').eq('id',id).single();
   await sb.from('bookings').update({status:'cancelled'}).eq('id',id);
+  if(booking) sb.rpc('create_notification', {
+    p_recipient_id: booking.student_id, p_type: 'booking_cancelled_by_prof',
+    p_title: 'Seu professor cancelou um agendamento',
+    p_body: `${formatDate(booking.date)} às ${booking.time}`,
+    p_link: 'dashboard-aluno'
+  }).then(()=>{}).catch(()=>{});
   loadProfAllBookings();
 }
 
@@ -3687,6 +3730,9 @@ async function viewProfResponse(id){
   if(!sb) return;
   const {data:r} = await sb.from('anamnese_responses').select('*').eq('id',id).single();
   if(!r) return;
+  if(currentUser) sb.from('notifications').update({read_at:new Date().toISOString()})
+    .eq('related_id', id).eq('recipient_id', currentUser.id).is('read_at', null)
+    .then(()=>{ refreshNotifications(); }).catch(()=>{});
   const el = document.getElementById('prof-anamnese-content');
   if(!el) return;
   const data = r.data||{};
@@ -3748,6 +3794,12 @@ async function cancelarAgendamento(id) {
   // Busca dados do agendamento antes de cancelar
   const {data:booking} = await sb.from('bookings').select('*').eq('id',id).single();
   await sb.from('bookings').update({status:'cancelled'}).eq('id',id).eq('student_id',currentUser.id);
+  if(booking) sb.rpc('create_notification', {
+    p_recipient_id: booking.professor_id, p_type: 'booking_cancelled',
+    p_title: `${currentProfile?.full_name||'Aluno'} cancelou um agendamento`,
+    p_body: `${formatDate(booking.date)} às ${booking.time}`,
+    p_link: 'dashboard-prof'
+  }).then(()=>{}).catch(()=>{});
   // Notifica o professor por email
   const ejsCfg = state.admin?.emailjs;
   if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && booking) {
@@ -3812,7 +3864,133 @@ function updateNavAvatar() {
     circle.innerHTML = UI_ICONS.user;
     circle.classList.add('guest');
   }
+  initNotifBell();
 }
+
+/* ── Notificações (sino) ─────────────────────────────────────── */
+let notifItems = [];
+let notifChannel = null;
+
+function initNotifBell(){
+  const wrap = document.getElementById('nav-bell-wrap');
+  if(!wrap) return;
+  if(currentUser && currentProfile && sb){
+    wrap.hidden = false;
+    refreshNotifications();
+    subscribeNotifications();
+  } else {
+    wrap.hidden = true;
+    if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} notifChannel = null; }
+    const drop = document.getElementById('nav-notif-drop');
+    if(drop) drop.hidden = true;
+    notifItems = [];
+  }
+}
+
+function subscribeNotifications(){
+  if(!sb || !currentUser) return;
+  if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} }
+  notifChannel = sb.channel('notif-'+currentUser.id)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`recipient_id=eq.${currentUser.id}` },
+      payload => {
+        notifItems.unshift(payload.new);
+        renderNotifDrop();
+        updateNotifBadge();
+      })
+    .subscribe();
+}
+
+async function refreshNotifications(){
+  if(!sb || !currentUser) return;
+  const { data } = await sb.from('notifications').select('*')
+    .eq('recipient_id', currentUser.id).order('created_at',{ascending:false}).limit(30);
+  notifItems = data || [];
+
+  // Lembretes "ao vivo" (não são linhas na tabela, são calculados na hora)
+  if(currentProfile?.role==='professor'){
+    const { data: alunos } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
+    const ids = (alunos||[]).map(a=>a.id);
+    if(ids.length){
+      const { data: fichas } = await sb.from('anamnese_responses').select('student_id').in('student_id', ids);
+      const comFicha = new Set((fichas||[]).filter(f=>f.student_id).map(f=>f.student_id));
+      const semFicha = ids.filter(id=>!comFicha.has(id));
+      if(semFicha.length){
+        notifItems.unshift({
+          id:'live-anam-pending', live:true, type:'anam_pending',
+          title:`${semFicha.length} aluno${semFicha.length>1?'s':''} sem ficha de anamnese`,
+          body:'Cobre esses alunos pra preencherem a anamnese.', link:'dashboard-prof',
+          created_at:new Date().toISOString()
+        });
+      }
+    }
+  } else if(currentProfile?.role==='student'){
+    const { data: minhaFicha } = await sb.from('anamnese_responses').select('id').eq('student_id', currentUser.id).limit(1);
+    if(!minhaFicha?.length){
+      notifItems.unshift({
+        id:'live-my-anam-pending', live:true, type:'anam_pending_self',
+        title:'Você ainda não preencheu sua ficha de anamnese',
+        body:'Preencha assim que possível pra seu professor montar seu programa.', link:'dashboard-aluno',
+        created_at:new Date().toISOString()
+      });
+    }
+  }
+  renderNotifDrop();
+  updateNotifBadge();
+}
+
+function updateNotifBadge(){
+  const badge = document.getElementById('nav-bell-badge');
+  if(!badge) return;
+  const unread = notifItems.filter(n=>n.live || !n.read_at).length;
+  if(unread>0){ badge.hidden=false; badge.textContent = unread>9?'9+':String(unread); }
+  else badge.hidden=true;
+}
+
+function notifTimeAgo(iso){
+  const diff = Math.floor((Date.now()-new Date(iso).getTime())/60000);
+  if(diff<1) return 'agora';
+  if(diff<60) return `há ${diff}min`;
+  if(diff<1440) return `há ${Math.floor(diff/60)}h`;
+  return `há ${Math.floor(diff/1440)}d`;
+}
+
+function renderNotifDrop(){
+  const el = document.getElementById('nav-notif-content');
+  if(!el) return;
+  if(!notifItems.length){
+    el.innerHTML = `<div class="nav-notif-empty">Nenhuma notificação por enquanto.</div>`;
+    return;
+  }
+  el.innerHTML = notifItems.map(n=>`
+    <div class="nav-notif-item ${(n.live||!n.read_at)?'unread':''}" onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}')">
+      <div class="nav-notif-title">${n.title}</div>
+      ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
+      <div class="nav-notif-time">${notifTimeAgo(n.created_at)}</div>
+    </div>`).join('');
+}
+
+async function handleNotifClick(id, isLive, link){
+  document.getElementById('nav-notif-drop').hidden = true;
+  if(!isLive && sb){
+    await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id);
+    const n = notifItems.find(x=>x.id===id);
+    if(n) n.read_at = new Date().toISOString();
+    updateNotifBadge();
+  }
+  if(link) showPage(link);
+}
+
+function toggleNotifDrop(){
+  const drop = document.getElementById('nav-notif-drop');
+  if(!drop) return;
+  if(drop.hidden){ drop.hidden=false; refreshNotifications(); }
+  else drop.hidden=true;
+}
+document.addEventListener('click', function(e){
+  const wrap = document.getElementById('nav-bell-wrap');
+  const drop = document.getElementById('nav-notif-drop');
+  if(drop && !drop.hidden && wrap && !wrap.contains(e.target)) drop.hidden = true;
+});
 
 function toggleProfileDrop() {
   // Deslogado: vai direto pra tela de login, sem menu intermediário — só existe uma opção mesmo.
