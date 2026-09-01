@@ -3265,9 +3265,16 @@ async function cancelarAgendamento(id) {
   await loadAlunoDashboard();
 }
 
+function isRecoveryURL() {
+  // detecta direto pela URL (presente desde o carregamento, sem depender de timing de eventos)
+  const hash = window.location.hash || '';
+  const search = window.location.search || '';
+  return hash.includes('type=recovery') || search.includes('type=recovery');
+}
+
 async function checkExistingSession() {
   if(!sb) return;
-  if(isPasswordRecoveryFlow) return; // já tratado pelo evento PASSWORD_RECOVERY — não sobrepõe a página de redefinir senha
+  if(isPasswordRecoveryFlow || isRecoveryURL()) return; // não sobrepõe a página de redefinir senha
   try {
     const { data: { session } } = await sb.auth.getSession();
     if(session?.user) await loadUserAndRedirect(session.user);
@@ -3782,6 +3789,7 @@ async function saveProfProfile() {
 /* ── Init ─────────────────────────────────────────────────────── */
 async function init(){
   initSupabase();
+  if(isRecoveryURL()) { isPasswordRecoveryFlow = true; showPage('redefinir-senha'); }
   await initArtifact();
   checkPendingConfirm();
   checkURLParams();
