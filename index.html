@@ -1070,7 +1070,7 @@ img { max-width: 100%; display: block; }
               </button>
             </div>
           </div>
-          <span class="forgot-pwd-link" onclick="notifyStudentForgotPassword()">Esqueceu a senha?</span>
+          <span class="forgot-pwd-link" onclick="showPage('esqueci-senha-aluno')">Esqueceu a senha?</span>
           <div class="auth-error" id="auth-err-aluno"></div>
           <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="loginAluno()">Entrar</button>
         </div>
@@ -1134,6 +1134,72 @@ img { max-width: 100%; display: block; }
         <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="recovery-save-btn" onclick="saveRecoveredPassword()">
           Salvar nova senha
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESQUECI SENHA — ALUNO (código por e-mail) -->
+  <div class="page" id="page-esqueci-senha-aluno">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Recuperação de acesso</p>
+        <h1>Esqueci minha senha</h1>
+      </div>
+    </div>
+    <div class="auth-wrap">
+      <div class="auth-card">
+
+        <!-- Etapa 1: informar CPF -->
+        <div id="reset-step-1">
+          <p style="font-size:.88rem;color:var(--muted);margin-bottom:22px">
+            Informe seu CPF. Vamos enviar um código de verificação pro e-mail de contato cadastrado com seu professor.
+          </p>
+          <div class="form-row"><label>CPF</label>
+            <input type="text" id="reset-cpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"
+              onkeydown="if(event.key==='Enter')requestStudentResetCode()">
+          </div>
+          <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="reset-request-btn" onclick="requestStudentResetCode()">
+            Enviar código
+          </button>
+          <p style="font-size:.8rem;color:var(--muted);margin-top:16px;text-align:center">
+            Não tem e-mail de contato cadastrado? Peça pro seu professor redefinir direto.
+          </p>
+        </div>
+
+        <!-- Etapa 2: código + nova senha -->
+        <div id="reset-step-2" hidden>
+          <p style="font-size:.88rem;color:var(--muted);margin-bottom:22px">
+            Enviamos um código de 6 dígitos pra <strong id="reset-email-hint"></strong>. Confira também o spam.
+          </p>
+          <div class="form-row"><label>Código recebido</label>
+            <input type="text" id="reset-code" placeholder="000000" maxlength="6"
+              style="letter-spacing:.3em;text-align:center;font-family:var(--font-d);font-weight:800;font-size:1.1rem">
+          </div>
+          <div class="form-row"><label>Nova senha</label>
+            <div class="pwd-field">
+              <input type="password" id="reset-new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('reset-new-password', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-row"><label>Confirmar nova senha</label>
+            <div class="pwd-field">
+              <input type="password" id="reset-confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
+                onkeydown="if(event.key==='Enter')confirmStudentResetCode()">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('reset-confirm-password', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </div>
+          <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="reset-confirm-btn" onclick="confirmStudentResetCode()">
+            Redefinir senha
+          </button>
+          <p class="forgot-pwd-link" style="text-align:center;margin-top:16px" onclick="backToResetStep1()">← Usar outro CPF / reenviar código</p>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1601,6 +1667,28 @@ img { max-width: 100%; display: block; }
 <div id="confirm-overlay" class="overlay" hidden>
   <div class="modal-box">
     <div id="confirm-content"></div>
+  </div>
+</div>
+
+<!-- ─── REDEFINIR SENHA DO ALUNO (professor) ───────────────────────── -->
+<div id="admin-pwd-reset-overlay" class="overlay" hidden>
+  <div class="modal-box" style="max-width:380px">
+    <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px">Redefinir senha do aluno</div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px" id="admin-pwd-reset-name"></p>
+    <div class="form-row"><label>Nova senha</label>
+      <div class="pwd-field">
+        <input type="password" id="admin-pwd-reset-input" placeholder="Mínimo 6 caracteres" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter')confirmAdminPwdReset()">
+        <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('admin-pwd-reset-input', this)">
+          <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn-ghost" style="flex:1;justify-content:center" onclick="closeAdminPwdReset()">Cancelar</button>
+      <button class="btn-primary" style="flex:1;justify-content:center" id="admin-pwd-reset-btn" onclick="confirmAdminPwdReset()">Redefinir</button>
+    </div>
   </div>
 </div>
 
@@ -2280,6 +2368,9 @@ async function sendBookingEmail(b){
 document.getElementById('confirm-overlay').addEventListener('click', e=>{
   if(e.target===document.getElementById('confirm-overlay')) closeConfirm();
 });
+document.getElementById('admin-pwd-reset-overlay').addEventListener('click', e=>{
+  if(e.target===document.getElementById('admin-pwd-reset-overlay')) closeAdminPwdReset();
+});
 function checkPendingConfirm(){
   try {
     const raw=sessionStorage.getItem('pending_confirm');
@@ -2677,6 +2768,7 @@ async function saveConfig(){
     serviceId:        (document.getElementById('cfg-ejs-service')?.value||'').trim(),
     templateId:       (document.getElementById('cfg-ejs-template')?.value||'').trim(),
     cancelTemplateId: (document.getElementById('cfg-ejs-cancel-template')?.value||'').trim(),
+    resetCodeTemplateId: (document.getElementById('cfg-ejs-reset-template')?.value||'').trim(),
     publicKey:        (document.getElementById('cfg-ejs-pubkey')?.value||'').trim()
   };
   const res=await publishState({...state,admin:{...state.admin,email,emailjs}});
@@ -2758,8 +2850,128 @@ async function sendProfPasswordReset() {
   else showToast('✅ Enviamos um link de redefinição para '+email+'. Confira sua caixa de entrada (e o spam).');
 }
 
-async function notifyStudentForgotPassword() {
-  await showAppMessage('Por enquanto, peça pro seu professor redefinir sua senha diretamente com você. Em breve você vai poder fazer isso sozinho por aqui.', 'error', 5500);
+/* ── ESQUECI SENHA — ALUNO (código por e-mail via EmailJS) ──────── */
+let resetFlow = { cpf: null };
+
+function maskEmail(email) {
+  const [user, domain] = (email||'').split('@');
+  if(!user || !domain) return email||'';
+  const visible = user.slice(0,2);
+  return `${visible}${'*'.repeat(Math.max(user.length-2,1))}@${domain}`;
+}
+
+async function sendResetCodeEmail(toEmail, code) {
+  const ejsCfg = state.admin?.emailjs;
+  if(!ejsCfg?.serviceId || !ejsCfg?.resetCodeTemplateId || !ejsCfg?.publicKey) {
+    throw new Error('EmailJS não configurado para código de redefinição (fale com o professor).');
+  }
+  if(!window.emailjs) throw new Error('EmailJS não carregado.');
+  emailjs.init(ejsCfg.publicKey);
+  await emailjs.send(ejsCfg.serviceId, ejsCfg.resetCodeTemplateId, {
+    to_email: toEmail,
+    reset_code: code
+  });
+}
+
+async function requestStudentResetCode() {
+  if(!sb) return;
+  const cpfInput = document.getElementById('reset-cpf');
+  const cpf = (cpfInput?.value||'').replace(/\D/g,'');
+  const btn = document.getElementById('reset-request-btn');
+  if(cpf.length !== 11) { showToast('❌ CPF inválido — 11 dígitos.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  const { data, error } = await sb.rpc('request_student_password_reset', { p_cpf: cpf });
+  if(error) {
+    btn.disabled = false; btn.textContent = 'Enviar código';
+    showToast('❌ '+error.message);
+    return;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if(!row?.reset_code || !row?.contact_email) {
+    btn.disabled = false; btn.textContent = 'Enviar código';
+    showToast('❌ Não foi possível gerar o código.');
+    return;
+  }
+  try {
+    await sendResetCodeEmail(row.contact_email, row.reset_code);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Enviar código';
+    showToast('❌ '+e.message);
+    return;
+  }
+  btn.disabled = false; btn.textContent = 'Enviar código';
+  resetFlow.cpf = cpf;
+  document.getElementById('reset-step-1').hidden = true;
+  document.getElementById('reset-step-2').hidden = false;
+  document.getElementById('reset-email-hint').textContent = maskEmail(row.contact_email);
+  showToast('✅ Código enviado! Confira seu e-mail.');
+}
+
+async function confirmStudentResetCode() {
+  if(!sb || !resetFlow.cpf) return;
+  const code    = (document.getElementById('reset-code')?.value||'').trim();
+  const pass    = (document.getElementById('reset-new-password')?.value||'');
+  const confirm = (document.getElementById('reset-confirm-password')?.value||'');
+  const btn     = document.getElementById('reset-confirm-btn');
+
+  if(!code) { showToast('❌ Informe o código recebido por e-mail.'); return; }
+  if(pass.length < 6) { showToast('❌ A senha deve ter pelo menos 6 caracteres.'); return; }
+  if(pass !== confirm) { showToast('❌ As senhas não coincidem.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Redefinindo…';
+  const { error } = await sb.rpc('confirm_student_password_reset', {
+    p_cpf: resetFlow.cpf, p_code: code, p_new_password: pass
+  });
+  btn.disabled = false; btn.textContent = 'Redefinir senha';
+
+  if(error) { showToast('❌ '+error.message); return; }
+
+  resetFlow.cpf = null;
+  document.getElementById('reset-code').value = '';
+  document.getElementById('reset-new-password').value = '';
+  document.getElementById('reset-confirm-password').value = '';
+  await showAppMessage('Senha redefinida com sucesso! Faça login com sua nova senha.', 'success', 4500);
+  showPage('login');
+}
+
+function backToResetStep1() {
+  document.getElementById('reset-step-1').hidden = false;
+  document.getElementById('reset-step-2').hidden = true;
+  resetFlow.cpf = null;
+}
+
+/* ── REDEFINIR SENHA — pelo professor (painel de alunos) ─────────── */
+let adminPwdResetTarget = null;
+
+function openAdminPwdReset(studentId, studentName) {
+  adminPwdResetTarget = studentId;
+  document.getElementById('admin-pwd-reset-name').textContent = `Aluno: ${studentName}`;
+  document.getElementById('admin-pwd-reset-input').value = '';
+  document.getElementById('admin-pwd-reset-overlay').hidden = false;
+}
+
+function closeAdminPwdReset() {
+  document.getElementById('admin-pwd-reset-overlay').hidden = true;
+  adminPwdResetTarget = null;
+}
+
+async function confirmAdminPwdReset() {
+  if(!sb || !adminPwdResetTarget) return;
+  const pass = document.getElementById('admin-pwd-reset-input').value;
+  const btn  = document.getElementById('admin-pwd-reset-btn');
+  if(pass.length < 6) { showToast('❌ A senha deve ter pelo menos 6 caracteres.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  const { error } = await sb.rpc('professor_reset_student_password', {
+    p_student_id: adminPwdResetTarget, p_new_password: pass
+  });
+  btn.disabled = false; btn.textContent = 'Redefinir';
+
+  if(error) { showToast('❌ Erro: '+error.message); return; }
+
+  showToast('✅ Senha redefinida! Avise o aluno da nova senha.');
+  closeAdminPwdReset();
 }
 
 function switchAuthTab(tab) {
@@ -3229,6 +3441,10 @@ function renderProfConfig() {
             <input id="cfg-ejs-cancel-template" value="${ejs.cancelTemplateId||''}" placeholder="template_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
           </div>
           <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Template ID — Código de redefinição de senha (aluno)</label>
+            <input id="cfg-ejs-reset-template" value="${ejs.resetCodeTemplateId||''}" placeholder="template_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+          <div class="form-row" style="margin:0">
             <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Public Key</label>
             <input id="cfg-ejs-pubkey" value="${ejs.publicKey||''}" placeholder="xxxxxxxxxxxxxxxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
           </div>
@@ -3667,6 +3883,12 @@ async function loadProfAlunos() {
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:.75rem;color:var(--pine);font-weight:700;
           background:rgba(52,106,172,.12);padding:4px 10px;border-radius:20px">Ativo</span>
+        <button onclick="openAdminPwdReset('${s.id}', '${(p?.full_name||'Aluno').replace(/'/g,"\\'")}')"
+          title="Redefinir senha"
+          style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
+            color:var(--pine);font-size:.9rem;line-height:1;transition:background .15s"
+          onmouseover="this.style.background='rgba(52,106,172,.1)'"
+          onmouseout="this.style.background='none'">🔑</button>
         <button onclick="deleteActiveStudent('${s.id}')"
           title="Remover aluno"
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
