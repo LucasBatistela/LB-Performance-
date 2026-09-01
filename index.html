@@ -1585,9 +1585,17 @@ img { max-width: 100%; display: block; }
       <!-- Disponibilidade -->
       <div id="prof-tab-disponibilidade" hidden>
         <div class="dash-card">
-          <div class="dash-card-title">
-            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
-            Horários disponíveis
+          <div class="dash-card-title" style="justify-content:space-between">
+            <span style="display:flex;align-items:center;gap:10px">
+              <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+              Horários disponíveis
+            </span>
+            <label style="display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:normal;font-size:.78rem;color:var(--muted);font-weight:700">
+              Duração da aula
+              <input type="number" id="session-duration-input" min="15" max="180" step="5" value="45"
+                style="width:58px;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);font-size:.85rem;font-weight:700;color:var(--ink);background:var(--surface)">
+              min
+            </label>
           </div>
           <div id="prof-disponibilidade-content"></div>
         </div>
@@ -1822,7 +1830,7 @@ function getNext5Days() {
   }
   return days;
 }
-const SESSION_DURATION_MIN = 45;
+let SESSION_DURATION_MIN = 45;
 function generateSlotsForWindow(startStr, endStr, durationMin){
   if(!startStr || !endStr) return [];
   const [sh,sm]=startStr.split(':').map(Number);
@@ -2125,8 +2133,9 @@ async function refreshScheduleData(){
   profBookingsProfId = profId;
   if(!sb || !profId){ profBookingsCache=[]; profWeeklySchedule={}; profExceptionsMap={}; profHolidaysSet=new Set(); return; }
 
-  const { data: prof } = await sb.from('professors').select('weekly_schedule').eq('id', profId).single();
+  const { data: prof } = await sb.from('professors').select('weekly_schedule, session_duration_min').eq('id', profId).single();
   profWeeklySchedule = prof?.weekly_schedule || {};
+  SESSION_DURATION_MIN = prof?.session_duration_min || 45;
 
   const { data: bookings } = await sb.from('bookings').select('date,time')
     .eq('professor_id', profId).eq('status','confirmed');
@@ -3353,8 +3362,9 @@ async function renderProfDisponibilidade() {
   if(!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
   if(sb && currentUser){
-    const { data: prof } = await sb.from('professors').select('weekly_schedule').eq('id', currentUser.id).single();
+    const { data: prof } = await sb.from('professors').select('weekly_schedule, session_duration_min').eq('id', currentUser.id).single();
     profWeeklySchedule = prof?.weekly_schedule || {};
+    SESSION_DURATION_MIN = prof?.session_duration_min || 45;
   }
   el.innerHTML=`
     <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Defina o horário de início e fim de cada dia útil. Os horários de atendimento (${SESSION_DURATION_MIN} min cada) são gerados automaticamente dentro dessa janela, toda semana, sem precisar mexer de novo.</p>
@@ -3389,6 +3399,8 @@ async function renderProfDisponibilidade() {
       <button class="btn-primary" style="padding:8px 16px" onclick="addException()">Adicionar</button>
     </div>
     <div id="exceptions-list" style="margin-top:14px"></div>`;
+  const durInput = document.getElementById('session-duration-input');
+  if(durInput) durInput.value = SESSION_DURATION_MIN;
   await loadExceptions();
 }
 async function saveWeeklySchedule(){
@@ -3402,11 +3414,14 @@ async function saveWeeklySchedule(){
       sched[String(dow)]={start:s,end:e};
     }
   }
+  const durVal = parseInt(document.getElementById('session-duration-input')?.value, 10);
+  if(!durVal || durVal < 15 || durVal > 180){ alert('Duração da aula precisa ser entre 15 e 180 minutos.'); return; }
   if(!sb || !currentUser){ alert('Faça login novamente.'); return; }
-  const { data, error } = await sb.from('professors').update({ weekly_schedule: sched }).eq('id', currentUser.id).select();
+  const { data, error } = await sb.from('professors').update({ weekly_schedule: sched, session_duration_min: durVal }).eq('id', currentUser.id).select();
   if(error){ alert('Erro ao salvar: ' + error.message); return; }
   if(!data || !data.length){ alert('Não foi possível salvar: nenhuma linha foi atualizada no banco (provável permissão faltando). Fale com o suporte técnico.'); return; }
   profWeeklySchedule = sched;
+  SESSION_DURATION_MIN = durVal;
   alert('Horário semanal salvo! Já vale para todos os alunos, toda semana, automaticamente.');
 }
 function toggleExcTimeFields(){
