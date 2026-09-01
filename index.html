@@ -474,7 +474,8 @@ img { max-width: 100%; display: block; }
 .plan-features { flex: 1; display: flex; flex-direction: column; gap: 10px;
   margin-bottom: 26px; }
 .plan-features li { display: flex; align-items: flex-start; gap: 10px; font-size: .88rem; line-height: 1.4; }
-.feat-check { color: var(--pine); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.feat-check { color: var(--pine); font-weight: 700; flex-shrink: 0; margin-top: 1px; display: inline-flex; }
+.feat-check svg { width: 16px; height: 16px; }
 .feat-no { color: var(--muted); }
 .feat-no .feat-check { color: var(--muted); }
 .plan-cta { display: block; text-align: center; }
@@ -521,7 +522,13 @@ img { max-width: 100%; display: block; }
 .anamnese-done-screen { max-width: 480px; margin: 80px auto; padding: 0 24px; text-align: center; }
 .anamnese-done-screen h2 { font-size: 1.8rem; margin-bottom: 14px; }
 .anamnese-done-screen p { color: var(--ink-2); margin-bottom: 28px; }
-.anamnese-done-icon { font-size: 3rem; margin-bottom: 20px; }
+.anamnese-done-icon { margin-bottom: 20px; color: var(--good); display: flex; justify-content: center; }
+.anamnese-done-icon svg { width: 52px; height: 52px; }
+.icon-inline { display: inline-flex; vertical-align: middle; }
+.icon-inline svg { width: 100%; height: 100%; display: block; }
+.icon-inline.good { color: var(--good); }
+.icon-inline.warn { color: var(--warn); }
+.icon-inline.crit { color: var(--crit); }
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 .toast {
@@ -1085,7 +1092,7 @@ img { max-width: 100%; display: block; }
     </div>
 
     <div id="anamnese-done-screen" class="anamnese-done-screen" hidden>
-      <div class="anamnese-done-icon">✅</div>
+      <div class="anamnese-done-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg></div>
       <h2>Ficha enviada!</h2>
       <p>Suas respostas foram recebidas com sucesso. Lucas vai analisar as informações e entrar em contato em breve para dar início ao seu programa.</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">
@@ -1280,7 +1287,7 @@ img { max-width: 100%; display: block; }
         </div>
         <div id="dash-anam-submitted" hidden>
           <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm);margin-bottom:10px">
-            <span style="font-size:1.4rem">✅</span>
+            <span class="icon-inline good" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg></span>
             <div>
               <div style="font-weight:700;font-size:.9rem">Ficha enviada com sucesso</div>
               <div style="font-size:.8rem;color:var(--muted)" id="dash-anam-submitted-date">Professor vai analisar em breve.</div>
@@ -1367,7 +1374,7 @@ img { max-width: 100%; display: block; }
                 background:var(--pine);color:#fff;font-size:.8rem;
                 display:flex;align-items:center;justify-content:center;
                 border:2px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.18)"
-              title="Editar foto">✏️</button>
+              title="Editar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
             <input type="file" id="dash-avatar-input" accept="image/*" capture="environment"
               style="display:none" onchange="handleAvatarUpload(this)">
           </div>
@@ -1424,7 +1431,7 @@ img { max-width: 100%; display: block; }
           Escolha uma nova senha de acesso ao seu painel.
         </p>
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(230,161,26,.12);border:1px solid rgba(230,161,26,.35);border-radius:var(--radius-sm);margin-bottom:18px">
-          <span style="font-size:1.1rem;line-height:1">⚠️</span>
+          <span class="icon-inline warn" style="width:18px;height:18px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg></span>
           <p style="font-size:.8rem;color:var(--ink-2);margin:0">
             Sua senha inicial era o seu CPF. Depois de trocar aqui, use a <strong>nova senha</strong> nos próximos acessos — o CPF deixa de funcionar como senha.
           </p>
@@ -1622,7 +1629,7 @@ img { max-width: 100%; display: block; }
                   background:var(--pine);color:#fff;font-size:.8rem;
                   display:flex;align-items:center;justify-content:center;
                   border:2px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.18)"
-                title="Editar foto">✏️</button>
+                title="Editar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
               <input type="file" id="prof-avatar-input" accept="image/*" capture="environment"
                 style="display:none" onchange="handleProfAvatarUpload(this)">
             </div>
@@ -2004,6 +2011,12 @@ const UI_ICONS = {
   zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>',
   activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
   heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>',
 };
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
@@ -2025,8 +2038,8 @@ function renderPlans() {
       priceHTML=`<div class="plan-price">${p.price}</div>
         <div class="plan-period">${p.period}${p.priceAlt?` · ${p.priceAlt}`:''}</div>`;
     }
-    const feats=p.features.map(f=>`<li><span class="feat-check">✓</span>${f}</li>`).join('');
-    const nots=(p.notIncluded||[]).map(f=>`<li class="feat-no"><span class="feat-check">✗</span><span style="color:var(--muted)">${f}</span></li>`).join('');
+    const feats=p.features.map(f=>`<li><span class="feat-check">${UI_ICONS.check}</span>${f}</li>`).join('');
+    const nots=(p.notIncluded||[]).map(f=>`<li class="feat-no"><span class="feat-check">${UI_ICONS.x}</span><span style="color:var(--muted)">${f}</span></li>`).join('');
     return `<div class="plan-card${p.badge?' featured':''}">
       ${p.badge?`<div class="plan-badge">${p.badge}</div>`:''}
       <div class="plan-icon">${PLAN_ICONS[p.icon]||''}</div>
@@ -2242,7 +2255,7 @@ function renderBookingForm(){
       <div class="form-submit">
         <button class="btn-primary" style="width:100%;justify-content:center" onclick="submitBooking('${ds}','${selTime}')">Confirmar agendamento →</button>
       </div>
-      <p style="font-size:.78rem;color:var(--muted);margin-top:14px">⚠️ Cancelamentos devem ser feitos com no mínimo 1 hora de antecedência.</p>
+      <p style="font-size:.78rem;color:var(--muted);margin-top:14px;display:flex;align-items:flex-start;gap:6px"><span class="icon-inline warn" style="width:14px;height:14px;flex-shrink:0;margin-top:2px">${UI_ICONS.warn}</span>Cancelamentos devem ser feitos com no mínimo 1 hora de antecedência.</p>
     </div>`;
   setFixed(false);
 }
@@ -2323,14 +2336,14 @@ function showConfirmation(b){
   const typeLabel=b.type==='presencial'?'Presencial':'Online (videochamada)';
   const freqLabel=b.isFixed?'Horário fixo (semanal)':'Aula avulsa';
   document.getElementById('confirm-content').innerHTML=`
-    <div class="modal-icon">✅</div>
+    <div class="modal-icon" style="display:flex;align-items:center;justify-content:center;background:rgba(52,106,172,.1);color:var(--pine)"><span class="icon-inline" style="width:26px;height:26px">${UI_ICONS.check}</span></div>
     <div class="modal-title">Agendamento confirmado!</div>
     <div class="modal-detail">
       <strong>${b.name}</strong><br>
       ${dayFull}, ${d.getDate()} de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][d.getMonth()]} · ${b.time}<br>
       ${typeLabel} · ${freqLabel}
     </div>
-    <div class="modal-policy">⚠️ Cancele com pelo menos <strong>1 hora de antecedência</strong> para não ser cobrado. Em caso de falta sem aviso, a sessão será cobrada normalmente.</div>
+    <div class="modal-policy" style="display:flex;align-items:flex-start;gap:8px"><span class="icon-inline warn" style="width:16px;height:16px;flex-shrink:0;margin-top:2px">${UI_ICONS.warn}</span><span>Cancele com pelo menos <strong>1 hora de antecedência</strong> para não ser cobrado. Em caso de falta sem aviso, a sessão será cobrada normalmente.</span></div>
     <div class="modal-actions">
       <a href="https://wa.me/5512981112070?text=${encodeURIComponent('Olá Lucas! Acabei de agendar uma aula.\n\nNome: '+b.name+'\nData: '+dayFull+', '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'\nHorário: '+b.time+'\nModalidade: '+typeLabel+'\nFrequência: '+freqLabel)}"
         target="_blank" class="btn-primary" style="justify-content:center">Confirmar via WhatsApp</a>
@@ -2509,7 +2522,7 @@ const ANAMNESE_SECTIONS = [
       <div class="parq-q-opts"><label><input type="radio" name="parq6" value="Não" required> Não</label><label><input type="radio" name="parq6" value="Sim"> Sim</label></div></div>
     <div class="parq-q"><span class="parq-q-text">Você tem conhecimento de qualquer outra razão pela qual não deveria praticar atividade física?</span>
       <div class="parq-q-opts"><label><input type="radio" name="parq7" value="Não" required> Não</label><label><input type="radio" name="parq7" value="Sim"> Sim</label></div></div>
-    <div class="parq-alert" id="parq-alert">⚠️ Uma ou mais respostas indicam necessidade de avaliação médica antes de iniciar o treinamento. Seu treinador será informado e entrará em contato.</div>`
+    <div class="parq-alert" id="parq-alert"><div style="display:flex;align-items:flex-start;gap:8px"><span class="icon-inline warn" style="width:16px;height:16px;flex-shrink:0;margin-top:2px">${UI_ICONS.warn}</span><span>Uma ou mais respostas indicam necessidade de avaliação médica antes de iniciar o treinamento. Seu treinador será informado e entrará em contato.</span></div></div>`
   },
   { num:5, title:'Histórico de saúde', fields:`
     <div class="form-row">
@@ -3208,11 +3221,11 @@ async function loadAlunoDashboard() {
     const next = bookings[0];
     document.getElementById('dash-proximo-treino').innerHTML = `
       <div class="dash-booking-date">${formatDate(next.date)} às ${next.time}</div>
-      <div class="dash-booking-meta">✅ Confirmado</div>`;
+      <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado</div>`;
     document.getElementById('dash-historico').innerHTML = bookings.map(b=>`
       <div class="dash-booking-item">
         <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}</div>
-        <div class="dash-booking-meta">✅ Confirmado
+        <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado
           <button onclick="cancelarAgendamento('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
         </div>
       </div>`).join('');
@@ -3262,7 +3275,7 @@ async function loadProfDashboard() {
       <div class="prof-student-row">
         <div>
           <div class="prof-student-name">${ap[i].data?.full_name||'Aluno'}</div>
-          <div class="prof-student-plan">${a.training_plan_url?'✓ Treino vinculado':'Sem treino vinculado'}</div>
+          <div class="prof-student-plan">${a.training_plan_url?'<span class="icon-inline good" style="width:12px;height:12px">'+UI_ICONS.check+'</span> Treino vinculado':'Sem treino vinculado'}</div>
         </div>
       </div>`).join('');
   }
@@ -3458,7 +3471,7 @@ async function renderProfAnamnese() {
     <div class="code-item">
       <span>${c.student_name}</span>
       <span class="code-val">${c.code}</span>
-      <span class="code-used">${c.used?'✓ Respondido':'Aguardando'}</span>
+      <span class="code-used">${c.used?'<span class="icon-inline good" style="width:12px;height:12px">'+UI_ICONS.check+'</span> Respondido':'Aguardando'}</span>
     </div>`).join('')||'<p style="color:var(--muted);font-size:.88rem">Nenhum código gerado ainda.</p>';
   const responsesList=(responses||[]).length===0
     ?'<p style="color:var(--muted);font-size:.88rem">Nenhuma ficha preenchida ainda.</p>'
@@ -3685,7 +3698,7 @@ function renderProfConfig() {
         <input type="email" id="cfg-email" value="${state.admin?.email||''}" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
       </div>
       <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:20px">
-        <div style="font-weight:700;font-size:.85rem;margin-bottom:4px">📧 EmailJS — configuração geral</div>
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:4px;display:flex;align-items:center;gap:6px"><span class="icon-inline" style="width:15px;height:15px;color:var(--pine)">${UI_ICONS.mail}</span> EmailJS — configuração geral</div>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Crie conta grátis em <a href="https://www.emailjs.com" target="_blank" style="color:var(--pine)">emailjs.com</a> → Email Services → Add Service → cole os dados abaixo.</p>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="form-row" style="margin:0">
@@ -3911,7 +3924,7 @@ function renderGoogleLinkStatus(prefix) {
     el.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.2rem">✅</span>
+          <span class="icon-inline good" style="width:19px;height:19px">${UI_ICONS.check}</span>
           <div>
             <div style="font-weight:700;font-size:.88rem">Conta Google vinculada</div>
             <div style="font-size:.78rem;color:var(--muted)">${linked.identity_data?.email||''}</div>
@@ -4095,7 +4108,7 @@ async function cadastrarAluno() {
   result.hidden = false;
   result.innerHTML = `
     <div style="background:var(--surface-alt);border-radius:var(--radius-sm);padding:18px;border:1.5px solid var(--border)">
-      <div style="font-weight:700;margin-bottom:10px">✅ Aluno pré-cadastrado!</div>
+      <div style="font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px"><span class="icon-inline good" style="width:18px;height:18px">${UI_ICONS.check}</span> Aluno pré-cadastrado!</div>
       <div style="font-size:.88rem;line-height:2.2;color:var(--ink-2)">
         <b>Nome:</b> ${nome}<br>
         <b>Login (CPF):</b> ${cpfFmt}<br>
@@ -4148,13 +4161,13 @@ async function loadProfAlunos() {
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
             color:var(--pine);font-size:.9rem;line-height:1;transition:background .15s"
           onmouseover="this.style.background='rgba(52,106,172,.1)'"
-          onmouseout="this.style.background='none'">🔑</button>
+          onmouseout="this.style.background='none'"><span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.key}</span></button>
         <button onclick="deleteActiveStudent('${s.id}')"
           title="Remover aluno"
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
             color:#e05050;font-size:.8rem;line-height:1;transition:background .15s"
           onmouseover="this.style.background='rgba(224,80,80,.1)'"
-          onmouseout="this.style.background='none'">✕</button>
+          onmouseout="this.style.background='none'"><span class="icon-inline" style="width:13px;height:13px">${UI_ICONS.x}</span></button>
       </div>
     </div>`;
   });
@@ -4176,7 +4189,7 @@ async function loadProfAlunos() {
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
             color:#e05050;font-size:.8rem;line-height:1;transition:background .15s"
           onmouseover="this.style.background='rgba(224,80,80,.1)'"
-          onmouseout="this.style.background='none'">✕</button>
+          onmouseout="this.style.background='none'"><span class="icon-inline" style="width:13px;height:13px">${UI_ICONS.x}</span></button>
       </div>
     </div>`;
   });
