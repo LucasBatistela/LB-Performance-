@@ -1274,10 +1274,10 @@ img { max-width: 100%; display: block; }
     </div>
     <div class="dash-wrap">
       <div class="dash-header">
-        <div class="dash-greeting" id="dash-aluno-greeting">Olá!</div>
+        <div class="dash-greeting" style="display:flex;align-items:center;gap:10px"><span id="dash-aluno-greeting">Olá!</span><span class="icon-inline" style="width:22px;height:22px;color:var(--pine)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14V4a2 2 0 1 1 4 0v7"/><path d="M15 4a2 2 0 1 1 4 0v8"/><path d="M19 6a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-1a8.9 8.9 0 0 1-6.4-2.7L3 12.7A2 2 0 0 1 6 10l2 2V4a2 2 0 1 1 4 0v9"/></svg></span></div>
         <button class="btn-ghost" onclick="logout()" style="font-size:.85rem;padding:8px 18px">Sair</button>
       </div>
-      <div class="dash-phrase" id="dash-phrase">💪 Carregando...</div>
+      <div class="dash-phrase" id="dash-phrase" style="display:flex;align-items:center;gap:10px"><span class="icon-inline" style="width:20px;height:20px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v4"/><path d="M22 10v4"/><rect x="4" y="7" width="3.5" height="10" rx="1"/><rect x="16.5" y="7" width="3.5" height="10" rx="1"/><path d="M7.5 12h9"/></svg></span><span id="dash-phrase-text">Carregando...</span></div>
 
       <!-- ANAMNESE — ação prioritária, fica logo no topo -->
       <div class="dash-card is-highlight">
@@ -1477,7 +1477,7 @@ img { max-width: 100%; display: block; }
     </div>
     <div class="dash-wrap">
       <div class="dash-header">
-        <div class="dash-greeting" id="dash-prof-greeting">Olá!</div>
+        <div class="dash-greeting" style="display:flex;align-items:center;gap:10px"><span id="dash-prof-greeting">Olá!</span><span class="icon-inline" style="width:22px;height:22px;color:var(--pine)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14V4a2 2 0 1 1 4 0v7"/><path d="M15 4a2 2 0 1 1 4 0v8"/><path d="M19 6a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-1a8.9 8.9 0 0 1-6.4-2.7L3 12.7A2 2 0 0 1 6 10l2 2V4a2 2 0 1 1 4 0v9"/></svg></span></div>
         <button class="btn-ghost" onclick="logout()" style="font-size:.85rem;padding:8px 18px">Sair</button>
       </div>
       <!-- Tabs do professor -->
@@ -3211,9 +3211,9 @@ function formatDate(dateStr) {
 async function loadAlunoDashboard() {
   if(!currentUser||!sb) return;
   const name = currentProfile?.full_name||'Aluno';
-  document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+  document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
   const phrase = await getMotivationalPhrase();
-  document.getElementById('dash-phrase').textContent = `💪 "${phrase}"`;
+  document.getElementById('dash-phrase-text').textContent = `"${phrase}"`;
   const today = new Date().toISOString().slice(0,10);
   const { data: bookings } = await sb.from('bookings').select('*')
     .eq('student_id',currentUser.id).gte('date',today).eq('status','confirmed').order('date').order('time').limit(8);
@@ -3251,7 +3251,7 @@ async function loadAlunoDashboard() {
 async function loadProfDashboard() {
   if(!currentUser||!sb) return;
   const name = currentProfile?.full_name||'Professor';
-  document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+  document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
   document.getElementById('dash-prof-title').textContent = name;
   // Atualiza avatar na nav
   updateNavAvatar();
@@ -4012,7 +4012,7 @@ async function saveStudentProfile() {
     showToast('❌ Erro ao salvar: '+error.message);
   } else {
     currentProfile = { ...currentProfile, full_name:name, phone, email };
-    document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+    document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
     updateNavAvatar();
     showToast('✅ Perfil atualizado com sucesso!');
   }
@@ -4274,7 +4274,7 @@ async function saveProfProfile() {
     showToast('❌ Erro ao salvar: '+error.message);
   } else {
     currentProfile = { ...currentProfile, full_name:name, phone };
-    document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}! 👋`;
+    document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
     document.getElementById('dash-prof-title').textContent = name;
     updateNavAvatar();
     showToast('✅ Perfil atualizado!');
