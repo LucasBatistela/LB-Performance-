@@ -1099,6 +1099,45 @@ img { max-width: 100%; display: block; }
     </div>
   </div>
 
+  <!-- REDEFINIR SENHA — página oculta, só acessível pelo link do e-mail de recuperação -->
+  <div class="page" id="page-redefinir-senha">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Recuperação de acesso</p>
+        <h1>Definir nova senha</h1>
+      </div>
+    </div>
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <p style="font-size:.88rem;color:var(--muted);margin-bottom:22px">
+          Escolha uma nova senha pra continuar acessando sua conta.
+        </p>
+        <div class="form-row"><label>Nova senha</label>
+          <div class="pwd-field">
+            <input type="password" id="recovery-new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+            <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('recovery-new-password', this)">
+              <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="form-row"><label>Confirmar nova senha</label>
+          <div class="pwd-field">
+            <input type="password" id="recovery-confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
+              onkeydown="if(event.key==='Enter')saveRecoveredPassword()">
+            <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('recovery-confirm-password', this)">
+              <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="recovery-save-btn" onclick="saveRecoveredPassword()">
+          Salvar nova senha
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- DASHBOARD ALUNO -->
   <div class="page" id="page-dashboard-aluno">
     <div class="page-header">
@@ -1707,7 +1746,7 @@ function showPage(id, opts) {
   if(id==='planos') renderPlans();
   if(id==='home') renderHomeAccordion();
   const backBtn = document.getElementById('nav-back-btn');
-  if(backBtn) backBtn.hidden = (id==='home');
+  if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
 function goBack() {
   const prev = pageHistory.pop();
@@ -2658,6 +2697,7 @@ let sb = null;
 let currentUser = null;
 let currentProfile = null;
 let currentStudentData = null;
+let isPasswordRecoveryFlow = false;
 
 function initSupabase() {
   try {
@@ -2665,18 +2705,46 @@ function initSupabase() {
     sb = createClient(SUPABASE_URL, SUPABASE_KEY);
     sb.auth.onAuthStateChange(async (event, session) => {
       if(event === 'PASSWORD_RECOVERY' && session?.user) {
-        await loadUserAndRedirect(session.user);
-        if(currentProfile?.role === 'professor') {
-          showProfTab('config');
-          setTimeout(()=>document.getElementById('prof-security-card')?.scrollIntoView({behavior:'smooth'}), 250);
-        } else if(currentProfile?.role === 'student') {
-          showPage('dashboard-aluno');
-          setTimeout(()=>document.getElementById('dash-security-card')?.scrollIntoView({behavior:'smooth'}), 250);
-        }
-        showAppMessage('Link confirmado! Defina sua nova senha abaixo para concluir.', 'success', 5000);
+        // Página isolada de redefinição — não carrega o painel, não autentica de verdade
+        // pro resto do site. Depois de salvar a senha, a sessão é encerrada e a pessoa
+        // faz login de novo normalmente.
+        isPasswordRecoveryFlow = true;
+        currentUser = session.user;
+        showPage('redefinir-senha');
       }
     });
   } catch(e) { console.error('Supabase init:', e); }
+}
+
+async function saveRecoveredPassword() {
+  if(!sb) return;
+  const passInput    = document.getElementById('recovery-new-password');
+  const confirmInput = document.getElementById('recovery-confirm-password');
+  const pass    = (passInput?.value||'');
+  const confirm = (confirmInput?.value||'');
+  const btn     = document.getElementById('recovery-save-btn');
+
+  if(pass.length < 6) { showToast('❌ A senha deve ter pelo menos 6 caracteres.'); return; }
+  if(pass !== confirm) { showToast('❌ As senhas não coincidem.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  const { error } = await sb.auth.updateUser({ password: pass });
+
+  if(error) {
+    btn.disabled = false; btn.textContent = 'Salvar nova senha';
+    showToast('❌ Erro ao salvar senha: '+error.message);
+    return;
+  }
+
+  await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  isPasswordRecoveryFlow = false;
+  passInput.value = ''; confirmInput.value = '';
+  btn.disabled = false; btn.textContent = 'Salvar nova senha';
+  updateNavAvatar();
+  await showAppMessage('Senha redefinida com sucesso! Faça login com sua nova senha.', 'success', 4500);
+  showPage('login');
 }
 
 async function sendProfPasswordReset() {
@@ -3199,6 +3267,7 @@ async function cancelarAgendamento(id) {
 
 async function checkExistingSession() {
   if(!sb) return;
+  if(isPasswordRecoveryFlow) return; // já tratado pelo evento PASSWORD_RECOVERY — não sobrepõe a página de redefinir senha
   try {
     const { data: { session } } = await sb.auth.getSession();
     if(session?.user) await loadUserAndRedirect(session.user);
