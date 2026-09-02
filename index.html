@@ -207,15 +207,22 @@ img { max-width: 100%; display: block; }
 .nav-bell-badge { position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px; border-radius: 8px;
   background: #C0392B; color: #fff; font-size: .62rem; font-weight: 800; display: flex; align-items: center;
   justify-content: center; padding: 0 4px; line-height: 1; }
-.nav-notif-item { display: block; width: 100%; text-align: left; padding: 12px 16px;
-  border-bottom: 1px solid var(--border); transition: background .12s; cursor: pointer; }
+.nav-notif-item { display: block; width: 100%; text-align: left; padding: 12px 16px; position: relative;
+  border-bottom: 1px solid var(--border); transition: background .12s; }
 .nav-notif-item:last-child { border-bottom: none; }
 .nav-notif-item:hover { background: var(--surface-alt); }
 .nav-notif-item.unread { background: rgba(52,106,172,.07); }
-.nav-notif-title { font-weight: 700; font-size: .85rem; color: var(--ink); }
-.nav-notif-body { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.nav-notif-title { font-weight: 700; font-size: .85rem; color: var(--ink); padding-right: 22px; }
+.nav-notif-body { font-size: .78rem; color: var(--muted); margin-top: 2px; padding-right: 22px; }
 .nav-notif-time { font-size: .7rem; color: var(--muted); margin-top: 4px; }
 .nav-notif-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: .85rem; }
+.nav-notif-x { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; padding: 0;
+  background: none; border: none; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.nav-notif-x svg { width: 12px; height: 12px; }
+.nav-notif-x:hover { color: #C0392B; }
+.nav-notif-see-all { display: block; width: 100%; text-align: center; padding: 12px 16px; font-size: .8rem;
+  font-weight: 700; color: var(--pine); background: none; border: none; cursor: pointer; }
+.nav-notif-see-all:hover { background: var(--surface-alt); }
 
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -1703,6 +1710,26 @@ img { max-width: 100%; display: block; }
     </div>
   </div>
 
+  <!-- HISTÓRICO DE NOTIFICAÇÕES (compartilhado professor/aluno) -->
+  <div class="page" id="page-notificacoes">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Histórico</p>
+        <h1>Notificações</h1>
+      </div>
+    </div>
+    <div class="dash-wrap">
+      <div class="dash-card">
+        <div class="admin-tabs" style="margin-bottom:20px">
+          <button class="admin-tab active" id="ntab-hoje" onclick="renderNotifHistoryPage('hoje')">Hoje</button>
+          <button class="admin-tab" id="ntab-semana" onclick="renderNotifHistoryPage('semana')">Semana</button>
+          <button class="admin-tab" id="ntab-mes" onclick="renderNotifHistoryPage('mes')">Mês</button>
+        </div>
+        <div id="notif-history-content"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /pages-wrap -->
 
 <!-- ─── CONFIRM OVERLAY ───────────────────────────────────────────── -->
@@ -1861,7 +1888,7 @@ let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null };
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null };
   if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -1877,6 +1904,7 @@ function showPage(id, opts) {
   if(id==='home') renderHomeAccordion();
   if(id==='anamnese') iniciarAnamnese();
   if(id==='config') renderConfigPage();
+  if(id==='notificacoes') renderNotifHistoryPage('hoje');
   const backBtn = document.getElementById('nav-back-btn');
   if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
@@ -2682,7 +2710,18 @@ let anamCurrentSection=0;
 let anamData={};
 
 /* ── Acesso à anamnese: sem código — direto pro aluno logado ──── */
-function iniciarAnamnese(){
+async function iniciarAnamnese(){
+  if(sb && currentUser){
+    const { data: fichas } = await sb.from('anamnese_responses').select('id').eq('student_id', currentUser.id).limit(1);
+    if(fichas?.length){
+      const { data: studentRow } = await sb.from('students').select('anamnese_unlocked').eq('id', currentUser.id).single();
+      if(studentRow?.anamnese_unlocked === false){
+        showToast('❌ Peça ao seu professor pra liberar o envio de uma nova ficha.');
+        voltarAoDashboard();
+        return;
+      }
+    }
+  }
   document.getElementById('anamnese-form-wrap').hidden=false;
   document.getElementById('anamnese-done-screen').hidden=true;
   anamCurrentSection=0; anamData={};
@@ -2773,13 +2812,17 @@ async function anamSubmit(){
         data: {...anamData}
       }).select().single();
       if(insErr){ saveError = insErr; console.error('Erro ao salvar anamnese:',insErr); }
-      else if(professorId) {
-        sb.rpc('create_notification', {
-          p_recipient_id: professorId, p_type: 'anamnese_submitted',
-          p_title: `Nova ficha de anamnese: ${anamData.nome||currentProfile?.full_name||'Aluno'}`,
-          p_body: 'Toque para analisar.',
-          p_link: 'dashboard-prof', p_related_id: insRow?.id||null
-        }).then(()=>{}).catch(()=>{});
+      else {
+        // Tranca a próxima anamnese — só destrava quando o professor pedir de novo
+        sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(()=>{}).catch(()=>{});
+        if(professorId) {
+          sb.rpc('create_notification', {
+            p_recipient_id: professorId, p_type: 'anamnese_submitted',
+            p_title: `Nova ficha de anamnese: ${anamData.nome||currentProfile?.full_name||'Aluno'}`,
+            p_body: 'Toque para analisar.',
+            p_link: 'dashboard-prof', p_related_id: insRow?.id||null
+          }).then(()=>{}).catch(()=>{});
+        }
       }
     } catch(e){ saveError = e; console.error('Erro ao salvar anamnese:',e); }
   }
@@ -2805,6 +2848,7 @@ async function anamSubmit(){
 /* ── Enviar pedido de anamnese pro aluno (notificação, sem código) ── */
 async function enviarPedidoAnamnese(studentId, studentName){
   if(!sb||!currentUser) return;
+  await sb.from('students').update({ anamnese_unlocked: true }).eq('id', studentId);
   await sb.rpc('create_notification', {
     p_recipient_id: studentId, p_type: 'anamnese_requested',
     p_title: 'Seu professor pediu uma nova ficha de anamnese',
@@ -3169,6 +3213,11 @@ async function refreshDashAnamCard(){
   if(!el || !sb || !currentUser) return;
   const { data: fichas } = await sb.from('anamnese_responses').select('submitted_at')
     .eq('student_id', currentUser.id).order('submitted_at',{ascending:false});
+  const { data: studentRow } = await sb.from('students').select('anamnese_unlocked').eq('id', currentUser.id).single();
+  const unlocked = studentRow?.anamnese_unlocked !== false; // default liberado se a coluna ainda não existir
+  if(currentStudentData) currentStudentData.anamnese_unlocked = studentRow?.anamnese_unlocked;
+  const locked = (fichas?.length>0) && !unlocked;
+
   if(fichas?.length){
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm)">
@@ -3177,11 +3226,15 @@ async function refreshDashAnamCard(){
           <div style="font-weight:700;font-size:.9rem">${fichas.length>1?`${fichas.length} fichas enviadas`:'Ficha enviada'}</div>
           <div style="font-size:.8rem;color:var(--muted)">Última em ${new Date(fichas[0].submitted_at).toLocaleDateString('pt-BR')}</div>
         </div>
-      </div>`;
-    if(btn) btn.textContent = 'Enviar nova ficha →';
+      </div>
+      ${locked ? `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(230,161,26,.12);border:1px solid rgba(230,161,26,.35);border-radius:var(--radius-sm);margin-top:10px">
+        <span class="icon-inline warn" style="width:16px;height:16px;flex-shrink:0">${UI_ICONS.warn}</span>
+        <p style="font-size:.78rem;color:var(--ink-2);margin:0">Peça ao seu professor pra liberar o envio de uma nova ficha.</p>
+      </div>` : ''}`;
+    if(btn){ btn.textContent = 'Enviar nova ficha →'; btn.disabled = locked; btn.style.opacity = locked?'.5':''; btn.style.cursor = locked?'not-allowed':''; }
   } else {
     el.innerHTML = '';
-    if(btn) btn.textContent = 'Preencher anamnese →';
+    if(btn){ btn.textContent = 'Preencher anamnese →'; btn.disabled = false; btn.style.opacity=''; btn.style.cursor=''; }
   }
 }
 
@@ -3208,7 +3261,7 @@ async function loadAlunoDashboard() {
         </div>
       </div>`).join('');
   }
-  const { data: student } = await sb.from('students').select('professor_id, training_plan_url').eq('id',currentUser.id).single();
+  const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked').eq('id',currentUser.id).single();
   currentStudentData = student;
   if(student?.professor_id) {
     const { data: pp } = await sb.from('profiles').select('full_name').eq('id',student.professor_id).single();
@@ -3456,7 +3509,7 @@ async function renderProfAnamnese() {
   if(!el||!sb) return;
   el.innerHTML=`<p style="color:var(--muted);font-size:.88rem">Carregando...</p>`;
 
-  const { data: students } = await sb.from('students').select('id, cpf').eq('professor_id', currentUser.id);
+  const { data: students } = await sb.from('students').select('id, cpf, anamnese_unlocked').eq('professor_id', currentUser.id);
   const profiles = students?.length
     ? await Promise.all(students.map(s => sb.from('profiles').select('full_name').eq('id', s.id).single()))
     : [];
@@ -3484,33 +3537,59 @@ async function renderProfAnamnese() {
     const nameEsc = name.replace(/'/g,"\\'");
     const fichas = byStudent[s.id] || [];
     const orphanCount = orphanCountByCpf[s.cpf] || 0;
-    const fichasHTML = fichas.length
-      ? fichas.map(r=>`
-        <div class="anamnese-resp-card" onclick="viewProfResponse('${r.id}')" style="cursor:pointer;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-top:8px;display:flex;align-items:center;gap:8px">
-          <span class="icon-inline" style="width:14px;height:14px;color:var(--muted)">${UI_ICONS.history}</span>
-          <span style="font-size:.85rem;font-weight:600">${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</span>
-        </div>`).join('')
-      : '<p style="color:var(--muted);font-size:.8rem;margin-top:8px">Nenhuma ficha enviada ainda.</p>';
+    const unlocked = s.anamnese_unlocked !== false;
+    const hasFichas = fichas.length>0;
+
+    const fichasHTML = fichas.map(r=>`
+      <div class="anamnese-resp-card" onclick="viewProfResponse('${r.id}')" style="cursor:pointer;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-top:8px;display:flex;align-items:center;gap:8px">
+        <span class="icon-inline" style="width:14px;height:14px;color:var(--muted)">${UI_ICONS.history}</span>
+        <span style="font-size:.85rem;font-weight:600">${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</span>
+      </div>`).join('');
+
+    const historyToggle = hasFichas ? `
+      <button class="btn-ghost" style="font-size:.78rem;white-space:nowrap;margin-top:8px" onclick="toggleFichaHistory('${s.id}', this)">
+        ${fichas.length} ficha${fichas.length>1?'s':''} — ver histórico <span class="ficha-hist-chev" style="display:inline-block;transition:transform .15s">▾</span>
+      </button>
+      <div id="ficha-hist-${s.id}" hidden>${fichasHTML}</div>` : '';
+
+    const statusLine = !hasFichas
+      ? 'Nenhuma ficha enviada · Pendente'
+      : `${fichas.length} ficha${fichas.length>1?'s':''} enviada${fichas.length>1?'s':''} · Feito · ${unlocked?'liberado pra nova ficha':'aguardando liberação'}`;
+
     const reactivateBtn = orphanCount>0
       ? `<button class="btn-ghost" style="font-size:.78rem;white-space:nowrap;color:var(--pine)" onclick="reactivarFichasAntigas('${s.cpf}','${s.id}','${nameEsc}')">
            ${orphanCount} ficha${orphanCount>1?'s':''} antiga${orphanCount>1?'s':''} disponível${orphanCount>1?'is':''} — reativar
          </button>` : '';
+
+    // O botão "Enviar anamnese" só faz sentido a partir da 2ª ficha (a 1ª o aluno já pode preencher livre)
+    const sendBtn = hasFichas
+      ? `<button class="btn-primary" style="font-size:.8rem;white-space:nowrap;padding:8px 14px" onclick="enviarPedidoAnamnese('${s.id}','${nameEsc}')">
+          <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.send}</span> ${unlocked?'Reenviar pedido':'Liberar nova ficha'}
+        </button>`
+      : '';
+
     return `<div class="dash-card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div>
           <div style="font-weight:700;font-size:.92rem">${name}</div>
-          <div style="font-size:.78rem;color:var(--muted)">${fichas.length?`${fichas.length} ficha${fichas.length>1?'s':''} enviada${fichas.length>1?'s':''} · Feito`:'Nenhuma ficha enviada · Pendente'}</div>
+          <div style="font-size:.78rem;color:var(--muted)">${statusLine}</div>
         </div>
-        <button class="btn-primary" style="font-size:.8rem;white-space:nowrap;padding:8px 14px" onclick="enviarPedidoAnamnese('${s.id}','${nameEsc}')">
-          <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.send}</span> Enviar anamnese
-        </button>
+        ${sendBtn}
       </div>
       ${reactivateBtn ? `<div style="margin-top:8px">${reactivateBtn}</div>` : ''}
-      ${fichasHTML}
+      ${historyToggle}
     </div>`;
   }).join('');
 
-  el.innerHTML = `<p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Envie a solicitação de anamnese direto pro aluno — sem código. Ele recebe um aviso no sino e preenche pelo próprio painel.</p>${rows}`;
+  el.innerHTML = `<p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">A 1ª ficha o aluno preenche livre, direto pelo painel dele. A partir da 2ª, ele só consegue enviar depois que você liberar aqui.</p>${rows}`;
+}
+
+function toggleFichaHistory(studentId, btn){
+  const el = document.getElementById('ficha-hist-'+studentId);
+  if(!el) return;
+  el.hidden = !el.hidden;
+  const chev = btn?.querySelector('.ficha-hist-chev');
+  if(chev) chev.style.transform = el.hidden ? '' : 'rotate(180deg)';
 }
 
 async function reactivarFichasAntigas(cpf, studentId, studentName) {
@@ -3875,8 +3954,15 @@ function subscribeNotifications(){
     .subscribe();
 }
 
+function cleanupOldNotifications(){
+  if(!sb || !currentUser) return;
+  const cutoff = new Date(Date.now() - 60*24*60*60*1000).toISOString();
+  sb.from('notifications').delete().eq('recipient_id', currentUser.id).lt('created_at', cutoff).then(()=>{}).catch(()=>{});
+}
+
 async function refreshNotifications(){
   if(!sb || !currentUser) return;
+  cleanupOldNotifications();
   const { data } = await sb.from('notifications').select('*')
     .eq('recipient_id', currentUser.id).order('created_at',{ascending:false}).limit(30);
   notifItems = data || [];
@@ -3933,15 +4019,20 @@ function renderNotifDrop(){
   const el = document.getElementById('nav-notif-content');
   if(!el) return;
   if(!notifItems.length){
-    el.innerHTML = `<div class="nav-notif-empty">Nenhuma notificação por enquanto.</div>`;
+    el.innerHTML = `<div class="nav-notif-empty">Nenhuma notificação por enquanto.</div>
+      <button class="nav-notif-see-all" onclick="document.getElementById('nav-notif-drop').hidden=true;showPage('notificacoes')">Ver histórico completo</button>`;
     return;
   }
   el.innerHTML = notifItems.map(n=>`
-    <div class="nav-notif-item ${(n.live||!n.read_at)?'unread':''}" onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}')">
-      <div class="nav-notif-title">${n.title}</div>
-      ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
-      <div class="nav-notif-time">${notifTimeAgo(n.created_at)}</div>
-    </div>`).join('');
+    <div class="nav-notif-item ${(n.live||!n.read_at)?'unread':''}">
+      <div onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}')" style="cursor:pointer">
+        <div class="nav-notif-title">${n.title}</div>
+        ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
+        <div class="nav-notif-time">${notifTimeAgo(n.created_at)}</div>
+      </div>
+      ${n.live?'':`<button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotif('${n.id}', event)"><span class="icon-inline">${UI_ICONS.x}</span></button>`}
+    </div>`).join('') +
+    `<button class="nav-notif-see-all" onclick="document.getElementById('nav-notif-drop').hidden=true;showPage('notificacoes')">Ver histórico completo</button>`;
 }
 
 async function handleNotifClick(id, isLive, link){
@@ -3955,10 +4046,32 @@ async function handleNotifClick(id, isLive, link){
   if(link) showPage(link);
 }
 
+async function markAllNotifRead(){
+  if(!sb || !currentUser) return;
+  const unreadIds = notifItems.filter(n=>!n.live && !n.read_at).map(n=>n.id);
+  if(!unreadIds.length) return;
+  const now = new Date().toISOString();
+  notifItems.forEach(n=>{ if(unreadIds.includes(n.id)) n.read_at = now; });
+  updateNotifBadge();
+  renderNotifDrop();
+  await sb.from('notifications').update({read_at:now}).in('id', unreadIds);
+}
+
+async function deleteNotif(id, ev){
+  if(ev){ ev.stopPropagation(); }
+  notifItems = notifItems.filter(n=>n.id!==id);
+  renderNotifDrop();
+  updateNotifBadge();
+  if(sb) await sb.from('notifications').delete().eq('id', id);
+}
+
 function toggleNotifDrop(){
   const drop = document.getElementById('nav-notif-drop');
   if(!drop) return;
-  if(drop.hidden){ drop.hidden=false; refreshNotifications(); }
+  if(drop.hidden){
+    drop.hidden=false;
+    refreshNotifications().then(()=>markAllNotifRead());
+  }
   else drop.hidden=true;
 }
 document.addEventListener('click', function(e){
@@ -3966,6 +4079,52 @@ document.addEventListener('click', function(e){
   const drop = document.getElementById('nav-notif-drop');
   if(drop && !drop.hidden && wrap && !wrap.contains(e.target)) drop.hidden = true;
 });
+
+/* ── HISTÓRICO DE NOTIFICAÇÕES (página compartilhada) ──────────── */
+let notifHistoryPeriod = 'hoje';
+async function renderNotifHistoryPage(period){
+  if(period) notifHistoryPeriod = period;
+  ['hoje','semana','mes'].forEach(p=>{
+    document.getElementById('ntab-'+p)?.classList.toggle('active', p===notifHistoryPeriod);
+  });
+  const el = document.getElementById('notif-history-content');
+  if(!el||!sb||!currentUser) return;
+  el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
+  cleanupOldNotifications();
+  const now = new Date();
+  let cutoff;
+  if(notifHistoryPeriod==='hoje') cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  else if(notifHistoryPeriod==='semana') cutoff = new Date(now.getTime() - 7*24*60*60*1000);
+  else cutoff = new Date(now.getTime() - 30*24*60*60*1000);
+  const { data } = await sb.from('notifications').select('*')
+    .eq('recipient_id', currentUser.id).gte('created_at', cutoff.toISOString())
+    .order('created_at',{ascending:false});
+  if(!data?.length){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhuma notificação nesse período.</p>';
+    return;
+  }
+  el.innerHTML = data.map(n=>{
+    const d = new Date(n.created_at);
+    const ds = d.toLocaleDateString('pt-BR');
+    const hs = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="nav-notif-item ${n.read_at?'':'unread'}" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px">
+      <div>
+        <div class="nav-notif-title">${n.title}</div>
+        ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
+        <div class="nav-notif-time">${ds} às ${hs}</div>
+      </div>
+      <button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotifFromHistory('${n.id}')"><span class="icon-inline">${UI_ICONS.x}</span></button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteNotifFromHistory(id){
+  if(!sb) return;
+  await sb.from('notifications').delete().eq('id', id);
+  notifItems = notifItems.filter(n=>n.id!==id);
+  updateNotifBadge();
+  renderNotifHistoryPage();
+}
 
 function toggleProfileDrop() {
   // Deslogado: vai direto pra tela de login, sem menu intermediário — só existe uma opção mesmo.
@@ -4003,6 +4162,9 @@ function renderNavDrop() {
         <span>${UI_ICONS.grid}</span> Meu painel
       </button>
       ${profileBtn}
+      <button class="nav-profile-drop-item" onclick="showPage('notificacoes');document.getElementById('nav-profile-drop').hidden=true">
+        <span>${UI_ICONS.bell}</span> Notificações
+      </button>
       <button class="nav-profile-drop-item" onclick="showPage('config');document.getElementById('nav-profile-drop').hidden=true">
         <span>${UI_ICONS.gear}</span> Configurações
       </button>
