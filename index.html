@@ -250,7 +250,7 @@ img { max-width: 100%; display: block; }
   background-image: radial-gradient(var(--border) .6px, transparent .6px);
   background-size: 18px 18px; }
 .chat-file-preview { padding: 0 16px 8px; font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 10px; background: var(--surface); }
-.chat-inputbar { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+.chat-inputbar { display: flex; gap: 8px; align-items: center; padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
 .chat-attach-btn, .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .chat-attach-btn { background: var(--surface-alt); color: var(--ink-2); }
 .chat-attach-btn:hover { background: var(--border); }
@@ -809,10 +809,24 @@ img { max-width: 100%; display: block; }
 #page-duvidas.chat-fullscreen .page-header { display: none; }
 #page-duvidas.chat-fullscreen .dash-wrap { max-width: none; padding: 0; }
 #page-duvidas.chat-fullscreen #duvidas-thread-view { padding: 0; }
-#page-duvidas.chat-fullscreen .chat-card { height: calc(100vh - var(--nav-h)); height: calc(100dvh - var(--nav-h)); border-radius: 0; }
+/* position:fixed em vez de depender de 100vh/100dvh: gruda direto nas bordas reais da tela
+   visível (o navegador recalcula sozinho), então a barra de digitar nunca fica "escondida"
+   embaixo, exigindo rolar a página pra aparecer. */
+#page-duvidas.chat-fullscreen .chat-card {
+  position: fixed;
+  top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+  left: 0; right: 0; bottom: 0;
+  height: auto; margin: 0 auto;
+  border-radius: 0; z-index: 60;
+}
 @media (min-width: 640px) {
   #page-duvidas.chat-fullscreen #duvidas-thread-view { max-width: 760px; margin: 0 auto; padding-top: 16px; }
-  #page-duvidas.chat-fullscreen .chat-card { height: calc(100vh - var(--nav-h) - 16px); height: calc(100dvh - var(--nav-h) - 16px); border-radius: var(--radius); }
+  #page-duvidas.chat-fullscreen .chat-card {
+    max-width: 760px;
+    top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 16px);
+    bottom: 16px;
+    border-radius: var(--radius);
+  }
 }
 
 /* Chat em duas colunas — modo desktop (professor: lista sempre visível ao lado da conversa, como o WhatsApp Web) */
