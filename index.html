@@ -4237,6 +4237,15 @@ async function ensureAnamMissingNotifications(profId, studentIds){
   }));
 }
 
+function getNotifClearedAt(){
+  if(!currentUser) return null;
+  try { return localStorage.getItem('notif_cleared_'+currentUser.id) || null; } catch(_) { return null; }
+}
+function setNotifClearedAt(iso){
+  if(!currentUser) return;
+  try { localStorage.setItem('notif_cleared_'+currentUser.id, iso); } catch(_) {}
+}
+
 async function refreshNotifications(){
   if(!sb || !currentUser) return;
   cleanupOldNotifications();
@@ -4255,7 +4264,10 @@ async function refreshNotifications(){
 
   const { data } = await sb.from('notifications').select('*')
     .eq('recipient_id', currentUser.id).order('created_at',{ascending:false}).limit(30);
-  notifItems = data || [];
+  // Notificações "limpas" pelo botão Limpar não voltam a aparecer no sino nem contam no número —
+  // só continuam disponíveis em Ver histórico completo (que consulta o banco direto, sem esse filtro).
+  const clearedAt = getNotifClearedAt();
+  notifItems = clearedAt ? (data||[]).filter(n=>new Date(n.created_at) > new Date(clearedAt)) : (data||[]);
 
   // Lembrete "ao vivo" do próprio aluno (não é linha na tabela, é calculado na hora)
   if(currentProfile?.role==='student'){
@@ -4353,10 +4365,15 @@ async function markAllNotifRead(){
 
 async function clearAllNotifications(){
   if(!sb || !currentUser) return;
+  const now = new Date().toISOString();
+  // Guarda o corte de data: só isso já basta pro sino não mostrar essas de novo (ver refreshNotifications).
+  // Não apaga as linhas do banco — assim o histórico completo continua mostrando tudo, e a checagem de
+  // duplicidade (ex.: aviso de anamnese) não perde a memória e recria a mesma notificação na hora.
+  setNotifClearedAt(now);
   notifItems = notifItems.filter(n=>n.live);
   renderNotifDrop();
   updateNotifBadge();
-  await sb.from('notifications').delete().eq('recipient_id', currentUser.id);
+  await sb.from('notifications').update({read_at:now}).eq('recipient_id', currentUser.id).is('read_at', null);
 }
 
 async function deleteNotif(id, ev){
