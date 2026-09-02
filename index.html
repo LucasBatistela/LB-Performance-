@@ -362,13 +362,14 @@ img { max-width: 100%; display: block; }
 
 /* ─── SOBRE ───────────────────────────────────────────────────── */
 .page-header {
-  background: var(--hero-bg); color: #fff; padding: 96px 24px 72px; position: relative; overflow: hidden;
+  background: var(--hero-bg); color: #fff; padding: 44px 24px 34px; position: relative; overflow: hidden;
   background-image: radial-gradient(ellipse 60% 90% at 12% 0%, rgba(52,106,172,.35) 0%, transparent 65%);
 }
-.page-header-inner { max-width: var(--max-w); margin: 0 auto; position: relative; }
-.page-header .eyebrow { color: var(--hero-citrus); }
-.page-header h1 { font-family: var(--font-d); font-size: clamp(2.1rem,4.4vw,3.4rem);
-  font-weight: 800; line-height: 1.08; letter-spacing: -.02em; margin-top: 10px; max-width: 760px; text-wrap: balance; }
+.page-header-inner { max-width: var(--max-w); margin: 0 auto; position: relative; text-align: left; }
+.page-header .eyebrow { color: var(--hero-citrus); margin-bottom: 4px; }
+.page-header h1 { font-family: var(--font-d); font-size: clamp(1.3rem,2.6vw,1.9rem);
+  font-weight: 800; line-height: 1.15; letter-spacing: -.01em; margin-top: 2px; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .sobre-body { max-width: var(--max-w); margin: 0 auto; padding: 72px 24px; }
 
@@ -760,7 +761,7 @@ img { max-width: 100%; display: block; }
   .plans-preview-inner h2 { margin-bottom: 32px; }
   .accordion-trigger { padding: 18px 18px; }
   .accordion-body { padding: 0 18px 18px; }
-  .page-header { padding: 76px 20px 52px; }
+  .page-header { padding: 36px 20px 26px; }
   .sobre-body { padding: 56px 20px; }
   .timeline { padding-left: 24px; }
   .timeline::before { left: 4px; }
