@@ -223,6 +223,11 @@ img { max-width: 100%; display: block; }
 .nav-notif-see-all { display: block; width: 100%; text-align: center; padding: 12px 16px; font-size: .8rem;
   font-weight: 700; color: var(--pine); background: none; border: none; cursor: pointer; }
 .nav-notif-see-all:hover { background: var(--surface-alt); }
+.anam-flash { animation: anamFlash 1.8s ease; }
+@keyframes anamFlash {
+  0% { background: rgba(52,106,172,.22); }
+  100% { background: var(--surface); }
+}
 
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -2816,6 +2821,10 @@ async function anamSubmit(){
         // Tranca a próxima anamnese — só destrava quando o professor pedir de novo
         sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(()=>{}).catch(()=>{});
         if(professorId) {
+          // Essa ficha resolve o lembrete de "ainda não preencheu", se existir
+          sb.from('notifications').delete()
+            .eq('recipient_id', professorId).eq('type','anamnese_missing').eq('related_id', currentUser?.id)
+            .then(()=>{}).catch(()=>{});
           sb.rpc('create_notification', {
             p_recipient_id: professorId, p_type: 'anamnese_submitted',
             p_title: `Nova ficha de anamnese: ${anamData.nome||currentProfile?.full_name||'Aluno'}`,
@@ -3568,7 +3577,7 @@ async function renderProfAnamnese() {
         </button>`
       : '';
 
-    return `<div class="dash-card" style="margin-bottom:14px">
+    return `<div class="dash-card" id="anam-student-${s.id}" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div>
           <div style="font-weight:700;font-size:.92rem">${name}</div>
@@ -3590,6 +3599,14 @@ function toggleFichaHistory(studentId, btn){
   el.hidden = !el.hidden;
   const chev = btn?.querySelector('.ficha-hist-chev');
   if(chev) chev.style.transform = el.hidden ? '' : 'rotate(180deg)';
+}
+
+function focusAnamStudent(studentId){
+  const el = document.getElementById('anam-student-'+studentId);
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  el.classList.add('anam-flash');
+  setTimeout(()=>el.classList.remove('anam-flash'), 1800);
 }
 
 async function reactivarFichasAntigas(cpf, studentId, studentName) {
@@ -3960,14 +3977,30 @@ function cleanupOldNotifications(){
   sb.from('notifications').delete().eq('recipient_id', currentUser.id).lt('created_at', cutoff).then(()=>{}).catch(()=>{});
 }
 
+async function ensureAnamMissingNotifications(profId, studentIds){
+  if(!sb || !studentIds.length) return;
+  const { data: existing } = await sb.from('notifications').select('related_id')
+    .eq('recipient_id', profId).eq('type','anamnese_missing').in('related_id', studentIds);
+  const already = new Set((existing||[]).map(e=>e.related_id));
+  const toCreate = studentIds.filter(id=>!already.has(id));
+  if(!toCreate.length) return;
+  const profiles = await Promise.all(toCreate.map(id=>sb.from('profiles').select('full_name').eq('id',id).single()));
+  await Promise.all(toCreate.map((id,i)=>{
+    const name = profiles[i]?.data?.full_name || 'Aluno';
+    return sb.rpc('create_notification', {
+      p_recipient_id: profId, p_type: 'anamnese_missing',
+      p_title: `${name} ainda não preencheu a ficha de anamnese`,
+      p_body: 'Toque para ver o aluno.',
+      p_link: 'dashboard-prof', p_related_id: id
+    }).then(()=>{}).catch(()=>{});
+  }));
+}
+
 async function refreshNotifications(){
   if(!sb || !currentUser) return;
   cleanupOldNotifications();
-  const { data } = await sb.from('notifications').select('*')
-    .eq('recipient_id', currentUser.id).order('created_at',{ascending:false}).limit(30);
-  notifItems = data || [];
 
-  // Lembretes "ao vivo" (não são linhas na tabela, são calculados na hora)
+  // Uma notificação real por aluno sem ficha (entra na contagem e some quando o professor abre o sino)
   if(currentProfile?.role==='professor'){
     const { data: alunos } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
     const ids = (alunos||[]).map(a=>a.id);
@@ -3975,16 +4008,16 @@ async function refreshNotifications(){
       const { data: fichas } = await sb.from('anamnese_responses').select('student_id').in('student_id', ids);
       const comFicha = new Set((fichas||[]).filter(f=>f.student_id).map(f=>f.student_id));
       const semFicha = ids.filter(id=>!comFicha.has(id));
-      if(semFicha.length){
-        notifItems.unshift({
-          id:'live-anam-pending', live:true, type:'anam_pending',
-          title:`${semFicha.length} aluno${semFicha.length>1?'s':''} sem ficha de anamnese`,
-          body:'Cobre esses alunos pra preencherem a anamnese.', link:'dashboard-prof',
-          created_at:new Date().toISOString()
-        });
-      }
+      await ensureAnamMissingNotifications(currentUser.id, semFicha);
     }
-  } else if(currentProfile?.role==='student'){
+  }
+
+  const { data } = await sb.from('notifications').select('*')
+    .eq('recipient_id', currentUser.id).order('created_at',{ascending:false}).limit(30);
+  notifItems = data || [];
+
+  // Lembrete "ao vivo" do próprio aluno (não é linha na tabela, é calculado na hora)
+  if(currentProfile?.role==='student'){
     const { data: minhaFicha } = await sb.from('anamnese_responses').select('id').eq('student_id', currentUser.id).limit(1);
     if(!minhaFicha?.length){
       notifItems.unshift({
@@ -4025,7 +4058,7 @@ function renderNotifDrop(){
   }
   el.innerHTML = notifItems.map(n=>`
     <div class="nav-notif-item ${(n.live||!n.read_at)?'unread':''}">
-      <div onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}')" style="cursor:pointer">
+      <div onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}', '${n.type||''}', '${n.related_id||''}')" style="cursor:pointer">
         <div class="nav-notif-title">${n.title}</div>
         ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
         <div class="nav-notif-time">${notifTimeAgo(n.created_at)}</div>
@@ -4035,13 +4068,24 @@ function renderNotifDrop(){
     `<button class="nav-notif-see-all" onclick="document.getElementById('nav-notif-drop').hidden=true;showPage('notificacoes')">Ver histórico completo</button>`;
 }
 
-async function handleNotifClick(id, isLive, link){
+async function handleNotifClick(id, isLive, link, type, relatedId){
   document.getElementById('nav-notif-drop').hidden = true;
   if(!isLive && sb){
     await sb.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id);
     const n = notifItems.find(x=>x.id===id);
     if(n) n.read_at = new Date().toISOString();
     updateNotifBadge();
+  }
+  // Notificações de anamnese levam direto pro aluno certo, dentro da aba Anamnese do professor
+  if(type==='anamnese_submitted' && relatedId){
+    showPage('dashboard-prof');
+    setTimeout(()=>{ showProfTab('anamnese'); setTimeout(()=>viewProfResponse(relatedId), 200); }, 50);
+    return;
+  }
+  if(type==='anamnese_missing' && relatedId){
+    showPage('dashboard-prof');
+    setTimeout(()=>{ showProfTab('anamnese'); setTimeout(()=>focusAnamStudent(relatedId), 300); }, 50);
+    return;
   }
   if(link) showPage(link);
 }
@@ -4108,17 +4152,18 @@ async function renderNotifHistoryPage(period){
     const ds = d.toLocaleDateString('pt-BR');
     const hs = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     return `<div class="nav-notif-item ${n.read_at?'':'unread'}" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px">
-      <div>
+      <div onclick="handleNotifClick('${n.id}', false, '${n.link||''}', '${n.type||''}', '${n.related_id||''}')" style="cursor:pointer">
         <div class="nav-notif-title">${n.title}</div>
         ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
         <div class="nav-notif-time">${ds} às ${hs}</div>
       </div>
-      <button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotifFromHistory('${n.id}')"><span class="icon-inline">${UI_ICONS.x}</span></button>
+      <button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotifFromHistory('${n.id}', event)"><span class="icon-inline">${UI_ICONS.x}</span></button>
     </div>`;
   }).join('');
 }
 
-async function deleteNotifFromHistory(id){
+async function deleteNotifFromHistory(id, ev){
+  if(ev){ ev.stopPropagation(); }
   if(!sb) return;
   await sb.from('notifications').delete().eq('id', id);
   notifItems = notifItems.filter(n=>n.id!==id);
