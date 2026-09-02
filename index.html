@@ -262,6 +262,8 @@ img { max-width: 100%; display: block; }
 .chat-input-pill { flex: 1; min-width: 100px; padding: 10px 16px; border: none; border-radius: 999px;
   background: var(--surface-alt); color: var(--ink); font-size: .9rem; resize: none; font-family: inherit; max-height: 120px; }
 .chat-input-pill:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
+.chat-list-row:hover { background: var(--surface-alt); }
+.chat-list-row.active { background: var(--surface-alt); }
 
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -802,7 +804,7 @@ img { max-width: 100%; display: block; }
 /* ─── DASHBOARD ────────────────────────────────────────────── */
 .dash-wrap { max-width: var(--max-w); margin: 0 auto; padding: 32px 24px 80px; }
 
-/* Chat em tela cheia (aluno sempre, professor ao abrir uma conversa) */
+/* Chat em tela cheia — modo mobile (aluno sempre, professor ao abrir uma conversa) */
 #page-duvidas.chat-fullscreen .page-header { display: none; }
 #page-duvidas.chat-fullscreen .dash-wrap { max-width: none; padding: 0; }
 #page-duvidas.chat-fullscreen #duvidas-thread-view { padding: 0; }
@@ -811,6 +813,22 @@ img { max-width: 100%; display: block; }
   #page-duvidas.chat-fullscreen #duvidas-thread-view { max-width: 760px; margin: 0 auto; padding-top: 16px; }
   #page-duvidas.chat-fullscreen .chat-card { height: calc(100vh - var(--nav-h) - 16px); border-radius: var(--radius); }
 }
+
+/* Chat em duas colunas — modo desktop (professor: lista sempre visível ao lado da conversa, como o WhatsApp Web) */
+#page-duvidas.chat-split .dash-wrap { display: flex; align-items: flex-start; gap: 20px; padding-top: 24px; }
+#page-duvidas.chat-split #duvidas-list-view { width: 340px; flex-shrink: 0; }
+#page-duvidas.chat-split #duvidas-list-view .dash-card { max-height: calc(100vh - var(--nav-h) - 48px); overflow-y: auto; }
+#page-duvidas.chat-split #duvidas-thread-view { flex: 1; min-width: 0; }
+#page-duvidas.chat-split .chat-card { height: calc(100vh - var(--nav-h) - 48px); }
+#page-duvidas.chat-split #duvidas-back-btn { display: none !important; }
+.chat-empty-state { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;
+  gap: 8px; color: var(--muted); font-size: .9rem; text-align: center; padding: 24px; }
+.chat-empty-state svg { width: 40px; height: 40px; opacity: .5; margin-bottom: 6px; }
+#duvidas-chat-header[hidden], #duvidas-messages[hidden], #duvidas-inputbar[hidden], .chat-empty-state[hidden] { display: none; }
+
+/* Divisor de data dentro das mensagens, estilo WhatsApp */
+.chat-date-divider { align-self: center; background: var(--surface-alt); color: var(--ink-2); font-size: .72rem;
+  font-weight: 600; padding: 4px 12px; border-radius: 999px; margin: 6px 0; }
 .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
   padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
 .dash-greeting { font-family: var(--font-d); font-size: 1.6rem; font-weight: 800; letter-spacing: -.01em; }
@@ -1835,7 +1853,7 @@ img { max-width: 100%; display: block; }
       <!-- Conversa aberta -->
       <div id="duvidas-thread-view">
         <div class="dash-card chat-card">
-          <div class="chat-header">
+          <div id="duvidas-chat-header" class="chat-header">
             <button type="button" id="duvidas-back-btn" hidden onclick="backToDuvidasList()" class="chat-back-btn" aria-label="Voltar pra lista de conversas">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
@@ -1843,8 +1861,12 @@ img { max-width: 100%; display: block; }
             <div id="duvidas-thread-title" class="chat-header-name">Conversa</div>
           </div>
           <div id="duvidas-messages" class="chat-body"></div>
+          <div id="duvidas-empty-state" class="chat-empty-state" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>
+            <span>Selecione uma conversa pra começar</span>
+          </div>
           <div id="duvidas-file-preview" hidden class="chat-file-preview"></div>
-          <div class="chat-inputbar">
+          <div id="duvidas-inputbar" class="chat-inputbar">
             <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo" class="chat-attach-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg>
             </button>
@@ -4413,6 +4435,32 @@ function duvidasInitials(name){
   return ((parts[0]?.[0]||'')+(parts[1]?.[0]||'')).toUpperCase() || '?';
 }
 
+const chatSplitQuery = window.matchMedia ? window.matchMedia('(min-width: 900px)') : { matches: false, addEventListener(){} };
+
+function showDuvidasEmptyState(){
+  const title = document.getElementById('duvidas-title');
+  if(title) title.textContent = 'Conversas';
+  const headerEl = document.getElementById('duvidas-chat-header');
+  const msgsEl = document.getElementById('duvidas-messages');
+  const inputbar = document.getElementById('duvidas-inputbar');
+  const empty = document.getElementById('duvidas-empty-state');
+  if(headerEl) headerEl.hidden = true;
+  if(msgsEl) msgsEl.hidden = true;
+  if(inputbar) inputbar.hidden = true;
+  if(empty) empty.hidden = false;
+}
+
+function hideDuvidasEmptyState(){
+  const headerEl = document.getElementById('duvidas-chat-header');
+  const msgsEl = document.getElementById('duvidas-messages');
+  const inputbar = document.getElementById('duvidas-inputbar');
+  const empty = document.getElementById('duvidas-empty-state');
+  if(headerEl) headerEl.hidden = false;
+  if(msgsEl) msgsEl.hidden = false;
+  if(inputbar) inputbar.hidden = false;
+  if(empty) empty.hidden = true;
+}
+
 async function renderDuvidasPage(){
   if(!currentProfile || !sb || !currentUser) return;
   const page = document.getElementById('page-duvidas');
@@ -4427,9 +4475,29 @@ async function renderDuvidasPage(){
   const messagesEl = document.getElementById('duvidas-messages');
   if(listContentEl) listContentEl.innerHTML = '';
   if(messagesEl) messagesEl.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto">Carregando...</p>';
+  hideDuvidasEmptyState();
 
   if(currentProfile.role==='professor'){
     duvidasCurrentProfessorId = currentUser.id;
+    const split = chatSplitQuery.matches;
+    if(page) page.classList.toggle('chat-split', split);
+
+    if(split){
+      // Desktop: lista de conversas e a conversa aberta ficam lado a lado, sempre visíveis (como o WhatsApp Web).
+      if(page) page.classList.remove('chat-fullscreen');
+      if(listView) listView.hidden = false;
+      if(threadView) threadView.hidden = false;
+      await renderDuvidasConversationsList();
+      if(duvidasCurrentStudentId){
+        const { data: check } = await sb.from('students').select('id').eq('id', duvidasCurrentStudentId).eq('professor_id', currentUser.id).single();
+        if(check){ await selectDuvidasStudent(duvidasCurrentStudentId); return; }
+        duvidasCurrentStudentId = null;
+      }
+      showDuvidasEmptyState();
+      return;
+    }
+
+    // Mobile: uma tela de cada vez (lista OU conversa em tela cheia).
     if(backBtn) backBtn.hidden = false;
     // Se já veio de uma notificação/preview com aluno específico, abre a conversa direto.
     if(duvidasCurrentStudentId){
@@ -4505,8 +4573,9 @@ async function renderDuvidasConversationsList(){
       ? `${r.last.sender_role==='professor'?'Você: ':''}${escHtml(r.last.body || (r.last.media_type==='video'?'📹 Enviou um vídeo':'📷 Enviou uma foto'))}`
       : 'Nenhuma mensagem ainda';
     const time = r.last ? notifClockTime(r.last.created_at) : '';
-    return `<div onclick="openDuvidasThread('${r.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border)">
-      <div style="width:44px;height:44px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:.95rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${duvidasInitials(r.name)}</div>
+    const active = r.id === duvidasCurrentStudentId;
+    return `<div onclick="openDuvidasThread('${r.id}')" class="chat-list-row${active?' active':''}" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${duvidasInitials(r.name)}</div>
       <div style="flex:1;overflow:hidden">
         <div style="display:flex;justify-content:space-between;gap:8px">
           <span style="font-weight:600;font-size:.92rem${r.unread?';color:var(--ink)':''}">${r.name}</span>
@@ -4525,6 +4594,13 @@ async function openDuvidasThread(studentId){
   const page = document.getElementById('page-duvidas');
   const listView = document.getElementById('duvidas-list-view');
   const threadView = document.getElementById('duvidas-thread-view');
+  hideDuvidasEmptyState();
+  if(chatSplitQuery.matches){
+    // Desktop: a lista continua visível, só troca a conversa aberta à direita.
+    await selectDuvidasStudent(studentId);
+    renderDuvidasConversationsList(); // realça a linha ativa
+    return;
+  }
   if(listView) listView.hidden = true;
   if(threadView) threadView.hidden = false;
   if(page) page.classList.add('chat-fullscreen');
@@ -4541,6 +4617,14 @@ function backToDuvidasList(){
   duvidasCurrentStudentId = null;
   if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
   renderDuvidasConversationsList();
+}
+
+// Se a janela cruzar o limite mobile/desktop enquanto o Chat está aberto, re-renderiza no modo certo.
+if(chatSplitQuery.addEventListener){
+  chatSplitQuery.addEventListener('change', ()=>{
+    const page = document.getElementById('page-duvidas');
+    if(page && page.classList.contains('active') && currentProfile?.role==='professor') renderDuvidasPage();
+  });
 }
 
 function setDuvidasThreadTitle(text){
@@ -4573,6 +4657,16 @@ async function loadDuvidasMessages(){
   markDuvidasRead();
 }
 
+function duvidasDateLabel(iso){
+  const d = new Date(iso);
+  const today = new Date();
+  const yest = new Date(); yest.setDate(today.getDate()-1);
+  const sameDay = (a,b)=> a.toDateString()===b.toDateString();
+  if(sameDay(d,today)) return 'Hoje';
+  if(sameDay(d,yest)) return 'Ontem';
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year: d.getFullYear()!==today.getFullYear()?'numeric':undefined});
+}
+
 function renderDuvidasMessages(){
   const el = document.getElementById('duvidas-messages');
   if(!el) return;
@@ -4581,12 +4675,16 @@ function renderDuvidasMessages(){
     return;
   }
   const mine = currentProfile?.role;
+  let lastDateLabel = null;
   el.innerHTML = duvidasMessages.map(m=>{
     const isMine = m.sender_role===mine;
     const media = m.media_url ? (m.media_type==='video'
       ? `<video src="${m.media_url}" controls></video>`
       : `<img src="${m.media_url}" alt="Anexo">`) : '';
-    return `<div class="duvida-msg ${isMine?'mine':'theirs'}">
+    const dateLabel = duvidasDateLabel(m.created_at);
+    let divider = '';
+    if(dateLabel !== lastDateLabel){ divider = `<div class="chat-date-divider">${dateLabel}</div>`; lastDateLabel = dateLabel; }
+    return `${divider}<div class="duvida-msg ${isMine?'mine':'theirs'}">
       ${media}
       ${m.body?`<div>${escHtml(m.body)}</div>`:''}
       <div class="duvida-msg-time">${notifClockTime(m.created_at)}</div>
