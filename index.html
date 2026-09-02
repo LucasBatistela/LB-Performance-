@@ -229,11 +229,39 @@ img { max-width: 100%; display: block; }
   0% { background: rgba(52,106,172,.22); }
   100% { background: var(--surface); }
 }
-.duvida-msg { max-width: 78%; padding: 10px 14px; border-radius: 14px; font-size: .88rem; line-height: 1.45; }
+.duvida-msg { max-width: 78%; padding: 8px 12px; border-radius: 14px; font-size: .88rem; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
 .duvida-msg.mine { align-self: flex-end; background: var(--pine); color: #fff; border-bottom-right-radius: 4px; }
-.duvida-msg.theirs { align-self: flex-start; background: var(--surface-alt); color: var(--ink); border-bottom-left-radius: 4px; }
+.duvida-msg.theirs { align-self: flex-start; background: var(--surface); color: var(--ink); border-bottom-left-radius: 4px; }
 .duvida-msg img, .duvida-msg video { max-width: 100%; border-radius: 8px; margin-bottom: 6px; display: block; }
-.duvida-msg-time { font-size: .65rem; opacity: .7; margin-top: 4px; text-align: right; }
+.duvida-msg-time { font-size: .65rem; opacity: .7; margin-top: 3px; text-align: right; }
+
+/* Chat estilo WhatsApp */
+.chat-card { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; height: min(70vh,640px); }
+.chat-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--pine); color: #fff; flex-shrink: 0; }
+.chat-back-btn { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0;
+  background: rgba(255,255,255,.12); border-radius: 50%; color: #fff; }
+.chat-back-btn svg { width: 18px; height: 18px; }
+.chat-back-btn:hover { background: rgba(255,255,255,.22); }
+.chat-header-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff;
+  font-family: var(--font-d); font-weight: 800; font-size: .82rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chat-header-name { font-weight: 700; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px;
+  background: var(--ground);
+  background-image: radial-gradient(var(--border) .6px, transparent .6px);
+  background-size: 18px 18px; }
+.chat-file-preview { padding: 0 16px 8px; font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 10px; background: var(--surface); }
+.chat-inputbar { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+.chat-attach-btn, .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chat-attach-btn { background: var(--surface-alt); color: var(--ink-2); }
+.chat-attach-btn:hover { background: var(--border); }
+.chat-attach-btn svg { width: 18px; height: 18px; }
+.chat-send-btn { background: var(--pine); color: #fff; }
+.chat-send-btn:hover { background: var(--pine-h); }
+.chat-send-btn:disabled { opacity: .6; cursor: default; }
+.chat-send-btn svg { width: 17px; height: 17px; margin-left: -1px; }
+.chat-input-pill { flex: 1; min-width: 100px; padding: 10px 16px; border: none; border-radius: 999px;
+  background: var(--surface-alt); color: var(--ink); font-size: .9rem; resize: none; font-family: inherit; max-height: 120px; }
+.chat-input-pill:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
 
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -776,10 +804,11 @@ img { max-width: 100%; display: block; }
 /* Chat em tela cheia (aluno sempre, professor ao abrir uma conversa) */
 #page-duvidas.chat-fullscreen .page-header { display: none; }
 #page-duvidas.chat-fullscreen .dash-wrap { max-width: none; padding: 0; }
-#page-duvidas.chat-fullscreen #duvidas-thread-view { padding: 10px 12px 0; }
-#page-duvidas.chat-fullscreen #duvidas-thread-view .dash-card { height: calc(100vh - var(--nav-h) - 10px); border-radius: var(--radius); }
+#page-duvidas.chat-fullscreen #duvidas-thread-view { padding: 0; }
+#page-duvidas.chat-fullscreen .chat-card { height: calc(100vh - var(--nav-h)); border-radius: 0; }
 @media (min-width: 640px) {
-  #page-duvidas.chat-fullscreen #duvidas-thread-view { padding: 16px 24px 0; max-width: 760px; margin: 0 auto; }
+  #page-duvidas.chat-fullscreen #duvidas-thread-view { max-width: 760px; margin: 0 auto; padding-top: 16px; }
+  #page-duvidas.chat-fullscreen .chat-card { height: calc(100vh - var(--nav-h) - 16px); border-radius: var(--radius); }
 }
 .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
   padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
@@ -1804,27 +1833,26 @@ img { max-width: 100%; display: block; }
 
       <!-- Conversa aberta -->
       <div id="duvidas-thread-view">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap">
-          <button type="button" id="duvidas-back-btn" hidden onclick="backToDuvidasList()"
-            style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--ink-2);font-size:.88rem;font-weight:600;cursor:pointer;padding:0;flex-shrink:0">
-            <span class="icon-inline" style="width:16px;height:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span>
-            Conversas
-          </button>
-          <div id="duvidas-thread-title" style="font-weight:700;font-size:.95rem;color:var(--ink)"></div>
-        </div>
-        <div class="dash-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:min(70vh,640px)">
-          <div id="duvidas-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px"></div>
-          <div id="duvidas-file-preview" hidden style="padding:0 16px 10px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:10px"></div>
-          <div style="border-top:1px solid var(--border);padding:14px 16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-            <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo"
-              style="background:none;border:1.5px solid var(--border);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);flex-shrink:0">
-              <span class="icon-inline" style="width:18px;height:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg></span>
+        <div class="dash-card chat-card">
+          <div class="chat-header">
+            <button type="button" id="duvidas-back-btn" hidden onclick="backToDuvidasList()" class="chat-back-btn" aria-label="Voltar pra lista de conversas">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <div id="duvidas-header-avatar" class="chat-header-avatar">?</div>
+            <div id="duvidas-thread-title" class="chat-header-name">Conversa</div>
+          </div>
+          <div id="duvidas-messages" class="chat-body"></div>
+          <div id="duvidas-file-preview" hidden class="chat-file-preview"></div>
+          <div class="chat-inputbar">
+            <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo" class="chat-attach-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg>
             </button>
             <input type="file" id="duvidas-file-input" accept="image/*,video/*" style="display:none" onchange="handleDuvidasFileSelect(this)">
-            <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..."
-              style="flex:1;min-width:160px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem;resize:none;font-family:inherit"
+            <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..." class="chat-input-pill"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDuvidaMessage();}"></textarea>
-            <button class="btn-primary" onclick="sendDuvidaMessage()" id="duvidas-send-btn" style="padding:10px 18px">Enviar</button>
+            <button onclick="sendDuvidaMessage()" id="duvidas-send-btn" class="chat-send-btn" aria-label="Enviar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -2468,7 +2496,7 @@ async function submitBooking(dateStr, time){
       p_title: `Novo agendamento de ${currentProfile.full_name||'aluno'}`,
       p_body: `${formatDate(dateStr)} às ${time}`,
       p_link: 'dashboard-prof'
-    }).then(()=>{}).catch(()=>{});
+    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
     await loadAlunoDashboard();
     showPage('dashboard-aluno');
     showToast('✅ Agendamento confirmado! Verifique seu e-mail.');
@@ -2956,18 +2984,18 @@ async function anamSubmit(){
       if(insErr){ saveError = insErr; console.error('Erro ao salvar anamnese:',insErr); }
       else {
         // Tranca a próxima anamnese — só destrava quando o professor pedir de novo
-        sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(()=>{}).catch(()=>{});
+        sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
         if(professorId) {
           // Essa ficha resolve o lembrete de "ainda não preencheu", se existir
           sb.from('notifications').delete()
             .eq('recipient_id', professorId).eq('type','anamnese_missing').eq('related_id', currentUser?.id)
-            .then(()=>{}).catch(()=>{});
+            .then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
           sb.rpc('create_notification', {
             p_recipient_id: professorId, p_type: 'anamnese_submitted',
             p_title: `Nova ficha de anamnese: ${anamData.nome||currentProfile?.full_name||'Aluno'}`,
             p_body: 'Toque para analisar.',
             p_link: 'dashboard-prof', p_related_id: insRow?.id||null
-          }).then(()=>{}).catch(()=>{});
+          }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
         }
       }
     } catch(e){ saveError = e; console.error('Erro ao salvar anamnese:',e); }
@@ -3322,7 +3350,7 @@ async function loadUserAndRedirect(user) {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if(tz){
         currentProfile = { ...currentProfile, timezone: tz };
-        sb.from('profiles').update({ timezone: tz }).eq('id', user.id).then(()=>{}).catch(()=>{});
+        sb.from('profiles').update({ timezone: tz }).eq('id', user.id).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
       }
     } catch(_){}
   }
@@ -3335,6 +3363,7 @@ async function loadUserAndRedirect(user) {
 async function logout() {
   if(sb) await sb.auth.signOut();
   if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} notifChannel = null; }
+  if(notifPollTimer){ clearInterval(notifPollTimer); notifPollTimer = null; }
   if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
   duvidasCurrentStudentId = null; duvidasCurrentProfessorId = null; duvidasMessages = [];
   currentUser=null; currentProfile=null;
@@ -3566,7 +3595,7 @@ async function profCancelBooking(id) {
     p_title: 'Seu professor cancelou um agendamento',
     p_body: `${formatDate(booking.date)} às ${booking.time}`,
     p_link: 'dashboard-aluno'
-  }).then(()=>{}).catch(()=>{});
+  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
   loadProfAllBookings();
 }
 
@@ -4047,7 +4076,7 @@ async function cancelarAgendamento(id) {
     p_title: `${currentProfile?.full_name||'Aluno'} cancelou um agendamento`,
     p_body: `${formatDate(booking.date)} às ${booking.time}`,
     p_link: 'dashboard-prof'
-  }).then(()=>{}).catch(()=>{});
+  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
   // Notifica o professor por email
   const ejsCfg = state.admin?.emailjs;
   if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && booking) {
@@ -4118,6 +4147,7 @@ function updateNavAvatar() {
 /* ── Notificações (sino) ─────────────────────────────────────── */
 let notifItems = [];
 let notifChannel = null;
+let notifPollTimer = null;
 
 function initNotifBell(){
   const wrap = document.getElementById('nav-bell-wrap');
@@ -4126,9 +4156,14 @@ function initNotifBell(){
     wrap.hidden = false;
     refreshNotifications();
     subscribeNotifications();
+    // Reforço além do realtime: se o WebSocket cair/travar, isso garante que a notificação
+    // chega em no máximo ~20s, sem precisar recarregar a página na mão.
+    if(notifPollTimer) clearInterval(notifPollTimer);
+    notifPollTimer = setInterval(()=>{ if(currentUser) refreshNotifications(); }, 20000);
   } else {
     wrap.hidden = true;
     if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} notifChannel = null; }
+    if(notifPollTimer){ clearInterval(notifPollTimer); notifPollTimer = null; }
     const drop = document.getElementById('nav-notif-drop');
     if(drop) drop.hidden = true;
     notifItems = [];
@@ -4151,7 +4186,7 @@ function subscribeNotifications(){
 function cleanupOldNotifications(){
   if(!sb || !currentUser) return;
   const cutoff = new Date(Date.now() - 60*24*60*60*1000).toISOString();
-  sb.from('notifications').delete().eq('recipient_id', currentUser.id).lt('created_at', cutoff).then(()=>{}).catch(()=>{});
+  sb.from('notifications').delete().eq('recipient_id', currentUser.id).lt('created_at', cutoff).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
 }
 
 async function ensureAnamMissingNotifications(profId, studentIds){
@@ -4169,7 +4204,7 @@ async function ensureAnamMissingNotifications(profId, studentIds){
       p_title: `${name} ainda não preencheu a ficha de anamnese`,
       p_body: 'Toque para ver o aluno.',
       p_link: 'dashboard-prof', p_related_id: id
-    }).then(()=>{}).catch(()=>{});
+    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
   }));
 }
 
@@ -4498,7 +4533,9 @@ function backToDuvidasList(){
 
 function setDuvidasThreadTitle(text){
   const el = document.getElementById('duvidas-thread-title');
-  if(el) el.textContent = text;
+  if(el) el.textContent = text || 'Conversa';
+  const av = document.getElementById('duvidas-header-avatar');
+  if(av) av.textContent = text ? duvidasInitials(text) : '?';
 }
 
 async function selectDuvidasStudent(studentId){
@@ -4640,7 +4677,7 @@ async function sendDuvidaMessage(){
     p_title: `Nova mensagem de ${senderName}`,
     p_body: body ? (body.length>60?body.slice(0,60)+'…':body) : (mediaType==='video'?'Enviou um vídeo':'Enviou uma foto'),
     p_link: 'duvidas', p_related_id: currentProfile.role==='professor' ? duvidasCurrentStudentId : null
-  }).then(()=>{}).catch(()=>{});
+  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
 }
 
 async function loadAlunoDuvidasPreview(){
