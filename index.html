@@ -1835,7 +1835,7 @@ img { max-width: 100%; display: block; }
       <div id="duvidas-thread-view">
         <div class="dash-card chat-card">
           <div id="duvidas-chat-header" class="chat-header">
-            <button type="button" id="duvidas-back-btn" hidden onclick="backToDuvidasList()" class="chat-back-btn" aria-label="Voltar pra lista de conversas">
+            <button type="button" id="duvidas-back-btn" hidden onclick="duvidasBackClicked()" class="chat-back-btn" aria-label="Voltar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
             <div id="duvidas-header-avatar" class="chat-header-avatar">?</div>
@@ -2048,6 +2048,42 @@ function goBack() {
   const prev = pageHistory.pop();
   showPage(prev || 'home', { isBack:true });
 }
+
+/* ── Gestos de arrastar (mobile): esquerda→direita volta, direita→esquerda avança ── */
+function swipeBackAction(){
+  const duvidasBtn = document.getElementById('duvidas-back-btn');
+  if(duvidasBtn && !duvidasBtn.hidden){ duvidasBtn.click(); return; }
+  const navBtn = document.getElementById('nav-back-btn');
+  if(navBtn && !navBtn.hidden) goBack();
+}
+function swipeForwardAction(){
+  // Só a Anamnese tem um "próximo" sempre disponível sem precisar escolher algo antes
+  // (ex.: Agendar exige selecionar dia/horário, então não dá pra avançar às cegas com o gesto).
+  const anamPage = document.getElementById('page-anamnese');
+  if(!anamPage || !anamPage.classList.contains('active')) return;
+  const wrap = document.getElementById('anamnese-form-wrap');
+  if(!wrap || wrap.hidden) return;
+  if(typeof ANAMNESE_SECTIONS!=='undefined' && anamCurrentSection < ANAMNESE_SECTIONS.length-1) anamNext();
+  // Na última etapa não avança sozinho — enviar a ficha continua sendo uma ação explícita no botão.
+}
+(function(){
+  let touchStartX=0, touchStartY=0, touchActive=false;
+  const THRESHOLD = 70, MAX_OFF_AXIS = 60;
+  document.addEventListener('touchstart', e=>{
+    if(e.touches.length!==1) return;
+    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; touchActive = true;
+  }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    if(!touchActive) return;
+    touchActive = false;
+    const tag = (e.target.tagName||'').toLowerCase();
+    if(tag==='input' || tag==='textarea' || e.target.isContentEditable) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
+    if(Math.abs(dy) > MAX_OFF_AXIS || Math.abs(dx) < THRESHOLD) return;
+    if(dx > 0) swipeBackAction(); else swipeForwardAction();
+  }, {passive:true});
+})();
 
 /* ── Tema (claro/escuro) ─────────────────────────────────── */
 function currentEffectiveTheme(){
@@ -3371,7 +3407,7 @@ async function logout() {
   if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} notifChannel = null; }
   if(notifPollTimer){ clearInterval(notifPollTimer); notifPollTimer = null; }
   if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
-  duvidasCurrentStudentId = null; duvidasCurrentProfessorId = null; duvidasMessages = [];
+  duvidasCurrentStudentId = null; duvidasCurrentProfessorId = null; duvidasMessages = []; duvidasStudentView = 'thread';
   const duvidasListEl = document.getElementById('duvidas-list-content');
   const duvidasMsgEl = document.getElementById('duvidas-messages');
   if(duvidasListEl) duvidasListEl.innerHTML = '';
@@ -4425,6 +4461,8 @@ let duvidasCurrentStudentId = null;
 let duvidasCurrentProfessorId = null;
 let duvidasMessages = [];
 let duvidasPendingFile = null;
+// Pro aluno: 'thread' = já abre direto na conversa (padrão); 'list' = tela de resumo (voltar da conversa).
+let duvidasStudentView = 'thread';
 
 function escHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4525,13 +4563,27 @@ async function renderDuvidasPage(){
     if(page) page.classList.remove('chat-fullscreen');
     await renderDuvidasConversationsList();
   } else {
-    if(listView) listView.hidden = true;
-    if(threadView) threadView.hidden = false;
-    if(backBtn) backBtn.hidden = true;
-    if(page) page.classList.add('chat-fullscreen');
+    // ALUNO: só existe UMA conversa possível (com o professor dele), então nunca mostramos
+    // a lista do professor. "Voltar" leva pra um resumo dessa única conversa, não pra uma lista vazia.
     const profId = currentStudentData?.professor_id;
     duvidasCurrentProfessorId = profId;
     duvidasCurrentStudentId = currentUser.id;
+
+    if(duvidasStudentView === 'list'){
+      if(threadView) threadView.hidden = true;
+      if(backBtn) backBtn.hidden = true;
+      if(listView) listView.hidden = false;
+      if(page) page.classList.remove('chat-fullscreen');
+      if(title) title.textContent = 'Chat';
+      if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
+      await renderDuvidasStudentSummary(profId);
+      return;
+    }
+
+    if(listView) listView.hidden = true;
+    if(threadView) threadView.hidden = false;
+    if(backBtn) backBtn.hidden = false;
+    if(page) page.classList.add('chat-fullscreen');
     if(!profId){
       if(title) title.textContent = 'Conversa';
       setDuvidasThreadTitle('');
@@ -4545,6 +4597,52 @@ async function renderDuvidasPage(){
     await loadDuvidasMessages();
     subscribeDuvidasRealtime();
   }
+}
+
+async function renderDuvidasStudentSummary(profId){
+  const el = document.getElementById('duvidas-list-content');
+  if(!el || !sb || !currentUser) return;
+  if(!profId){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;padding:12px 16px">Vincule-se a um professor pra conversar.</p>';
+    return;
+  }
+  const [profRes, lastRes, unreadRes] = await Promise.all([
+    sb.from('profiles').select('full_name').eq('id',profId).single(),
+    sb.from('chat_messages').select('*').eq('professor_id', profId).eq('student_id', currentUser.id)
+      .order('created_at',{ascending:false}).limit(1),
+    sb.from('chat_messages').select('id').eq('professor_id', profId).eq('student_id', currentUser.id)
+      .eq('sender_role','professor').is('read_at', null)
+  ]);
+  const name = profRes.data?.full_name || 'Seu professor';
+  const lastMsg = lastRes.data?.[0];
+  const unread = unreadRes.data?.length || 0;
+  const preview = lastMsg
+    ? `${lastMsg.sender_role==='student'?'Você: ':''}${escHtml(lastMsg.body || (lastMsg.media_type==='video'?'📹 Enviou um vídeo':'📷 Enviou uma foto'))}`
+    : 'Nenhuma mensagem ainda — manda a primeira dúvida!';
+  const time = lastMsg ? notifClockTime(lastMsg.created_at) : '';
+  el.innerHTML = `<div onclick="openDuvidasStudentThread()" class="chat-list-row" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer">
+    <div style="width:48px;height:48px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${duvidasInitials(name)}</div>
+    <div style="flex:1;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;gap:8px">
+        <span style="font-weight:600;font-size:.92rem${unread?';color:var(--ink)':''}">${name}</span>
+        ${time?`<span style="font-size:.75rem;color:var(--muted);flex-shrink:0">${time}</span>`:''}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px">
+        <span style="font-size:.82rem;color:${unread?'var(--ink-2)':'var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</span>
+        ${unread?`<span class="nav-bell-badge" style="position:static;flex-shrink:0">${unread>9?'9+':unread}</span>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function openDuvidasStudentThread(){
+  duvidasStudentView = 'thread';
+  renderDuvidasPage();
+}
+
+function duvidasBackClicked(){
+  if(currentProfile?.role==='student'){ duvidasStudentView = 'list'; renderDuvidasPage(); }
+  else backToDuvidasList();
 }
 
 async function renderDuvidasConversationsList(){
