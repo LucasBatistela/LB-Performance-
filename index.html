@@ -259,8 +259,9 @@ img { max-width: 100%; display: block; }
 .chat-send-btn:hover { background: var(--pine-h); }
 .chat-send-btn:disabled { opacity: .6; cursor: default; }
 .chat-send-btn svg { width: 17px; height: 17px; margin-left: -1px; }
-.chat-input-pill { flex: 1; min-width: 100px; padding: 10px 16px; border: none; border-radius: 999px;
-  background: var(--surface-alt); color: var(--ink); font-size: .9rem; resize: none; font-family: inherit; max-height: 120px; }
+.chat-input-pill { flex: 1; min-width: 100px; padding: 9px 16px; border: none; border-radius: 20px;
+  background: var(--surface-alt); color: var(--ink); font-size: .9rem; line-height: 1.35; resize: none; font-family: inherit;
+  min-height: 40px; max-height: 78px; overflow-y: auto; }
 .chat-input-pill:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
 .chat-list-row:hover { background: var(--surface-alt); }
 .chat-list-row.active { background: var(--surface-alt); }
@@ -815,11 +816,12 @@ img { max-width: 100%; display: block; }
 }
 
 /* Chat em duas colunas — modo desktop (professor: lista sempre visível ao lado da conversa, como o WhatsApp Web) */
-#page-duvidas.chat-split .dash-wrap { display: flex; align-items: flex-start; gap: 20px; padding-top: 24px; }
-#page-duvidas.chat-split #duvidas-list-view { width: 340px; flex-shrink: 0; }
-#page-duvidas.chat-split #duvidas-list-view .dash-card { max-height: calc(100vh - var(--nav-h) - 48px); overflow-y: auto; }
-#page-duvidas.chat-split #duvidas-thread-view { flex: 1; min-width: 0; }
-#page-duvidas.chat-split .chat-card { height: calc(100vh - var(--nav-h) - 48px); }
+#page-duvidas.chat-split .page-header { display: none; }
+#page-duvidas.chat-split .dash-wrap { display: flex; align-items: flex-start; gap: 0; max-width: none; margin: 0; padding: 12px 16px; }
+#page-duvidas.chat-split #duvidas-list-view { width: 360px; flex-shrink: 0; }
+#page-duvidas.chat-split #duvidas-list-view .dash-card { max-height: calc(100vh - var(--nav-h) - 24px); overflow-y: auto; }
+#page-duvidas.chat-split #duvidas-thread-view { flex: 1; min-width: 0; padding-left: 16px; }
+#page-duvidas.chat-split .chat-card { height: calc(100vh - var(--nav-h) - 24px); }
 #page-duvidas.chat-split #duvidas-back-btn { display: none !important; }
 .chat-empty-state { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;
   gap: 8px; color: var(--muted); font-size: .9rem; text-align: center; padding: 24px; }
@@ -1872,6 +1874,7 @@ img { max-width: 100%; display: block; }
             </button>
             <input type="file" id="duvidas-file-input" accept="image/*,video/*" style="display:none" onchange="handleDuvidasFileSelect(this)">
             <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..." class="chat-input-pill"
+              oninput="autoResizeDuvidasInput(this)"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDuvidaMessage();}"></textarea>
             <button onclick="sendDuvidaMessage()" id="duvidas-send-btn" class="chat-send-btn" aria-label="Enviar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
@@ -4430,6 +4433,12 @@ function escHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+function autoResizeDuvidasInput(el){
+  if(!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px'; // o max-height do CSS (3 linhas) trava o crescimento e libera a rolagem interna
+}
+
 function duvidasInitials(name){
   const parts = String(name||'?').trim().split(/\s+/);
   return ((parts[0]?.[0]||'')+(parts[1]?.[0]||'')).toUpperCase() || '?';
@@ -4747,7 +4756,7 @@ async function sendDuvidaMessage(){
   const body = (input?.value||'').trim();
   if(!body && !duvidasPendingFile) return;
   const btn = document.getElementById('duvidas-send-btn');
-  if(btn){ btn.disabled = true; btn.textContent='Enviando…'; }
+  if(btn) btn.disabled = true;
 
   let mediaUrl = null, mediaType = null;
   if(duvidasPendingFile){
@@ -4757,7 +4766,7 @@ async function sendDuvidaMessage(){
     const { error: upErr } = await sb.storage.from('chat-media').upload(path, file);
     if(upErr){
       showToast('❌ Erro ao enviar arquivo: '+upErr.message);
-      if(btn){ btn.disabled=false; btn.textContent='Enviar'; }
+      if(btn) btn.disabled=false;
       return;
     }
     const { data: pub } = sb.storage.from('chat-media').getPublicUrl(path);
@@ -4772,10 +4781,10 @@ async function sendDuvidaMessage(){
     body: body||null, media_url: mediaUrl, media_type: mediaType
   }).select().single();
 
-  if(btn){ btn.disabled=false; btn.textContent='Enviar'; }
+  if(btn) btn.disabled=false;
   if(error){ showToast('❌ Erro ao enviar mensagem: '+error.message); return; }
 
-  if(input) input.value='';
+  if(input){ input.value=''; autoResizeDuvidasInput(input); }
   clearDuvidasFile();
   duvidasMessages.push(insRow);
   renderDuvidasMessages();
