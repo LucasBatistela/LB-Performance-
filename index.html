@@ -214,7 +214,8 @@ img { max-width: 100%; display: block; }
 .nav-notif-item.unread { background: rgba(52,106,172,.07); }
 .nav-notif-title { font-weight: 700; font-size: .85rem; color: var(--ink); padding-right: 22px; }
 .nav-notif-body { font-size: .78rem; color: var(--muted); margin-top: 2px; padding-right: 22px; }
-.nav-notif-time { font-size: .7rem; color: var(--muted); margin-top: 4px; }
+.nav-notif-time { font-size: .7rem; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.nav-notif-clock { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nav-notif-empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: .85rem; }
 .nav-notif-x { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; padding: 0;
   background: none; border: none; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; }
@@ -1705,12 +1706,30 @@ img { max-width: 100%; display: block; }
 
       <div class="dash-card" style="margin-top:20px">
         <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+          Fuso horário
+        </div>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">
+          Detectamos automaticamente pelo seu aparelho. Se você viajar e o horário exibido no site não bater com o seu, ajuste aqui.
+        </p>
+        <div style="max-width:420px;display:flex;flex-direction:column;gap:12px">
+          <select id="config-timezone-select" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem"></select>
+          <button class="btn-primary" onclick="saveConfigTimezone()" id="config-timezone-save-btn" style="justify-content:center">Salvar fuso horário</button>
+        </div>
+      </div>
+
+      <div class="dash-card" style="margin-top:20px">
+        <div class="dash-card-title">
           <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
           Idioma do aplicativo
         </div>
-        <p style="font-size:.85rem;color:var(--muted)">
-          Em breve você vai poder escolher o idioma do aplicativo por aqui. Por enquanto, disponível apenas em Português (Brasil).
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">
+          Escolha sua preferência de idioma. A tradução completa do site ainda não está pronta — por enquanto isso só salva sua escolha pra quando ela chegar.
         </p>
+        <div style="max-width:420px;display:flex;flex-direction:column;gap:12px">
+          <select id="config-language-select" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem"></select>
+          <button class="btn-primary" onclick="saveConfigLanguage()" id="config-language-save-btn" style="justify-content:center">Salvar idioma</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2041,6 +2060,44 @@ const UI_ICONS = {
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
   history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>',
 };
+
+/* ── Fusos horários (lista curada, Brasil primeiro) ─────────────── */
+const TIMEZONE_OPTIONS = [
+  { id:'America/Rio_Branco', label:'Rio Branco / Acre (GMT-5)' },
+  { id:'America/Manaus', label:'Manaus / Amazonas (GMT-4)' },
+  { id:'America/Sao_Paulo', label:'Brasília, São Paulo, Rio de Janeiro (GMT-3)' },
+  { id:'America/Noronha', label:'Fernando de Noronha (GMT-2)' },
+  { id:'America/Argentina/Buenos_Aires', label:'Buenos Aires (GMT-3)' },
+  { id:'America/Santiago', label:'Santiago (GMT-4/-3)' },
+  { id:'America/Bogota', label:'Bogotá, Lima, Quito (GMT-5)' },
+  { id:'America/Mexico_City', label:'Cidade do México (GMT-6)' },
+  { id:'America/New_York', label:'Nova York, Miami (GMT-5/-4)' },
+  { id:'America/Chicago', label:'Chicago (GMT-6/-5)' },
+  { id:'America/Denver', label:'Denver (GMT-7/-6)' },
+  { id:'America/Los_Angeles', label:'Los Angeles (GMT-8/-7)' },
+  { id:'Atlantic/Azores', label:'Açores (GMT-1)' },
+  { id:'Europe/Lisbon', label:'Lisboa (GMT+0/+1)' },
+  { id:'Europe/London', label:'Londres (GMT+0/+1)' },
+  { id:'Europe/Madrid', label:'Madri (GMT+1/+2)' },
+  { id:'Europe/Paris', label:'Paris (GMT+1/+2)' },
+  { id:'Europe/Rome', label:'Roma (GMT+1/+2)' },
+  { id:'Europe/Berlin', label:'Berlim (GMT+1/+2)' },
+  { id:'Africa/Johannesburg', label:'Joanesburgo (GMT+2)' },
+  { id:'Asia/Dubai', label:'Dubai (GMT+4)' },
+  { id:'Asia/Kolkata', label:'Nova Deli (GMT+5:30)' },
+  { id:'Asia/Shanghai', label:'Pequim, Xangai (GMT+8)' },
+  { id:'Asia/Tokyo', label:'Tóquio (GMT+9)' },
+  { id:'Australia/Sydney', label:'Sydney (GMT+10/+11)' },
+];
+
+/* ── Idiomas (só o seletor por enquanto — tradução vem depois) ──── */
+const LANGUAGE_OPTIONS = [
+  { id:'pt-BR', label:'Português (Brasil)' },
+  { id:'en-US', label:'English (United States)' },
+  { id:'en-GB', label:'English (United Kingdom)' },
+  { id:'es-419', label:'Español (Latinoamérica)' },
+  { id:'es-ES', label:'Español (España)' },
+];
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
   if(!grid||grid.dataset.rendered) return;
@@ -3179,6 +3236,16 @@ async function loadUserAndRedirect(user) {
   }
 
   currentProfile = profile;
+  // Detecta o fuso horário automaticamente na 1ª vez (o usuário pode trocar depois em Configurações)
+  if(profile && !profile.timezone){
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if(tz){
+        currentProfile = { ...currentProfile, timezone: tz };
+        sb.from('profiles').update({ timezone: tz }).eq('id', user.id).then(()=>{}).catch(()=>{});
+      }
+    } catch(_){}
+  }
   updateNavAvatar();
   if(profile?.role==='professor') { await loadProfDashboard(); showPage('dashboard-prof'); }
   else if(profile?.role==='student') { await loadAlunoDashboard(); showPage('dashboard-aluno'); }
@@ -3247,6 +3314,17 @@ async function refreshDashAnamCard(){
   }
 }
 
+function convertWallTime(dateStr, timeStr, fromTz, toTz){
+  try{
+    if(!fromTz || !toTz || fromTz===toTz) return null; // sem conversão necessária, mesmo fuso
+    const naiveUTC = new Date(`${dateStr}T${timeStr}:00Z`);
+    const asIfLocal = new Date(naiveUTC.toLocaleString('en-US', {timeZone: fromTz}));
+    const offset = naiveUTC.getTime() - asIfLocal.getTime();
+    const trueUTC = new Date(naiveUTC.getTime() + offset);
+    return trueUTC.toLocaleTimeString('pt-BR', {timeZone: toTz, hour:'2-digit', minute:'2-digit'});
+  } catch(_){ return null; }
+}
+
 async function loadAlunoDashboard() {
   if(!currentUser||!sb) return;
   const name = currentProfile?.full_name||'Aluno';
@@ -3254,24 +3332,38 @@ async function loadAlunoDashboard() {
   const phrase = await getMotivationalPhrase();
   document.getElementById('dash-phrase-text').textContent = `"${phrase}"`;
   refreshDashAnamCard();
+
+  const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked').eq('id',currentUser.id).single();
+  currentStudentData = student;
+
+  // Fuso do professor (horário "de referência" dos agendamentos) vs. fuso salvo do aluno
+  let profTz = 'America/Sao_Paulo';
+  if(student?.professor_id){
+    const { data: profProfile } = await sb.from('profiles').select('timezone').eq('id', student.professor_id).single();
+    if(profProfile?.timezone) profTz = profProfile.timezone;
+  }
+  const studentTz = currentProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const bookingTimeLabel = (dateStr, timeStr) => {
+    const converted = convertWallTime(dateStr, timeStr, profTz, studentTz);
+    return converted ? `${converted} (seu fuso) <span style="color:var(--muted);font-weight:400">· ${timeStr} horário do professor</span>` : timeStr;
+  };
+
   const today = new Date().toISOString().slice(0,10);
   const { data: bookings } = await sb.from('bookings').select('*')
     .eq('student_id',currentUser.id).gte('date',today).eq('status','confirmed').order('date').order('time').limit(8);
   if(bookings?.length) {
     const next = bookings[0];
     document.getElementById('dash-proximo-treino').innerHTML = `
-      <div class="dash-booking-date">${formatDate(next.date)} às ${next.time}</div>
+      <div class="dash-booking-date">${formatDate(next.date)} às ${bookingTimeLabel(next.date, next.time)}</div>
       <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado</div>`;
     document.getElementById('dash-historico').innerHTML = bookings.map(b=>`
       <div class="dash-booking-item">
-        <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}</div>
+        <div class="dash-booking-date">${formatDate(b.date)} às ${bookingTimeLabel(b.date, b.time)}</div>
         <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado
           <button onclick="cancelarAgendamento('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
         </div>
       </div>`).join('');
   }
-  const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked').eq('id',currentUser.id).single();
-  currentStudentData = student;
   if(student?.professor_id) {
     const { data: pp } = await sb.from('profiles').select('full_name').eq('id',student.professor_id).single();
     const { data: pd } = await sb.from('professors').select('whatsapp').eq('id',student.professor_id).single();
@@ -4048,6 +4140,10 @@ function notifTimeAgo(iso){
   return `há ${Math.floor(diff/1440)}d`;
 }
 
+function notifClockTime(iso){
+  return new Date(iso).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+}
+
 function renderNotifDrop(){
   const el = document.getElementById('nav-notif-content');
   if(!el) return;
@@ -4061,7 +4157,7 @@ function renderNotifDrop(){
       <div onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}', '${n.type||''}', '${n.related_id||''}')" style="cursor:pointer">
         <div class="nav-notif-title">${n.title}</div>
         ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
-        <div class="nav-notif-time">${notifTimeAgo(n.created_at)}</div>
+        <div class="nav-notif-time"><span>${notifTimeAgo(n.created_at)}</span><span class="nav-notif-clock">${notifClockTime(n.created_at)}</span></div>
       </div>
       ${n.live?'':`<button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotif('${n.id}', event)"><span class="icon-inline">${UI_ICONS.x}</span></button>`}
     </div>`).join('') +
@@ -4155,7 +4251,7 @@ async function renderNotifHistoryPage(period){
       <div onclick="handleNotifClick('${n.id}', false, '${n.link||''}', '${n.type||''}', '${n.related_id||''}')" style="cursor:pointer">
         <div class="nav-notif-title">${n.title}</div>
         ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
-        <div class="nav-notif-time">${ds} às ${hs}</div>
+        <div class="nav-notif-time"><span>${ds}</span><span class="nav-notif-clock">${hs}</span></div>
       </div>
       <button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotifFromHistory('${n.id}', event)"><span class="icon-inline">${UI_ICONS.x}</span></button>
     </div>`;
@@ -4451,6 +4547,46 @@ function renderConfigPage() {
     if(warnBox) warnBox.hidden = false;
     if(hint) hint.textContent = 'Escolha uma nova senha de acesso ao seu painel.';
   }
+
+  const tzSelect = document.getElementById('config-timezone-select');
+  if(tzSelect){
+    const current = currentProfile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const hasCurrent = TIMEZONE_OPTIONS.some(t=>t.id===current);
+    tzSelect.innerHTML = (hasCurrent ? '' : `<option value="${current}">${current}</option>`) +
+      TIMEZONE_OPTIONS.map(t=>`<option value="${t.id}" ${t.id===current?'selected':''}>${t.label}</option>`).join('');
+  }
+
+  const langSelect = document.getElementById('config-language-select');
+  if(langSelect){
+    const current = currentProfile.language || 'pt-BR';
+    langSelect.innerHTML = LANGUAGE_OPTIONS.map(l=>`<option value="${l.id}" ${l.id===current?'selected':''}>${l.label}</option>`).join('');
+  }
+}
+
+async function saveConfigTimezone(){
+  if(!sb||!currentUser) return;
+  const tz = document.getElementById('config-timezone-select')?.value;
+  if(!tz) return;
+  const btn = document.getElementById('config-timezone-save-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
+  const { error } = await sb.from('profiles').update({ timezone: tz }).eq('id', currentUser.id);
+  if(btn){ btn.disabled=false; btn.textContent='Salvar fuso horário'; }
+  if(error){ showToast('❌ Erro ao salvar fuso horário: '+error.message); return; }
+  currentProfile = { ...currentProfile, timezone: tz };
+  showToast('✅ Fuso horário atualizado!');
+}
+
+async function saveConfigLanguage(){
+  if(!sb||!currentUser) return;
+  const lang = document.getElementById('config-language-select')?.value;
+  if(!lang) return;
+  const btn = document.getElementById('config-language-save-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
+  const { error } = await sb.from('profiles').update({ language: lang }).eq('id', currentUser.id);
+  if(btn){ btn.disabled=false; btn.textContent='Salvar idioma'; }
+  if(error){ showToast('❌ Erro ao salvar idioma: '+error.message); return; }
+  currentProfile = { ...currentProfile, language: lang };
+  showToast('✅ Preferência de idioma salva! A tradução completa chega em breve.');
 }
 
 /* ── CADASTRO DE ALUNOS ───────────────────────────────────────── */
