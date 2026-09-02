@@ -229,6 +229,11 @@ img { max-width: 100%; display: block; }
   0% { background: rgba(52,106,172,.22); }
   100% { background: var(--surface); }
 }
+.duvida-msg { max-width: 78%; padding: 10px 14px; border-radius: 14px; font-size: .88rem; line-height: 1.45; }
+.duvida-msg.mine { align-self: flex-end; background: var(--pine); color: #fff; border-bottom-right-radius: 4px; }
+.duvida-msg.theirs { align-self: flex-start; background: var(--surface-alt); color: var(--ink); border-bottom-left-radius: 4px; }
+.duvida-msg img, .duvida-msg video { max-width: 100%; border-radius: 8px; margin-bottom: 6px; display: block; }
+.duvida-msg-time { font-size: .65rem; opacity: .7; margin-top: 4px; text-align: right; }
 
 /* ─── SLIDE-IN MENU ───────────────────────────────────────────── */
 .menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -1344,6 +1349,16 @@ img { max-width: 100%; display: block; }
         </div>
       </div>
 
+      <p class="dash-section-label">Dúvidas</p>
+      <div class="dash-card" id="dash-duvidas-card">
+        <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg></span>
+          Fale com seu professor
+        </div>
+        <div id="dash-duvidas-preview"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+        <button class="btn-primary" onclick="showPage('duvidas')" style="margin-top:14px;font-size:.85rem;padding:10px 20px">Abrir conversa</button>
+      </div>
+
       <p class="dash-section-label">Histórico</p>
       <div class="dash-card">
         <div class="dash-card-title">
@@ -1468,6 +1483,13 @@ img { max-width: 100%; display: block; }
             Fichas de anamnese recebidas
           </div>
           <div id="prof-anamneses"><p style="color:var(--muted);font-size:.88rem">Nenhuma ficha recebida.</p></div>
+        </div>
+        <div class="dash-card" style="margin-top:16px">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg></span>
+            Dúvidas dos alunos
+          </div>
+          <div id="prof-duvidas-preview"><p style="color:var(--muted);font-size:.88rem">Nenhuma mensagem nova.</p></div>
         </div>
         <p class="dash-section-label">Panorama</p>
         <div class="dash-grid">
@@ -1754,6 +1776,38 @@ img { max-width: 100%; display: block; }
     </div>
   </div>
 
+  <!-- DÚVIDAS — chat aluno/professor (compartilhado) -->
+  <div class="page" id="page-duvidas">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Dúvidas</p>
+        <h1 id="duvidas-title">Conversa</h1>
+      </div>
+    </div>
+    <div class="dash-wrap">
+      <div id="duvidas-student-picker" hidden style="margin-bottom:16px">
+        <label style="font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.05em">Aluno</label>
+        <select id="duvidas-student-select" onchange="selectDuvidasStudent(this.value)"
+          style="width:100%;max-width:420px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem;margin-top:6px;display:block"></select>
+      </div>
+      <div class="dash-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:min(70vh,640px)">
+        <div id="duvidas-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px"></div>
+        <div id="duvidas-file-preview" hidden style="padding:0 16px 10px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:10px"></div>
+        <div style="border-top:1px solid var(--border);padding:14px 16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+          <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo"
+            style="background:none;border:1.5px solid var(--border);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);flex-shrink:0">
+            <span class="icon-inline" style="width:18px;height:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg></span>
+          </button>
+          <input type="file" id="duvidas-file-input" accept="image/*,video/*" style="display:none" onchange="handleDuvidasFileSelect(this)">
+          <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..."
+            style="flex:1;min-width:160px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem;resize:none;font-family:inherit"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDuvidaMessage();}"></textarea>
+          <button class="btn-primary" onclick="sendDuvidaMessage()" id="duvidas-send-btn" style="padding:10px 18px">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /pages-wrap -->
 
 <!-- ─── CONFIRM OVERLAY ───────────────────────────────────────────── -->
@@ -1912,7 +1966,7 @@ let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null };
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null };
   if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -1929,6 +1983,7 @@ function showPage(id, opts) {
   if(id==='anamnese') iniciarAnamnese();
   if(id==='config') renderConfigPage();
   if(id==='notificacoes') renderNotifHistoryPage('hoje');
+  if(id==='duvidas') renderDuvidasPage();
   const backBtn = document.getElementById('nav-back-btn');
   if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
@@ -2059,6 +2114,8 @@ const UI_ICONS = {
   globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
   history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>',
+  clip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg>',
 };
 
 /* ── Fusos horários (lista curada, Brasil primeiro) ─────────────── */
@@ -3254,6 +3311,9 @@ async function loadUserAndRedirect(user) {
 
 async function logout() {
   if(sb) await sb.auth.signOut();
+  if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} notifChannel = null; }
+  if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
+  duvidasCurrentStudentId = null; duvidasCurrentProfessorId = null; duvidasMessages = [];
   currentUser=null; currentProfile=null;
   updateNavAvatar();
   showPage('home');
@@ -3378,6 +3438,7 @@ async function loadAlunoDashboard() {
     document.getElementById('dash-plano').innerHTML = `<a href="${student.training_plan_url}" target="_blank" class="btn-primary" style="font-size:.88rem;padding:10px 20px">Ver meu treino →</a>`;
   }
   fillProfileCard();
+  loadAlunoDuvidasPreview();
 }
 
 async function loadProfDashboard() {
@@ -3433,6 +3494,7 @@ async function loadProfDashboard() {
         <div class="resp-meta">${new Date(f.submitted_at).toLocaleDateString('pt-BR')}</div>
       </div>`).join('');
   }
+  loadProfDuvidasPreview();
 }
 
 /* ── Professor tabs ───────────────────────────────────────────── */
@@ -4183,6 +4245,11 @@ async function handleNotifClick(id, isLive, link, type, relatedId){
     setTimeout(()=>{ showProfTab('anamnese'); setTimeout(()=>focusAnamStudent(relatedId), 300); }, 50);
     return;
   }
+  if(type==='chat_message'){
+    if(relatedId && currentProfile?.role==='professor') duvidasCurrentStudentId = relatedId;
+    showPage('duvidas');
+    return;
+  }
   if(link) showPage(link);
 }
 
@@ -4267,6 +4334,245 @@ async function deleteNotifFromHistory(id, ev){
   renderNotifHistoryPage();
 }
 
+/* ── DÚVIDAS — chat aluno/professor ─────────────────────────────── */
+let duvidasChannel = null;
+let duvidasCurrentStudentId = null;
+let duvidasCurrentProfessorId = null;
+let duvidasMessages = [];
+let duvidasPendingFile = null;
+
+function escHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function renderDuvidasPage(){
+  if(!currentProfile || !sb || !currentUser) return;
+  const picker = document.getElementById('duvidas-student-picker');
+  const title = document.getElementById('duvidas-title');
+
+  if(currentProfile.role==='professor'){
+    if(picker) picker.hidden = false;
+    duvidasCurrentProfessorId = currentUser.id;
+    const { data: students } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
+    const profiles = students?.length
+      ? await Promise.all(students.map(s=>sb.from('profiles').select('full_name').eq('id',s.id).single()))
+      : [];
+    const sel = document.getElementById('duvidas-student-select');
+    if(sel){
+      sel.innerHTML = students?.length
+        ? students.map((s,i)=>`<option value="${s.id}">${profiles[i]?.data?.full_name||'Aluno'}</option>`).join('')
+        : '<option value="">Nenhum aluno vinculado</option>';
+    }
+    const valid = students?.some(s=>s.id===duvidasCurrentStudentId);
+    const target = valid ? duvidasCurrentStudentId : students?.[0]?.id;
+    if(target){
+      if(sel) sel.value = target;
+      await selectDuvidasStudent(target);
+    } else {
+      duvidasCurrentStudentId = null;
+      if(title) title.textContent = 'Conversa';
+      const el = document.getElementById('duvidas-messages');
+      if(el) el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto">Cadastre um aluno pra começar a conversar.</p>';
+    }
+  } else {
+    if(picker) picker.hidden = true;
+    const profId = currentStudentData?.professor_id;
+    duvidasCurrentProfessorId = profId;
+    duvidasCurrentStudentId = currentUser.id;
+    if(!profId){
+      if(title) title.textContent = 'Conversa';
+      const el = document.getElementById('duvidas-messages');
+      if(el) el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto">Você ainda não tem professor vinculado.</p>';
+      return;
+    }
+    const { data: pp } = await sb.from('profiles').select('full_name').eq('id',profId).single();
+    if(title) title.textContent = pp?.full_name ? `Conversa com ${pp.full_name}` : 'Conversa';
+    await loadDuvidasMessages();
+    subscribeDuvidasRealtime();
+  }
+}
+
+async function selectDuvidasStudent(studentId){
+  duvidasCurrentStudentId = studentId;
+  const { data: pp } = await sb.from('profiles').select('full_name').eq('id',studentId).single();
+  const title = document.getElementById('duvidas-title');
+  if(title) title.textContent = pp?.full_name ? `Conversa com ${pp.full_name}` : 'Conversa';
+  await loadDuvidasMessages();
+  subscribeDuvidasRealtime();
+}
+
+async function loadDuvidasMessages(){
+  const el = document.getElementById('duvidas-messages');
+  if(!sb || !duvidasCurrentProfessorId || !duvidasCurrentStudentId){ if(el) el.innerHTML=''; return; }
+  if(el) el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto">Carregando...</p>';
+  const { data } = await sb.from('chat_messages').select('*')
+    .eq('professor_id', duvidasCurrentProfessorId).eq('student_id', duvidasCurrentStudentId)
+    .order('created_at',{ascending:true}).limit(200);
+  duvidasMessages = data || [];
+  renderDuvidasMessages();
+  markDuvidasRead();
+}
+
+function renderDuvidasMessages(){
+  const el = document.getElementById('duvidas-messages');
+  if(!el) return;
+  if(!duvidasMessages.length){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto;text-align:center">Nenhuma mensagem ainda. Manda um oi!</p>';
+    return;
+  }
+  const mine = currentProfile?.role;
+  el.innerHTML = duvidasMessages.map(m=>{
+    const isMine = m.sender_role===mine;
+    const media = m.media_url ? (m.media_type==='video'
+      ? `<video src="${m.media_url}" controls></video>`
+      : `<img src="${m.media_url}" alt="Anexo">`) : '';
+    return `<div class="duvida-msg ${isMine?'mine':'theirs'}">
+      ${media}
+      ${m.body?`<div>${escHtml(m.body)}</div>`:''}
+      <div class="duvida-msg-time">${notifClockTime(m.created_at)}</div>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function markDuvidasRead(){
+  if(!sb || !currentProfile) return;
+  const mine = currentProfile.role;
+  const unread = duvidasMessages.filter(m=>m.sender_role!==mine && !m.read_at);
+  if(!unread.length) return;
+  const now = new Date().toISOString();
+  unread.forEach(m=>{ m.read_at = now; });
+  await sb.from('chat_messages').update({read_at:now}).in('id', unread.map(m=>m.id));
+}
+
+function subscribeDuvidasRealtime(){
+  if(!sb || !duvidasCurrentProfessorId || !duvidasCurrentStudentId) return;
+  if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} }
+  duvidasChannel = sb.channel('chat-'+duvidasCurrentProfessorId+'-'+duvidasCurrentStudentId)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages',
+      filter:`student_id=eq.${duvidasCurrentStudentId}` },
+      payload => {
+        if(payload.new.professor_id!==duvidasCurrentProfessorId) return;
+        if(duvidasMessages.some(m=>m.id===payload.new.id)) return;
+        duvidasMessages.push(payload.new);
+        renderDuvidasMessages();
+        markDuvidasRead();
+      })
+    .subscribe();
+}
+
+function handleDuvidasFileSelect(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/') && !file.type.startsWith('video/')){
+    showToast('❌ Só foto ou vídeo por enquanto.'); input.value=''; return;
+  }
+  if(file.size > 25*1024*1024){ showToast('❌ Arquivo muito grande (máx. 25MB).'); input.value=''; return; }
+  duvidasPendingFile = file;
+  const prev = document.getElementById('duvidas-file-preview');
+  if(prev){
+    prev.hidden = false;
+    prev.innerHTML = `<span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.clip}</span><span>${file.name}</span><button onclick="clearDuvidasFile()" style="color:#C0392B;background:none;border:none;cursor:pointer;font-size:.8rem">Remover</button>`;
+  }
+}
+function clearDuvidasFile(){
+  duvidasPendingFile = null;
+  const input = document.getElementById('duvidas-file-input');
+  if(input) input.value='';
+  const prev = document.getElementById('duvidas-file-preview');
+  if(prev) prev.hidden = true;
+}
+
+async function sendDuvidaMessage(){
+  if(!sb || !currentUser || !currentProfile || !duvidasCurrentProfessorId || !duvidasCurrentStudentId) return;
+  const input = document.getElementById('duvidas-input');
+  const body = (input?.value||'').trim();
+  if(!body && !duvidasPendingFile) return;
+  const btn = document.getElementById('duvidas-send-btn');
+  if(btn){ btn.disabled = true; btn.textContent='Enviando…'; }
+
+  let mediaUrl = null, mediaType = null;
+  if(duvidasPendingFile){
+    const file = duvidasPendingFile;
+    const ext = (file.name.split('.').pop()||'bin').toLowerCase();
+    const path = `${duvidasCurrentProfessorId}/${duvidasCurrentStudentId}/${Date.now()}.${ext}`;
+    const { error: upErr } = await sb.storage.from('chat-media').upload(path, file);
+    if(upErr){
+      showToast('❌ Erro ao enviar arquivo: '+upErr.message);
+      if(btn){ btn.disabled=false; btn.textContent='Enviar'; }
+      return;
+    }
+    const { data: pub } = sb.storage.from('chat-media').getPublicUrl(path);
+    mediaUrl = pub?.publicUrl || null;
+    mediaType = file.type.startsWith('video') ? 'video' : 'image';
+  }
+
+  const studentName = currentProfile.role==='student' ? currentProfile.full_name : null;
+  const { data: insRow, error } = await sb.from('chat_messages').insert({
+    professor_id: duvidasCurrentProfessorId, student_id: duvidasCurrentStudentId,
+    student_name: studentName, sender_role: currentProfile.role,
+    body: body||null, media_url: mediaUrl, media_type: mediaType
+  }).select().single();
+
+  if(btn){ btn.disabled=false; btn.textContent='Enviar'; }
+  if(error){ showToast('❌ Erro ao enviar mensagem: '+error.message); return; }
+
+  if(input) input.value='';
+  clearDuvidasFile();
+  duvidasMessages.push(insRow);
+  renderDuvidasMessages();
+
+  const recipientId = currentProfile.role==='professor' ? duvidasCurrentStudentId : duvidasCurrentProfessorId;
+  const senderName = currentProfile.full_name || (currentProfile.role==='professor'?'Seu professor':'Aluno');
+  sb.rpc('create_notification', {
+    p_recipient_id: recipientId, p_type: 'chat_message',
+    p_title: `Nova mensagem de ${senderName}`,
+    p_body: body ? (body.length>60?body.slice(0,60)+'…':body) : (mediaType==='video'?'Enviou um vídeo':'Enviou uma foto'),
+    p_link: 'duvidas', p_related_id: currentProfile.role==='professor' ? duvidasCurrentStudentId : null
+  }).then(()=>{}).catch(()=>{});
+}
+
+async function loadAlunoDuvidasPreview(){
+  const el = document.getElementById('dash-duvidas-preview');
+  if(!el || !sb || !currentUser) return;
+  const profId = currentStudentData?.professor_id;
+  if(!profId){ el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Vincule-se a um professor pra conversar.</p>'; return; }
+  const { data } = await sb.from('chat_messages').select('*')
+    .eq('professor_id', profId).eq('student_id', currentUser.id)
+    .order('created_at',{ascending:false}).limit(1);
+  const { data: unreadRows } = await sb.from('chat_messages').select('id')
+    .eq('professor_id', profId).eq('student_id', currentUser.id).eq('sender_role','professor').is('read_at', null);
+  const unread = unreadRows?.length||0;
+  const last = data?.[0];
+  el.innerHTML = last
+    ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="overflow:hidden">
+          <div style="font-size:.85rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last.sender_role==='student'?'Você: ':''}${escHtml(last.body||(last.media_type==='video'?'Enviou um vídeo':'Enviou uma foto'))}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${notifClockTime(last.created_at)}</div>
+        </div>
+        ${unread?`<span class="nav-bell-badge" style="position:static">${unread>9?'9+':unread}</span>`:''}
+      </div>`
+    : '<p style="color:var(--muted);font-size:.88rem">Nenhuma mensagem ainda — manda a primeira dúvida!</p>';
+}
+
+async function loadProfDuvidasPreview(){
+  const el = document.getElementById('prof-duvidas-preview');
+  if(!el || !sb || !currentUser) return;
+  const { data: unreadRows } = await sb.from('chat_messages').select('student_id')
+    .eq('professor_id', currentUser.id).eq('sender_role','student').is('read_at', null);
+  if(!unreadRows?.length){ el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhuma mensagem nova.</p>'; return; }
+  const byStudent = {};
+  unreadRows.forEach(r=>{ if(r.student_id) byStudent[r.student_id] = (byStudent[r.student_id]||0)+1; });
+  const ids = Object.keys(byStudent);
+  if(!ids.length){ el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhuma mensagem nova.</p>'; return; }
+  const profiles = await Promise.all(ids.map(id=>sb.from('profiles').select('full_name').eq('id',id).single()));
+  el.innerHTML = ids.map((id,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="duvidasCurrentStudentId='${id}';showPage('duvidas')">
+      <span style="font-size:.88rem">${profiles[i]?.data?.full_name||'Aluno'}</span>
+      <span class="nav-bell-badge" style="position:static">${byStudent[id]}</span>
+    </div>`).join('');
+}
+
 function toggleProfileDrop() {
   // Deslogado: vai direto pra tela de login, sem menu intermediário — só existe uma opção mesmo.
   if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -4303,6 +4609,9 @@ function renderNavDrop() {
         <span>${UI_ICONS.grid}</span> Meu painel
       </button>
       ${profileBtn}
+      <button class="nav-profile-drop-item" onclick="showPage('duvidas');document.getElementById('nav-profile-drop').hidden=true">
+        <span>${UI_ICONS.chat}</span> Dúvidas
+      </button>
       <button class="nav-profile-drop-item" onclick="showPage('notificacoes');document.getElementById('nav-profile-drop').hidden=true">
         <span>${UI_ICONS.bell}</span> Notificações
       </button>
