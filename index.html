@@ -887,7 +887,10 @@ img { max-width: 100%; display: block; }
         <span class="nav-bell-badge" id="nav-bell-badge" hidden>0</span>
       </button>
       <div class="nav-profile-drop" id="nav-notif-drop" hidden style="min-width:300px;max-width:340px;max-height:420px;overflow-y:auto">
-        <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:.85rem">Notificações</div>
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font-weight:700;font-size:.85rem">Notificações</span>
+          <button onclick="clearAllNotifications()" style="background:none;border:none;color:var(--muted);font-size:.76rem;font-weight:600;cursor:pointer;padding:2px 0;opacity:.7;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">Limpar notificações</button>
+        </div>
         <div id="nav-notif-content"></div>
       </div>
     </div>
@@ -4215,8 +4218,10 @@ function cleanupOldNotifications(){
 
 async function ensureAnamMissingNotifications(profId, studentIds){
   if(!sb || !studentIds.length) return;
-  const { data: existing } = await sb.from('notifications').select('related_id')
+  const { data: existing, error: existingErr } = await sb.from('notifications').select('related_id')
     .eq('recipient_id', profId).eq('type','anamnese_missing').in('related_id', studentIds);
+  // Se não deu pra checar o que já existe, não cria nada — melhor não avisar do que duplicar o aviso.
+  if(existingErr){ console.error('Erro ao checar notificações existentes:', existingErr); return; }
   const already = new Set((existing||[]).map(e=>e.related_id));
   const toCreate = studentIds.filter(id=>!already.has(id));
   if(!toCreate.length) return;
@@ -4337,13 +4342,21 @@ async function handleNotifClick(id, isLive, link, type, relatedId){
 
 async function markAllNotifRead(){
   if(!sb || !currentUser) return;
-  const unreadIds = notifItems.filter(n=>!n.live && !n.read_at).map(n=>n.id);
-  if(!unreadIds.length) return;
   const now = new Date().toISOString();
-  notifItems.forEach(n=>{ if(unreadIds.includes(n.id)) n.read_at = now; });
+  notifItems.forEach(n=>{ if(!n.live) n.read_at = n.read_at || now; });
   updateNotifBadge();
   renderNotifDrop();
-  await sb.from('notifications').update({read_at:now}).in('id', unreadIds);
+  // Zera direto no banco por recipient_id (não só o lote de 30 carregado no sino) —
+  // assim nenhuma notificação antiga "sobra" fora da tela e volta a contar depois.
+  await sb.from('notifications').update({read_at:now}).eq('recipient_id', currentUser.id).is('read_at', null);
+}
+
+async function clearAllNotifications(){
+  if(!sb || !currentUser) return;
+  notifItems = notifItems.filter(n=>n.live);
+  renderNotifDrop();
+  updateNotifBadge();
+  await sb.from('notifications').delete().eq('recipient_id', currentUser.id);
 }
 
 async function deleteNotif(id, ev){
