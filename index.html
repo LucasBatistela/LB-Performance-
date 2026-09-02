@@ -1092,19 +1092,6 @@ img { max-width: 100%; display: block; }
       </div>
     </div>
 
-    <div id="anamnese-gate" class="anamnese-gate">
-      <h2>Acesso com código</h2>
-      <p>Insira o código de acesso enviado pelo seu treinador para preencher a anamnese.</p>
-      <div class="form-row">
-        <label for="gate-code">Código de acesso</label>
-        <input type="text" id="gate-code" placeholder="• • • • • •" maxlength="8" autocomplete="off"
-          oninput="this.value=this.value.toUpperCase()">
-      </div>
-      <div id="gate-error" style="color:#C0392B;font-size:.88rem;margin-bottom:14px;display:none"></div>
-      <button class="btn-primary" onclick="validateAnamneseCode()" style="width:100%;justify-content:center;margin-top:8px">
-        Continuar →
-      </button>
-    </div>
 
     <div id="anamnese-form-wrap" class="anamnese-form-wrap" hidden>
       <h2>Ficha de Avaliação</h2>
@@ -1308,27 +1295,10 @@ img { max-width: 100%; display: block; }
           <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="m8.5 16 2 2 4-4"/></svg></span>
           Anamnese
         </div>
-        <div id="dash-anam-submitted" hidden>
-          <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm);margin-bottom:10px">
-            <span class="icon-inline good" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg></span>
-            <div>
-              <div style="font-weight:700;font-size:.9rem">Ficha enviada com sucesso</div>
-              <div style="font-size:.8rem;color:var(--muted)" id="dash-anam-submitted-date">Professor vai analisar em breve.</div>
-            </div>
-          </div>
-        </div>
-        <div id="dash-anam-form">
-          <p style="font-size:.88rem;color:var(--muted);margin-bottom:16px">Insira o código enviado pelo professor para preencher sua ficha de avaliação física.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="text" id="dash-anam-code" placeholder="CÓDIGO" maxlength="8"
-              style="flex:1;min-width:140px;text-transform:uppercase;letter-spacing:.25em;font-family:var(--font-d);font-weight:800;font-size:1.05rem;text-align:center"
-              onkeydown="if(event.key==='Enter')acessarAnamnese()" oninput="this.value=this.value.toUpperCase()">
-            <button class="btn-primary" onclick="acessarAnamnese()" style="white-space:nowrap;padding:12px 22px;font-size:.88rem">
-              Acessar →
-            </button>
-          </div>
-          <div id="dash-anam-error" style="color:#C0392B;font-size:.82rem;margin-top:8px;display:none"></div>
-        </div>
+        <div id="dash-anam-status" style="margin-bottom:14px"></div>
+        <button class="btn-primary" id="dash-anam-form-btn" onclick="showPage('anamnese')" style="width:100%;justify-content:center">
+          Preencher anamnese →
+        </button>
       </div>
 
       <p class="dash-section-label">Meu treino</p>
@@ -1444,49 +1414,6 @@ img { max-width: 100%; display: block; }
         <div id="dash-google-status"><p style="color:var(--muted);font-size:.88rem">Carregando…</p></div>
       </div>
 
-      <!-- SEGURANÇA — ALTERAR SENHA -->
-      <div class="dash-card" id="dash-security-card">
-        <div class="dash-card-title">
-          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-          Alterar senha
-        </div>
-        <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">
-          Escolha uma nova senha de acesso ao seu painel.
-        </p>
-        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(230,161,26,.12);border:1px solid rgba(230,161,26,.35);border-radius:var(--radius-sm);margin-bottom:18px">
-          <span class="icon-inline warn" style="width:18px;height:18px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg></span>
-          <p style="font-size:.8rem;color:var(--ink-2);margin:0">
-            Sua senha inicial era o seu CPF. Depois de trocar aqui, use a <strong>nova senha</strong> nos próximos acessos — o CPF deixa de funcionar como senha.
-          </p>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <div>
-            <label>Nova senha</label>
-            <div class="pwd-field">
-              <input type="password" id="new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('new-password', this)">
-                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-              </button>
-            </div>
-          </div>
-          <div>
-            <label>Confirmar nova senha</label>
-            <div class="pwd-field">
-              <input type="password" id="confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
-                onkeydown="if(event.key==='Enter')changeStudentPassword()">
-              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('confirm-password', this)">
-                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-              </button>
-            </div>
-          </div>
-          <button class="btn-primary" onclick="changeStudentPassword()"
-            style="justify-content:center;margin-top:4px" id="password-save-btn">
-            Alterar senha
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1511,7 +1438,6 @@ img { max-width: 100%; display: block; }
         <button class="admin-tab" id="ptab-disponibilidade" onclick="showProfTab('disponibilidade')">Disponibilidade</button>
         <button class="admin-tab" id="ptab-anamnese" onclick="showProfTab('anamnese')">Anamnese</button>
         <button class="admin-tab" id="ptab-perfil" onclick="showProfTab('perfil')">Meu Perfil</button>
-        <button class="admin-tab" id="ptab-config" onclick="showProfTab('config')">Configurações</button>
       </div>
       <!-- Visão Geral -->
       <div id="prof-tab-visao">
@@ -1628,7 +1554,7 @@ img { max-width: 100%; display: block; }
         <div class="dash-card">
           <div class="dash-card-title">
             <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="m8.5 16 2 2 4-4"/></svg></span>
-            Gerar código de anamnese
+            Anamnese
           </div>
           <div id="prof-anamnese-content"></div>
         </div>
@@ -1702,52 +1628,77 @@ img { max-width: 100%; display: block; }
         </div>
       </div>
 
-      <!-- Configurações -->
-      <div id="prof-tab-config" hidden>
-        <div class="dash-card">
-          <div class="dash-card-title">
-            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-            Configurações
-          </div>
-          <div id="prof-config-content"></div>
-        </div>
+    </div>
+  </div>
 
-        <div class="dash-card" id="prof-security-card" style="margin-top:20px">
-          <div class="dash-card-title">
-            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-            Alterar senha
-          </div>
-          <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">
-            Escolha uma nova senha de acesso ao seu painel.
-          </p>
-          <div style="display:flex;flex-direction:column;gap:14px;max-width:480px">
-            <div>
-              <label>Nova senha</label>
-              <div class="pwd-field">
-                <input type="password" id="prof-new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-                <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('prof-new-password', this)">
-                  <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-                </button>
-              </div>
-            </div>
-            <div>
-              <label>Confirmar nova senha</label>
-              <div class="pwd-field">
-                <input type="password" id="prof-confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
-                  onkeydown="if(event.key==='Enter')changeProfPassword()">
-                <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('prof-confirm-password', this)">
-                  <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-                </button>
-              </div>
-            </div>
-            <button class="btn-primary" onclick="changeProfPassword()"
-              style="justify-content:center;margin-top:4px" id="prof-password-save-btn">
-              Alterar senha
-            </button>
-          </div>
+  <!-- CONFIGURAÇÕES (compartilhado professor/aluno) -->
+  <div class="page" id="page-config">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="eyebrow">Sua conta</p>
+        <h1>Configurações</h1>
+      </div>
+    </div>
+    <div class="dash-wrap">
+      <div class="dash-card" id="config-emailjs-card" hidden>
+        <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+          Notificações e integrações
         </div>
+        <div id="prof-config-content"></div>
+      </div>
+
+      <div class="dash-card" id="config-security-card" style="margin-top:20px">
+        <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          Alterar senha
+        </div>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px" id="config-security-hint">
+          Escolha uma nova senha de acesso ao seu painel.
+        </p>
+        <div id="config-security-warn" hidden style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(230,161,26,.12);border:1px solid rgba(230,161,26,.35);border-radius:var(--radius-sm);margin-bottom:18px">
+          <span class="icon-inline warn" style="width:18px;height:18px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg></span>
+          <p style="font-size:.8rem;color:var(--ink-2);margin:0">
+            Sua senha inicial era o seu CPF. Depois de trocar aqui, use a <strong>nova senha</strong> nos próximos acessos — o CPF deixa de funcionar como senha.
+          </p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;max-width:480px">
+          <div>
+            <label>Nova senha</label>
+            <div class="pwd-field">
+              <input type="password" id="config-new-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('config-new-password', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label>Confirmar nova senha</label>
+            <div class="pwd-field">
+              <input type="password" id="config-confirm-password" placeholder="Repita a nova senha" autocomplete="new-password"
+                onkeydown="if(event.key==='Enter')changeConfigPassword()">
+              <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('config-confirm-password', this)">
+                <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+              </button>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="changeConfigPassword()"
+            style="justify-content:center;margin-top:4px" id="config-password-save-btn">
+            Alterar senha
+          </button>
+        </div>
+      </div>
+
+      <div class="dash-card" style="margin-top:20px">
+        <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+          Idioma do aplicativo
+        </div>
+        <p style="font-size:.85rem;color:var(--muted)">
+          Em breve você vai poder escolher o idioma do aplicativo por aqui. Por enquanto, disponível apenas em Português (Brasil).
+        </p>
       </div>
     </div>
   </div>
@@ -1910,11 +1861,11 @@ let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor' };
-  if(protectedRoutes[id]) {
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null };
+  if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
-    if(currentProfile.role !== requiredRole) { showPage('home'); return; }
+    if(requiredRole && currentProfile.role !== requiredRole) { showPage('home'); return; }
   }
   if(!opts.isBack && currentPage && currentPage !== id) pageHistory.push(currentPage);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1924,6 +1875,8 @@ function showPage(id, opts) {
   if(id==='agendar') renderCalendar();
   if(id==='planos') renderPlans();
   if(id==='home') renderHomeAccordion();
+  if(id==='anamnese') iniciarAnamnese();
+  if(id==='config') renderConfigPage();
   const backBtn = document.getElementById('nav-back-btn');
   if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
@@ -2049,6 +2002,11 @@ const UI_ICONS = {
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>',
   bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>',
 };
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
@@ -2722,51 +2680,21 @@ const ANAMNESE_SECTIONS = [
 
 let anamCurrentSection=0;
 let anamData={};
-let anamCode='';
 
-async function validateAnamneseCode(){
-  const code=document.getElementById('gate-code').value.trim().toUpperCase();
-  const errEl=document.getElementById('gate-error');
-  if(!sb){ errEl.style.display='block'; errEl.textContent='Erro de conexão. Recarregue a página.'; return; }
-  const {data:found} = await sb.from('anamnese_codes').select('code').eq('code',code).eq('used',false).maybeSingle();
-  if(!found){ errEl.style.display='block'; errEl.textContent='Código inválido ou já utilizado. Verifique com seu treinador.'; return; }
-  errEl.style.display='none';
-  anamCode=code;
-  document.getElementById('anamnese-gate').hidden=true;
-  document.getElementById('anamnese-form-wrap').hidden=false;
-  anamCurrentSection=0; anamData={};
-  renderAnamneseSection();
-}
-
-/* ── Acesso à anamnese pelo dashboard do aluno ───────────────── */
-async function acessarAnamnese(){
-  const code=(document.getElementById('dash-anam-code').value||'').trim().toUpperCase();
-  const errEl=document.getElementById('dash-anam-error');
-  if(!code){ errEl.style.display='block'; errEl.textContent='Digite o código fornecido pelo professor.'; return; }
-  if(!sb){ errEl.style.display='block'; errEl.textContent='Erro de conexão. Recarregue a página.'; return; }
-  const {data:found} = await sb.from('anamnese_codes').select('code').eq('code',code).eq('used',false).maybeSingle();
-  if(!found){ errEl.style.display='block'; errEl.textContent='Código inválido ou já utilizado. Verifique com seu professor.'; return; }
-  errEl.style.display='none';
-  anamCode=code;
-  document.getElementById('anamnese-gate').hidden=true;
+/* ── Acesso à anamnese: sem código — direto pro aluno logado ──── */
+function iniciarAnamnese(){
   document.getElementById('anamnese-form-wrap').hidden=false;
   document.getElementById('anamnese-done-screen').hidden=true;
   anamCurrentSection=0; anamData={};
   renderAnamneseSection();
-  showPage('anamnese');
-  window.scrollTo(0,0);
 }
 
 function voltarAoDashboard(){
   // Reseta o estado da anamnese e volta ao painel do aluno
-  document.getElementById('anamnese-gate').hidden=false;
   document.getElementById('anamnese-form-wrap').hidden=true;
   document.getElementById('anamnese-done-screen').hidden=true;
-  document.getElementById('gate-code').value='';
   // Atualiza card de status no dashboard
-  const submittedEl=document.getElementById('dash-anam-submitted');
-  const formEl=document.getElementById('dash-anam-form');
-  if(submittedEl && formEl){ submittedEl.hidden=false; formEl.hidden=true; }
+  refreshDashAnamCard();
   if(currentProfile?.role==='student') showPage('dashboard-aluno');
   else showPage('home');
   window.scrollTo(0,0);
@@ -2831,31 +2759,24 @@ function anamPrev(){
 
 async function anamSubmit(){
   collectSectionData();
-  const response={
-    id: Date.now()+'', code:anamCode,
-    studentName: anamData.nome||'Aluno',
-    submittedAt: new Date().toISOString(),
-    data: {...anamData}
-  };
+  const professorId = currentStudentData?.professor_id || null;
+  const studentCpf = currentUser ? (currentUser.email||'').replace(/@alunos\.lb$/,'').replace(/\D/g,'') : null;
   // Salva no Supabase
   let saveError = null;
   if(sb){
     try {
-      const {data:codeRow} = await sb.from('anamnese_codes').select('professor_id').eq('code',anamCode).single();
       const {data:insRow, error:insErr} = await sb.from('anamnese_responses').insert({
-        code: anamCode,
         student_id: currentUser?.id||null,
-        student_name: anamData.nome||'Aluno',
-        professor_id: codeRow?.professor_id||null,
+        student_name: anamData.nome||currentProfile?.full_name||'Aluno',
+        student_cpf: studentCpf,
+        professor_id: professorId,
         data: {...anamData}
       }).select().single();
       if(insErr){ saveError = insErr; console.error('Erro ao salvar anamnese:',insErr); }
-      else {
-        const {error:updErr} = await sb.from('anamnese_codes').update({used:true}).eq('code',anamCode);
-        if(updErr) console.error('Erro ao marcar código como usado:',updErr);
-        if(codeRow?.professor_id) sb.rpc('create_notification', {
-          p_recipient_id: codeRow.professor_id, p_type: 'anamnese_submitted',
-          p_title: `Nova ficha de anamnese: ${anamData.nome||'Aluno'}`,
+      else if(professorId) {
+        sb.rpc('create_notification', {
+          p_recipient_id: professorId, p_type: 'anamnese_submitted',
+          p_title: `Nova ficha de anamnese: ${anamData.nome||currentProfile?.full_name||'Aluno'}`,
           p_body: 'Toque para analisar.',
           p_link: 'dashboard-prof', p_related_id: insRow?.id||null
         }).then(()=>{}).catch(()=>{});
@@ -2863,7 +2784,7 @@ async function anamSubmit(){
     } catch(e){ saveError = e; console.error('Erro ao salvar anamnese:',e); }
   }
   if(saveError){
-    alert('Não foi possível salvar sua ficha. Avise seu professor (código: '+(saveError.code||'?')+' — '+(saveError.message||'erro desconhecido')+').');
+    alert('Não foi possível salvar sua ficha. Avise seu professor (erro: '+(saveError.code||'?')+' — '+(saveError.message||'erro desconhecido')+').');
     return;
   }
   // Send to Formspree if configured
@@ -2878,30 +2799,19 @@ async function anamSubmit(){
   document.getElementById('anamnese-form-wrap').hidden=true;
   document.getElementById('anamnese-done-screen').hidden=false;
   window.scrollTo(0,0);
-  // Marca card do dashboard como enviado
-  const submittedEl=document.getElementById('dash-anam-submitted');
-  const formEl=document.getElementById('dash-anam-form');
-  if(submittedEl && formEl){ submittedEl.hidden=false; formEl.hidden=true; }
+  refreshDashAnamCard();
 }
 
-async function generateCode(){
-  const name=document.getElementById('new-code-name').value.trim();
-  if(!name){ alert('Informe o nome do aluno.'); return; }
-  if(!sb||!currentUser){ alert('Você precisa estar logado como professor.'); return; }
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code='';
-  for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
-  const {error} = await sb.from('anamnese_codes').insert({
-    code, student_name: name, professor_id: currentUser.id
+/* ── Enviar pedido de anamnese pro aluno (notificação, sem código) ── */
+async function enviarPedidoAnamnese(studentId, studentName){
+  if(!sb||!currentUser) return;
+  await sb.rpc('create_notification', {
+    p_recipient_id: studentId, p_type: 'anamnese_requested',
+    p_title: 'Seu professor pediu uma nova ficha de anamnese',
+    p_body: 'Toque para preencher.',
+    p_link: 'dashboard-aluno'
   });
-  if(error){ alert('Erro ao gerar código: '+error.message); return; }
-  document.getElementById('new-code-name').value='';
-  const list=document.getElementById('codes-list');
-  if(list) list.insertAdjacentHTML('afterbegin',`
-    <div class="code-item">
-      <span>${name}</span><span class="code-val">${code}</span>
-      <span class="code-used">Aguardando</span>
-    </div>`);
+  showToast(`✅ Pedido enviado pra ${studentName}!`);
 }
 async function saveConfig(){
   const email=(document.getElementById('cfg-email')?.value)||state.admin.email;
@@ -3253,12 +3163,35 @@ function formatDate(dateStr) {
   return `${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()]}, ${d}/${String(m).padStart(2,'0')}`;
 }
 
+async function refreshDashAnamCard(){
+  const el = document.getElementById('dash-anam-status');
+  const btn = document.getElementById('dash-anam-form-btn');
+  if(!el || !sb || !currentUser) return;
+  const { data: fichas } = await sb.from('anamnese_responses').select('submitted_at')
+    .eq('student_id', currentUser.id).order('submitted_at',{ascending:false});
+  if(fichas?.length){
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm)">
+        <span class="icon-inline good" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5.5"/></svg></span>
+        <div>
+          <div style="font-weight:700;font-size:.9rem">${fichas.length>1?`${fichas.length} fichas enviadas`:'Ficha enviada'}</div>
+          <div style="font-size:.8rem;color:var(--muted)">Última em ${new Date(fichas[0].submitted_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+      </div>`;
+    if(btn) btn.textContent = 'Enviar nova ficha →';
+  } else {
+    el.innerHTML = '';
+    if(btn) btn.textContent = 'Preencher anamnese →';
+  }
+}
+
 async function loadAlunoDashboard() {
   if(!currentUser||!sb) return;
   const name = currentProfile?.full_name||'Aluno';
   document.getElementById('dash-aluno-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
   const phrase = await getMotivationalPhrase();
   document.getElementById('dash-phrase-text').textContent = `"${phrase}"`;
+  refreshDashAnamCard();
   const today = new Date().toISOString().slice(0,10);
   const { data: bookings } = await sb.from('bookings').select('*')
     .eq('student_id',currentUser.id).gte('date',today).eq('status','confirmed').order('date').order('time').limit(8);
@@ -3350,7 +3283,7 @@ async function loadProfDashboard() {
 
 /* ── Professor tabs ───────────────────────────────────────────── */
 function showProfTab(tab) {
-  ['visao','alunos','agendamentos','disponibilidade','anamnese','perfil','config'].forEach(t=>{
+  ['visao','alunos','agendamentos','disponibilidade','anamnese','perfil'].forEach(t=>{
     const el = document.getElementById('prof-tab-'+t);
     const btn = document.getElementById('ptab-'+t);
     if(el) el.hidden = t!==tab;
@@ -3361,7 +3294,6 @@ function showProfTab(tab) {
   if(tab==='disponibilidade') renderProfDisponibilidade();
   if(tab==='anamnese') renderProfAnamnese();
   if(tab==='perfil') fillProfProfileCard();
-  if(tab==='config') renderProfConfig();
 }
 
 async function loadProfAllBookings() {
@@ -3523,31 +3455,74 @@ async function renderProfAnamnese() {
   const el = document.getElementById('prof-anamnese-content');
   if(!el||!sb) return;
   el.innerHTML=`<p style="color:var(--muted);font-size:.88rem">Carregando...</p>`;
-  const {data:codes} = await sb.from('anamnese_codes').select('*').eq('professor_id',currentUser.id).order('created_at',{ascending:false});
-  const {data:responses} = await sb.from('anamnese_responses').select('*').eq('professor_id',currentUser.id).order('submitted_at',{ascending:false});
-  const codesList=(codes||[]).map(c=>`
-    <div class="code-item">
-      <span>${c.student_name}</span>
-      <span class="code-val">${c.code}</span>
-      <span class="code-used">${c.used?'<span class="icon-inline good" style="width:12px;height:12px">'+UI_ICONS.check+'</span> Respondido':'Aguardando'}</span>
-    </div>`).join('')||'<p style="color:var(--muted);font-size:.88rem">Nenhum código gerado ainda.</p>';
-  const responsesList=(responses||[]).length===0
-    ?'<p style="color:var(--muted);font-size:.88rem">Nenhuma ficha preenchida ainda.</p>'
-    :(responses||[]).map(r=>`
-      <div class="anamnese-resp-card" onclick="viewProfResponse('${r.id}')" style="cursor:pointer;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px">
-        <div style="font-weight:700;font-size:.92rem">${r.student_name||'Aluno'}</div>
-        <div style="font-size:.8rem;color:var(--muted)">Código: ${r.code} · ${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</div>
-      </div>`).join('');
-  el.innerHTML=`
-    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Gere um código único por aluno. O aluno usa o código para preencher a anamnese.</p>
-    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      <input type="text" id="new-code-name" placeholder="Nome do aluno" style="flex:1;min-width:180px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem">
-      <button class="btn-primary" onclick="generateCode()" style="white-space:nowrap">Gerar código</button>
-    </div>
-    <div id="codes-list">${codesList}</div>
-    <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
-    <h4 style="font-family:var(--font-d);font-size:.95rem;margin-bottom:14px">Fichas preenchidas</h4>
-    <div id="responses-list">${responsesList}</div>`;
+
+  const { data: students } = await sb.from('students').select('id, cpf').eq('professor_id', currentUser.id);
+  const profiles = students?.length
+    ? await Promise.all(students.map(s => sb.from('profiles').select('full_name').eq('id', s.id).single()))
+    : [];
+
+  // Fichas vinculadas a alunos ativos
+  const { data: responses } = await sb.from('anamnese_responses').select('*')
+    .eq('professor_id', currentUser.id).not('student_id','is',null)
+    .order('submitted_at',{ascending:false});
+  const byStudent = {};
+  (responses||[]).forEach(r=>{ (byStudent[r.student_id] = byStudent[r.student_id]||[]).push(r); });
+
+  // Fichas órfãs (aluno desvinculado) — ficam ocultas, só contadas por CPF p/ reativação
+  const { data: orphans } = await sb.from('anamnese_responses').select('student_cpf')
+    .eq('professor_id', currentUser.id).is('student_id', null).not('student_cpf','is',null);
+  const orphanCountByCpf = {};
+  (orphans||[]).forEach(o=>{ if(o.student_cpf) orphanCountByCpf[o.student_cpf] = (orphanCountByCpf[o.student_cpf]||0)+1; });
+
+  if(!students?.length){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhum aluno vinculado ainda. Cadastre alunos na aba "Alunos".</p>';
+    return;
+  }
+
+  const rows = students.map((s,i) => {
+    const name = profiles[i]?.data?.full_name || 'Aluno';
+    const nameEsc = name.replace(/'/g,"\\'");
+    const fichas = byStudent[s.id] || [];
+    const orphanCount = orphanCountByCpf[s.cpf] || 0;
+    const fichasHTML = fichas.length
+      ? fichas.map(r=>`
+        <div class="anamnese-resp-card" onclick="viewProfResponse('${r.id}')" style="cursor:pointer;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-top:8px;display:flex;align-items:center;gap:8px">
+          <span class="icon-inline" style="width:14px;height:14px;color:var(--muted)">${UI_ICONS.history}</span>
+          <span style="font-size:.85rem;font-weight:600">${new Date(r.submitted_at).toLocaleDateString('pt-BR')}</span>
+        </div>`).join('')
+      : '<p style="color:var(--muted);font-size:.8rem;margin-top:8px">Nenhuma ficha enviada ainda.</p>';
+    const reactivateBtn = orphanCount>0
+      ? `<button class="btn-ghost" style="font-size:.78rem;white-space:nowrap;color:var(--pine)" onclick="reactivarFichasAntigas('${s.cpf}','${s.id}','${nameEsc}')">
+           ${orphanCount} ficha${orphanCount>1?'s':''} antiga${orphanCount>1?'s':''} disponível${orphanCount>1?'is':''} — reativar
+         </button>` : '';
+    return `<div class="dash-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:.92rem">${name}</div>
+          <div style="font-size:.78rem;color:var(--muted)">${fichas.length?`${fichas.length} ficha${fichas.length>1?'s':''} enviada${fichas.length>1?'s':''} · Feito`:'Nenhuma ficha enviada · Pendente'}</div>
+        </div>
+        <button class="btn-primary" style="font-size:.8rem;white-space:nowrap;padding:8px 14px" onclick="enviarPedidoAnamnese('${s.id}','${nameEsc}')">
+          <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.send}</span> Enviar anamnese
+        </button>
+      </div>
+      ${reactivateBtn ? `<div style="margin-top:8px">${reactivateBtn}</div>` : ''}
+      ${fichasHTML}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">Envie a solicitação de anamnese direto pro aluno — sem código. Ele recebe um aviso no sino e preenche pelo próprio painel.</p>${rows}`;
+}
+
+async function reactivarFichasAntigas(cpf, studentId, studentName) {
+  if(!sb) return;
+  const ok = await showAppConfirm(`Vincular as fichas antigas de anamnese ao cadastro atual de ${studentName}?`);
+  if(!ok) return;
+  const { error } = await sb.from('anamnese_responses')
+    .update({ student_id: studentId })
+    .eq('professor_id', currentUser.id).eq('student_cpf', cpf).is('student_id', null);
+  if(error){ showToast('❌ Erro ao reativar fichas: '+error.message); return; }
+  showToast('✅ Fichas antigas vinculadas!');
+  renderProfAnamnese();
 }
 
 /* ── Relatório de anamnese: rótulos das perguntas, agrupados por seção ── */
@@ -4028,6 +4003,9 @@ function renderNavDrop() {
         <span>${UI_ICONS.grid}</span> Meu painel
       </button>
       ${profileBtn}
+      <button class="nav-profile-drop-item" onclick="showPage('config');document.getElementById('nav-profile-drop').hidden=true">
+        <span>${UI_ICONS.gear}</span> Configurações
+      </button>
       <button class="nav-profile-drop-item danger" onclick="logout();document.getElementById('nav-profile-drop').hidden=true">
         <span>${UI_ICONS.logout}</span> Sair
       </button>`;
@@ -4246,12 +4224,26 @@ async function doChangePassword(passId, confirmId, btnId) {
   }
 }
 
-function changeStudentPassword() {
-  return doChangePassword('new-password', 'confirm-password', 'password-save-btn');
+function changeConfigPassword() {
+  return doChangePassword('config-new-password', 'config-confirm-password', 'config-password-save-btn');
 }
 
-function changeProfPassword() {
-  return doChangePassword('prof-new-password', 'prof-confirm-password', 'prof-password-save-btn');
+/* ── PÁGINA DE CONFIGURAÇÕES (compartilhada professor/aluno) ──── */
+function renderConfigPage() {
+  if(!currentProfile) return;
+  const isProf = currentProfile.role === 'professor';
+  const emailjsCard = document.getElementById('config-emailjs-card');
+  const warnBox = document.getElementById('config-security-warn');
+  const hint = document.getElementById('config-security-hint');
+  if(emailjsCard){ emailjsCard.hidden = !isProf; }
+  if(isProf){
+    renderProfConfig();
+    if(warnBox) warnBox.hidden = true;
+    if(hint) hint.textContent = 'Escolha uma nova senha de acesso ao seu painel.';
+  } else {
+    if(warnBox) warnBox.hidden = false;
+    if(hint) hint.textContent = 'Escolha uma nova senha de acesso ao seu painel.';
+  }
 }
 
 /* ── CADASTRO DE ALUNOS ───────────────────────────────────────── */
@@ -4338,8 +4330,15 @@ async function loadProfAlunos() {
     ? await Promise.all(students.map(s => sb.from('profiles').select('full_name,phone').eq('id',s.id).single()))
     : [];
 
+  // Quais alunos já enviaram ao menos uma ficha de anamnese
+  const { data: anamRows } = students?.length
+    ? await sb.from('anamnese_responses').select('student_id').eq('professor_id', currentUser.id).not('student_id','is',null)
+    : { data: [] };
+  const anamDoneIds = new Set((anamRows||[]).map(r=>r.student_id));
+
   const activeRows = (students||[]).map((s,i) => {
     const p = profiles[i]?.data;
+    const anamDone = anamDoneIds.has(s.id);
     return `<div style="display:flex;align-items:center;justify-content:space-between;
         padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm)">
       <div>
@@ -4347,6 +4346,9 @@ async function loadProfAlunos() {
         <div style="font-size:.78rem;color:var(--muted)">${p?.phone||'Sem telefone'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;
+          ${anamDone?'color:var(--pine);background:rgba(52,106,172,.12)':'color:#B08900;background:rgba(230,161,26,.14)'}"
+          title="Anamnese">${anamDone?'Anamnese: Feito':'Anamnese: Pendente'}</span>
         <span style="font-size:.75rem;color:var(--pine);font-weight:700;
           background:rgba(52,106,172,.12);padding:4px 10px;border-radius:20px">Ativo</span>
         <button onclick="openAdminPwdReset('${s.id}', '${(p?.full_name||'Aluno').replace(/'/g,"\\'")}')"
