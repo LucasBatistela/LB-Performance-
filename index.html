@@ -3367,6 +3367,10 @@ async function logout() {
   if(notifPollTimer){ clearInterval(notifPollTimer); notifPollTimer = null; }
   if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
   duvidasCurrentStudentId = null; duvidasCurrentProfessorId = null; duvidasMessages = [];
+  const duvidasListEl = document.getElementById('duvidas-list-content');
+  const duvidasMsgEl = document.getElementById('duvidas-messages');
+  if(duvidasListEl) duvidasListEl.innerHTML = '';
+  if(duvidasMsgEl) duvidasMsgEl.innerHTML = '';
   currentUser=null; currentProfile=null;
   updateNavAvatar();
   showPage('home');
@@ -4416,6 +4420,13 @@ async function renderDuvidasPage(){
   const threadView = document.getElementById('duvidas-thread-view');
   const backBtn = document.getElementById('duvidas-back-btn');
   const title = document.getElementById('duvidas-title');
+
+  // Limpa qualquer conteúdo antigo (ex: de uma troca de conta na mesma aba) antes de decidir o que mostrar,
+  // pra nunca deixar o texto de "lista de alunos" (só do professor) aparecer resquício na tela do aluno.
+  const listContentEl = document.getElementById('duvidas-list-content');
+  const messagesEl = document.getElementById('duvidas-messages');
+  if(listContentEl) listContentEl.innerHTML = '';
+  if(messagesEl) messagesEl.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto">Carregando...</p>';
 
   if(currentProfile.role==='professor'){
     duvidasCurrentProfessorId = currentUser.id;
