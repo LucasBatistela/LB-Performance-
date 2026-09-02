@@ -4570,12 +4570,17 @@ async function renderDuvidasPage(){
     duvidasCurrentStudentId = currentUser.id;
 
     if(duvidasStudentView === 'list'){
-      if(threadView) threadView.hidden = true;
-      if(backBtn) backBtn.hidden = true;
-      if(listView) listView.hidden = false;
-      if(page) page.classList.remove('chat-fullscreen');
+      // Mesmo visual de tela dividida do professor (sem faixa preta, lista à esquerda,
+      // "Selecione uma conversa" à direita) quando a tela é larga o bastante; em celular
+      // continua sendo só a lista (o que muda é que não é mais aquela faixa preta feia).
+      const split = chatSplitQuery.matches;
+      if(page){ page.classList.toggle('chat-split', split); page.classList.remove('chat-fullscreen'); }
       if(title) title.textContent = 'Chat';
       if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
+      if(listView) listView.hidden = false;
+      if(threadView) threadView.hidden = !split;
+      if(backBtn) backBtn.hidden = true;
+      if(split) showDuvidasEmptyState();
       await renderDuvidasStudentSummary(profId);
       return;
     }
@@ -4583,7 +4588,7 @@ async function renderDuvidasPage(){
     if(listView) listView.hidden = true;
     if(threadView) threadView.hidden = false;
     if(backBtn) backBtn.hidden = false;
-    if(page) page.classList.add('chat-fullscreen');
+    if(page){ page.classList.remove('chat-split'); page.classList.add('chat-fullscreen'); }
     if(!profId){
       if(title) title.textContent = 'Conversa';
       setDuvidasThreadTitle('');
@@ -4727,7 +4732,9 @@ function backToDuvidasList(){
 if(chatSplitQuery.addEventListener){
   chatSplitQuery.addEventListener('change', ()=>{
     const page = document.getElementById('page-duvidas');
-    if(page && page.classList.contains('active') && currentProfile?.role==='professor') renderDuvidasPage();
+    if(!page || !page.classList.contains('active')) return;
+    // Só recalcula quando faz diferença: lista do professor, ou resumo do aluno (a conversa aberta não muda).
+    if(currentProfile?.role==='professor' || (currentProfile?.role==='student' && duvidasStudentView==='list')) renderDuvidasPage();
   });
 }
 
