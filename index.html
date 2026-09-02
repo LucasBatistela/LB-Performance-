@@ -1781,28 +1781,39 @@ img { max-width: 100%; display: block; }
     <div class="page-header">
       <div class="page-header-inner">
         <p class="eyebrow">Dúvidas</p>
-        <h1 id="duvidas-title">Conversa</h1>
+        <h1 id="duvidas-title">Conversas</h1>
       </div>
     </div>
     <div class="dash-wrap">
-      <div id="duvidas-student-picker" hidden style="margin-bottom:16px">
-        <label style="font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.05em">Aluno</label>
-        <select id="duvidas-student-select" onchange="selectDuvidasStudent(this.value)"
-          style="width:100%;max-width:420px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem;margin-top:6px;display:block"></select>
+
+      <!-- Lista de conversas (só professor) -->
+      <div id="duvidas-list-view" hidden>
+        <div class="dash-card" style="padding:8px 0">
+          <div id="duvidas-list-content"><p style="color:var(--muted);font-size:.88rem;padding:12px 16px">Carregando...</p></div>
+        </div>
       </div>
-      <div class="dash-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:min(70vh,640px)">
-        <div id="duvidas-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px"></div>
-        <div id="duvidas-file-preview" hidden style="padding:0 16px 10px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:10px"></div>
-        <div style="border-top:1px solid var(--border);padding:14px 16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-          <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo"
-            style="background:none;border:1.5px solid var(--border);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);flex-shrink:0">
-            <span class="icon-inline" style="width:18px;height:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg></span>
-          </button>
-          <input type="file" id="duvidas-file-input" accept="image/*,video/*" style="display:none" onchange="handleDuvidasFileSelect(this)">
-          <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..."
-            style="flex:1;min-width:160px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem;resize:none;font-family:inherit"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDuvidaMessage();}"></textarea>
-          <button class="btn-primary" onclick="sendDuvidaMessage()" id="duvidas-send-btn" style="padding:10px 18px">Enviar</button>
+
+      <!-- Conversa aberta -->
+      <div id="duvidas-thread-view">
+        <button type="button" id="duvidas-back-btn" hidden onclick="backToDuvidasList()"
+          style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--ink-2);font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:12px;padding:0">
+          <span class="icon-inline" style="width:16px;height:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span>
+          Todas as conversas
+        </button>
+        <div class="dash-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:min(70vh,640px)">
+          <div id="duvidas-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px"></div>
+          <div id="duvidas-file-preview" hidden style="padding:0 16px 10px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:10px"></div>
+          <div style="border-top:1px solid var(--border);padding:14px 16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo"
+              style="background:none;border:1.5px solid var(--border);border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);flex-shrink:0">
+              <span class="icon-inline" style="width:18px;height:18px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg></span>
+            </button>
+            <input type="file" id="duvidas-file-input" accept="image/*,video/*" style="display:none" onchange="handleDuvidasFileSelect(this)">
+            <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..."
+              style="flex:1;min-width:160px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.9rem;resize:none;font-family:inherit"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDuvidaMessage();}"></textarea>
+            <button class="btn-primary" onclick="sendDuvidaMessage()" id="duvidas-send-btn" style="padding:10px 18px">Enviar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4345,37 +4356,42 @@ function escHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+function duvidasInitials(name){
+  const parts = String(name||'?').trim().split(/\s+/);
+  return ((parts[0]?.[0]||'')+(parts[1]?.[0]||'')).toUpperCase() || '?';
+}
+
 async function renderDuvidasPage(){
   if(!currentProfile || !sb || !currentUser) return;
-  const picker = document.getElementById('duvidas-student-picker');
+  const listView = document.getElementById('duvidas-list-view');
+  const threadView = document.getElementById('duvidas-thread-view');
+  const backBtn = document.getElementById('duvidas-back-btn');
   const title = document.getElementById('duvidas-title');
 
   if(currentProfile.role==='professor'){
-    if(picker) picker.hidden = false;
     duvidasCurrentProfessorId = currentUser.id;
-    const { data: students } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
-    const profiles = students?.length
-      ? await Promise.all(students.map(s=>sb.from('profiles').select('full_name').eq('id',s.id).single()))
-      : [];
-    const sel = document.getElementById('duvidas-student-select');
-    if(sel){
-      sel.innerHTML = students?.length
-        ? students.map((s,i)=>`<option value="${s.id}">${profiles[i]?.data?.full_name||'Aluno'}</option>`).join('')
-        : '<option value="">Nenhum aluno vinculado</option>';
-    }
-    const valid = students?.some(s=>s.id===duvidasCurrentStudentId);
-    const target = valid ? duvidasCurrentStudentId : students?.[0]?.id;
-    if(target){
-      if(sel) sel.value = target;
-      await selectDuvidasStudent(target);
-    } else {
+    if(backBtn) backBtn.hidden = false;
+    // Se já veio de uma notificação/preview com aluno específico, abre a conversa direto.
+    if(duvidasCurrentStudentId){
+      const { data: check } = await sb.from('students').select('id').eq('id', duvidasCurrentStudentId).eq('professor_id', currentUser.id).single();
+      if(check){
+        if(title) title.textContent = 'Conversas';
+        if(listView) listView.hidden = true;
+        if(threadView) threadView.hidden = false;
+        await selectDuvidasStudent(duvidasCurrentStudentId);
+        renderDuvidasConversationsList(); // atualiza em segundo plano pra quando voltar
+        return;
+      }
       duvidasCurrentStudentId = null;
-      if(title) title.textContent = 'Conversa';
-      const el = document.getElementById('duvidas-messages');
-      if(el) el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:auto">Cadastre um aluno pra começar a conversar.</p>';
     }
+    if(title) title.textContent = 'Conversas';
+    if(threadView) threadView.hidden = true;
+    if(listView) listView.hidden = false;
+    await renderDuvidasConversationsList();
   } else {
-    if(picker) picker.hidden = true;
+    if(listView) listView.hidden = true;
+    if(threadView) threadView.hidden = false;
+    if(backBtn) backBtn.hidden = true;
     const profId = currentStudentData?.professor_id;
     duvidasCurrentProfessorId = profId;
     duvidasCurrentStudentId = currentUser.id;
@@ -4390,6 +4406,72 @@ async function renderDuvidasPage(){
     await loadDuvidasMessages();
     subscribeDuvidasRealtime();
   }
+}
+
+async function renderDuvidasConversationsList(){
+  const el = document.getElementById('duvidas-list-content');
+  if(!el || !sb || !currentUser) return;
+  const { data: students } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
+  if(!students?.length){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;padding:12px 16px">Cadastre um aluno pra começar a conversar.</p>';
+    return;
+  }
+  const ids = students.map(s=>s.id);
+  const [profilesRes, msgsRes, unreadRes] = await Promise.all([
+    Promise.all(ids.map(id=>sb.from('profiles').select('full_name').eq('id',id).single())),
+    sb.from('chat_messages').select('*').eq('professor_id', currentUser.id).in('student_id', ids).order('created_at',{ascending:false}),
+    sb.from('chat_messages').select('student_id').eq('professor_id', currentUser.id).eq('sender_role','student').is('read_at', null)
+  ]);
+  const nameById = {}; ids.forEach((id,i)=>{ nameById[id] = profilesRes[i]?.data?.full_name || 'Aluno'; });
+  const lastByStudent = {};
+  (msgsRes.data||[]).forEach(m=>{ if(!lastByStudent[m.student_id]) lastByStudent[m.student_id] = m; });
+  const unreadByStudent = {};
+  (unreadRes.data||[]).forEach(r=>{ unreadByStudent[r.student_id] = (unreadByStudent[r.student_id]||0)+1; });
+
+  const rows = ids.map(id=>({ id, name: nameById[id], last: lastByStudent[id], unread: unreadByStudent[id]||0 }));
+  rows.sort((a,b)=>{
+    const ta = a.last ? new Date(a.last.created_at).getTime() : 0;
+    const tb = b.last ? new Date(b.last.created_at).getTime() : 0;
+    return tb - ta;
+  });
+
+  el.innerHTML = rows.map(r=>{
+    const preview = r.last
+      ? `${r.last.sender_role==='professor'?'Você: ':''}${escHtml(r.last.body || (r.last.media_type==='video'?'📹 Enviou um vídeo':'📷 Enviou uma foto'))}`
+      : 'Nenhuma mensagem ainda';
+    const time = r.last ? notifClockTime(r.last.created_at) : '';
+    return `<div onclick="openDuvidasThread('${r.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border)">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:.95rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${duvidasInitials(r.name)}</div>
+      <div style="flex:1;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;gap:8px">
+          <span style="font-weight:600;font-size:.92rem${r.unread?';color:var(--ink)':''}">${r.name}</span>
+          ${time?`<span style="font-size:.75rem;color:var(--muted);flex-shrink:0">${time}</span>`:''}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px">
+          <span style="font-size:.82rem;color:${r.unread?'var(--ink-2)':'var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</span>
+          ${r.unread?`<span class="nav-bell-badge" style="position:static;flex-shrink:0">${r.unread>9?'9+':r.unread}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openDuvidasThread(studentId){
+  const listView = document.getElementById('duvidas-list-view');
+  const threadView = document.getElementById('duvidas-thread-view');
+  if(listView) listView.hidden = true;
+  if(threadView) threadView.hidden = false;
+  await selectDuvidasStudent(studentId);
+}
+
+function backToDuvidasList(){
+  const listView = document.getElementById('duvidas-list-view');
+  const threadView = document.getElementById('duvidas-thread-view');
+  if(threadView) threadView.hidden = true;
+  if(listView) listView.hidden = false;
+  duvidasCurrentStudentId = null;
+  if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
+  renderDuvidasConversationsList();
 }
 
 async function selectDuvidasStudent(studentId){
