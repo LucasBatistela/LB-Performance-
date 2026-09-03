@@ -976,6 +976,10 @@ img { max-width: 100%; display: block; }
 .div-tab { flex-shrink: 0; padding: 9px 18px; border-radius: 999px; font-weight: 700; font-size: .85rem;
   background: var(--surface-alt); color: var(--muted); border: none; cursor: pointer; white-space: nowrap; }
 .div-tab.on { background: var(--pine); color: #fff; }
+.div-tab.sub { padding: 7px 14px; font-size: .78rem; font-weight: 600; background: transparent;
+  border: 1.5px solid var(--border); color: var(--muted); }
+.div-tab.sub.on { background: var(--pine); color: #fff; border-color: var(--pine); }
+#te-category-filter { margin-top: -10px; }
 .mt-ex-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
 .mt-ex-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .mt-ex-name { font-weight: 700; font-size: .98rem; }
@@ -1697,6 +1701,22 @@ img { max-width: 100%; display: block; }
     </div>
   </div>
 
+  <!-- EDITOR DE TREINO (professor monta o treino de um aluno específico) -->
+  <div class="page" id="page-treino-editor">
+    <div class="dash-wrap">
+      <div class="compact-page-title">
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 21c0-3.4 2.9-5.5 6-5.5s6 2.1 6 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15 15.3c2.6.4 4.5 2.2 4.5 5.7"/></svg></span>
+        Treino de <span id="te-student-name">—</span>
+      </div>
+      <div class="div-tabs" id="te-group-filter"></div>
+      <div class="div-tabs" id="te-category-filter" hidden></div>
+      <div style="display:flex;justify-content:flex-end;margin:4px 0 16px">
+        <button class="btn-primary" style="font-size:.85rem;padding:10px 18px" onclick="openDivisionModal()">+ Nova divisão</button>
+      </div>
+      <div id="te-divisions-list"></div>
+    </div>
+  </div>
+
   <!-- DASHBOARD PROFESSOR -->
   <div class="page" id="page-dashboard-prof">
     <div class="dash-wrap">
@@ -1782,6 +1802,14 @@ img { max-width: 100%; display: block; }
                 <label>WhatsApp</label>
                 <input type="tel" id="new-aluno-phone" placeholder="(11) 99999-9999">
               </div>
+              <div style="flex:1;min-width:160px">
+                <label>Gênero</label>
+                <select id="new-aluno-gender">
+                  <option value="">Prefiro não informar</option>
+                  <option value="F">Feminino</option>
+                  <option value="M">Masculino</option>
+                </select>
+              </div>
             </div>
             <button class="btn-primary" onclick="cadastrarAluno()"
               id="cadastrar-aluno-btn" style="justify-content:center">
@@ -1822,20 +1850,25 @@ img { max-width: 100%; display: block; }
             <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 21c0-3.4 2.9-5.5 6-5.5s6 2.1 6 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15 15.3c2.6.4 4.5 2.2 4.5 5.7"/></svg></span>
             Montar treino do aluno
           </div>
-          <div style="margin-bottom:18px;max-width:340px">
-            <label>Aluno</label>
-            <select id="treino-aluno-select" onchange="loadStudentTreino(this.value)">
-              <option value="">Selecione um aluno...</option>
+          <div style="margin-bottom:12px;max-width:480px;display:flex;gap:8px;flex-wrap:wrap">
+            <select id="treino-aluno-gender-filter" onchange="renderTreinoAlunoOptions()" style="width:150px;flex-shrink:0">
+              <option value="">Todos</option>
+              <option value="F">Feminino</option>
+              <option value="M">Masculino</option>
+            </select>
+            <div style="position:relative;flex:1;min-width:180px">
+              <span class="icon-inline" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              </span>
+              <input type="text" id="treino-aluno-search" placeholder="Buscar aluno pelo nome..." oninput="renderTreinoAlunoOptions()" style="width:100%;padding-left:34px">
+            </div>
+          </div>
+          <div style="max-width:480px">
+            <select id="treino-aluno-select" size="6" onchange="if(this.value) goToTreinoEditorFromSelect(this.value)" style="width:100%">
+              <option value="" disabled>Carregando alunos...</option>
             </select>
           </div>
-          <p id="treino-select-hint" style="color:var(--muted);font-size:.88rem">Selecione um aluno acima pra montar o treino dele.</p>
-          <div id="treino-divisions-wrap" hidden>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-              <span style="font-weight:700;font-size:.88rem">Divisões de treino</span>
-              <button class="btn-ghost" style="font-size:.78rem;padding:7px 12px" onclick="addTrainingDivision()">+ Nova divisão</button>
-            </div>
-            <div id="treino-divisions-list"></div>
-          </div>
+          <p style="color:var(--muted);font-size:.88rem;margin-top:8px">Escolha um aluno da lista pra abrir a página de montagem do treino dele.</p>
         </div>
       </div>
 
@@ -2222,6 +2255,43 @@ img { max-width: 100%; display: block; }
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="btn-ghost" style="flex:1;justify-content:center" onclick="closeExerciseModal()">Cancelar</button>
       <button class="btn-primary" style="flex:1;justify-content:center" id="exercise-modal-save-btn" onclick="saveExercise()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NOVA/EDITAR DIVISÃO DE TREINO ──────────────────────────────── -->
+<div id="division-modal-overlay" class="overlay" hidden>
+  <div class="modal-box" style="max-width:420px">
+    <div style="font-weight:700;font-size:1.05rem;margin-bottom:16px" id="division-modal-title">Nova divisão</div>
+    <input type="hidden" id="division-edit-id">
+    <div class="form-row"><label>Nome da divisão</label>
+      <input type="text" id="division-name-input" placeholder="Ex: Treino A, Peito e tríceps...">
+    </div>
+    <div class="form-row"><label>Categoria (pra poder filtrar depois)</label>
+      <select id="division-category-input">
+        <option value="">Sem categoria</option>
+        <optgroup label="Membros superiores">
+          <option value="peitoral">Peitoral</option>
+          <option value="costas">Costas</option>
+          <option value="ombro">Ombro</option>
+          <option value="biceps">Bíceps</option>
+          <option value="triceps">Tríceps</option>
+          <option value="abdomen">Abdômen</option>
+        </optgroup>
+        <optgroup label="Membros inferiores">
+          <option value="quadriceps">Quadríceps</option>
+          <option value="posterior">Posterior de coxa</option>
+          <option value="panturrilha">Panturrilha</option>
+        </optgroup>
+        <optgroup label="Outro">
+          <option value="aerobio">Aeróbio</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="auth-error" id="division-modal-error"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn-ghost" style="flex:1;justify-content:center" onclick="closeDivisionModal()">Cancelar</button>
+      <button class="btn-primary" style="flex:1;justify-content:center" id="division-modal-save-btn" onclick="saveDivision()">Salvar</button>
     </div>
   </div>
 </div>
@@ -2766,24 +2836,70 @@ async function deleteExercise(id){
   if(mtSelectedStudentId) await loadStudentTreino(mtSelectedStudentId);
 }
 
+let treinoAlunoRoster = [];
 async function populateTreinoAlunoSelect(){
   const sel = document.getElementById('treino-aluno-select');
   if(!sel || !sb || !currentUser) return;
-  const { data: students } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
-  if(!students?.length){ sel.innerHTML = '<option value="">Nenhum aluno ativo</option>'; return; }
+  const { data: students } = await sb.from('students').select('id, gender').eq('professor_id', currentUser.id);
+  if(!students?.length){ treinoAlunoRoster = []; sel.innerHTML = '<option value="" disabled>Nenhum aluno ativo</option>'; return; }
   const profiles = await Promise.all(students.map(s=>sb.from('profiles').select('full_name').eq('id',s.id).single()));
-  const prevVal = sel.value;
-  sel.innerHTML = '<option value="">Selecione um aluno...</option>' +
-    students.map((s,i)=>`<option value="${s.id}">${profiles[i]?.data?.full_name||'Aluno'}</option>`).join('');
-  if(prevVal) sel.value = prevVal;
+  treinoAlunoRoster = students.map((s,i)=>({ id: s.id, gender: s.gender||'', name: profiles[i]?.data?.full_name||'Aluno' }))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  renderTreinoAlunoOptions();
+}
+
+function renderTreinoAlunoOptions(){
+  const sel = document.getElementById('treino-aluno-select');
+  if(!sel) return;
+  const genderFilter = document.getElementById('treino-aluno-gender-filter')?.value || '';
+  const search = (document.getElementById('treino-aluno-search')?.value || '').trim().toLowerCase();
+  const filtered = treinoAlunoRoster.filter(a=>{
+    if(genderFilter && a.gender !== genderFilter) return false;
+    if(search && !a.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  if(!filtered.length){ sel.innerHTML = '<option value="" disabled>Nenhum aluno encontrado</option>'; return; }
+  sel.innerHTML = filtered.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+const MUSCLE_CATEGORIES = [
+  {id:'peitoral', label:'Peitoral', group:'superior'},
+  {id:'costas', label:'Costas', group:'superior'},
+  {id:'ombro', label:'Ombro', group:'superior'},
+  {id:'biceps', label:'Bíceps', group:'superior'},
+  {id:'triceps', label:'Tríceps', group:'superior'},
+  {id:'abdomen', label:'Abdômen', group:'superior'},
+  {id:'quadriceps', label:'Quadríceps', group:'inferior'},
+  {id:'posterior', label:'Posterior de coxa', group:'inferior'},
+  {id:'panturrilha', label:'Panturrilha', group:'inferior'},
+  {id:'aerobio', label:'Aeróbio', group:'aerobio'},
+];
+const MUSCLE_GROUPS = [
+  {id:'all', label:'Todos'},
+  {id:'superior', label:'Superiores'},
+  {id:'inferior', label:'Inferiores'},
+  {id:'aerobio', label:'Aeróbio'},
+];
+let teGroupFilter = 'all';
+let teCategoryFilter = null;
+
+function goToTreinoEditorFromSelect(studentId){
+  const sel = document.getElementById('treino-aluno-select');
+  const name = sel?.selectedOptions?.[0]?.textContent || 'Aluno';
+  goToTreinoEditor(studentId, name);
+}
+function goToTreinoEditor(studentId, studentName){
+  mtSelectedStudentId = studentId;
+  teGroupFilter = 'all'; teCategoryFilter = null;
+  showPage('treino-editor');
+  const nameEl = document.getElementById('te-student-name');
+  if(nameEl) nameEl.textContent = studentName || 'Aluno';
+  loadStudentTreino(studentId);
 }
 
 async function loadStudentTreino(studentId){
   mtSelectedStudentId = studentId || null;
-  const wrap = document.getElementById('treino-divisions-wrap');
-  const hint = document.getElementById('treino-select-hint');
-  if(!studentId){ wrap.hidden = true; hint.hidden = false; return; }
-  wrap.hidden = false; hint.hidden = true;
+  if(!studentId) return;
   const { data: divisions } = await sb.from('training_divisions').select('*')
     .eq('student_id', studentId).eq('professor_id', currentUser.id).order('order_index');
   mtDivisions = divisions || [];
@@ -2794,19 +2910,53 @@ async function loadStudentTreino(studentId){
       .in('division_id', divIds).order('order_index');
     (tes||[]).forEach(te=>{ (mtExercisesByDivision[te.division_id] ||= []).push(te); });
   }
-  renderProfDivisions();
+  renderTeFilters();
+  renderTeDivisions();
 }
 
-function renderProfDivisions(){
-  const el = document.getElementById('treino-divisions-list');
+function teSetGroupFilter(g){ teGroupFilter = g; teCategoryFilter = null; renderTeFilters(); renderTeDivisions(); }
+function teSetCategoryFilter(c){ teCategoryFilter = (teCategoryFilter===c ? null : c); renderTeFilters(); renderTeDivisions(); }
+
+function renderTeFilters(){
+  const groupEl = document.getElementById('te-group-filter');
+  if(!groupEl) return;
+  groupEl.innerHTML = MUSCLE_GROUPS.map(g=>
+    `<button class="div-tab ${teGroupFilter===g.id?'on':''}" onclick="teSetGroupFilter('${g.id}')">${g.label}</button>`).join('');
+  const catEl = document.getElementById('te-category-filter');
+  if(teGroupFilter==='all' || teGroupFilter==='aerobio'){ catEl.hidden = true; catEl.innerHTML=''; return; }
+  const cats = MUSCLE_CATEGORIES.filter(c=>c.group===teGroupFilter);
+  catEl.hidden = false;
+  catEl.innerHTML = cats.map(c=>
+    `<button class="div-tab sub ${teCategoryFilter===c.id?'on':''}" onclick="teSetCategoryFilter('${c.id}')">${c.label}</button>`).join('');
+}
+
+function teDivisionsFiltered(){
+  if(teGroupFilter==='all') return mtDivisions;
+  return mtDivisions.filter(d=>{
+    const cat = MUSCLE_CATEGORIES.find(c=>c.id===d.category);
+    const grp = cat?.group || null;
+    if(grp !== teGroupFilter) return false;
+    if(teCategoryFilter && d.category !== teCategoryFilter) return false;
+    return true;
+  });
+}
+
+function renderTeDivisions(){
+  const el = document.getElementById('te-divisions-list');
   if(!el) return;
+  const list = teDivisionsFiltered();
   if(!mtDivisions.length){
-    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhuma divisão criada ainda. Clique em "+ Nova divisão" pra começar.</p>';
+    el.innerHTML = '<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma divisão criada ainda. Clique em "+ Nova divisão" pra começar.</p></div>';
+    return;
+  }
+  if(!list.length){
+    el.innerHTML = '<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma divisão nessa categoria.</p></div>';
     return;
   }
   const exOptions = mtExerciseLibrary.map(ex=>`<option value="${ex.id}">${ex.name}</option>`).join('');
-  el.innerHTML = mtDivisions.map(div=>{
+  el.innerHTML = list.map(div=>{
     const exs = mtExercisesByDivision[div.id] || [];
+    const catLabel = MUSCLE_CATEGORIES.find(c=>c.id===div.category)?.label;
     const rows = exs.map(te=>`
       <div class="treino-ex-row">
         <div>
@@ -2820,11 +2970,20 @@ function renderProfDivisions(){
       </div>`).join('');
     return `<div class="treino-division-card">
       <div class="treino-division-head">
-        <span class="treino-division-name">${div.name}</span>
-        <button onclick="removeTrainingDivision('${div.id}')" title="Excluir divisão"
-          style="background:none;border:none;cursor:pointer;color:var(--muted)">
-          <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.x}</span>
-        </button>
+        <div>
+          <span class="treino-division-name">${div.name}</span>
+          ${catLabel?`<span style="font-size:.74rem;color:var(--muted);font-weight:600;margin-left:8px">${catLabel}</span>`:''}
+        </div>
+        <div style="display:flex;gap:4px">
+          <button onclick="openDivisionModal('${div.id}')" title="Editar divisão"
+            style="background:none;border:none;cursor:pointer;color:var(--muted)">
+            <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.edit}</span>
+          </button>
+          <button onclick="removeTrainingDivision('${div.id}')" title="Excluir divisão"
+            style="background:none;border:none;cursor:pointer;color:var(--muted)">
+            <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.x}</span>
+          </button>
+        </div>
       </div>
       ${rows || '<p style="color:var(--muted);font-size:.84rem">Nenhum exercício nessa divisão ainda.</p>'}
       <div class="treino-add-ex-row">
@@ -2840,14 +2999,34 @@ function renderProfDivisions(){
   }).join('');
 }
 
-async function addTrainingDivision(){
+function openDivisionModal(id){
+  document.getElementById('division-modal-error').textContent = '';
+  document.getElementById('division-edit-id').value = id || '';
+  document.getElementById('division-modal-title').textContent = id ? 'Editar divisão' : 'Nova divisão';
+  const div = id ? mtDivisions.find(d=>d.id===id) : null;
+  document.getElementById('division-name-input').value = div?.name || '';
+  document.getElementById('division-category-input').value = div?.category || '';
+  document.getElementById('division-modal-overlay').hidden = false;
+}
+function closeDivisionModal(){ document.getElementById('division-modal-overlay').hidden = true; }
+
+async function saveDivision(){
   if(!mtSelectedStudentId) return;
-  const name = prompt('Nome da divisão (ex: Treino A, Superior, Segunda-feira...)');
-  if(!name || !name.trim()) return;
-  const { error } = await sb.from('training_divisions').insert({
-    professor_id: currentUser.id, student_id: mtSelectedStudentId, name: name.trim(), order_index: mtDivisions.length
-  });
-  if(error){ alert('Erro ao criar divisão: '+error.message); return; }
+  const id = document.getElementById('division-edit-id').value;
+  const name = document.getElementById('division-name-input').value.trim();
+  const category = document.getElementById('division-category-input').value || null;
+  const errEl = document.getElementById('division-modal-error');
+  errEl.textContent = '';
+  if(!name){ errEl.textContent = 'Digite o nome da divisão.'; return; }
+  const btn = document.getElementById('division-modal-save-btn');
+  btn.disabled = true; const origTxt = btn.textContent; btn.textContent = 'Salvando...';
+  const payload = { professor_id: currentUser.id, student_id: mtSelectedStudentId, name, category };
+  const { error } = id
+    ? await sb.from('training_divisions').update(payload).eq('id', id)
+    : await sb.from('training_divisions').insert({ ...payload, order_index: mtDivisions.length });
+  btn.disabled = false; btn.textContent = origTxt;
+  if(error){ errEl.textContent = 'Erro ao salvar: '+error.message; return; }
+  closeDivisionModal();
   await loadStudentTreino(mtSelectedStudentId);
 }
 
@@ -3062,7 +3241,7 @@ let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student' };
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student', 'treino-editor': 'professor' };
   if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -4490,7 +4669,7 @@ async function loginAluno() {
 
   // 6. Criar/atualizar perfil e vínculo com sessão autenticada
   const { error: p1 } = await sb.from('profiles').upsert({ id: loginData.user.id, full_name: preReg.full_name, phone: preReg.phone||null, role: 'student' }, { onConflict: 'id' });
-  const { error: s1 } = await sb.from('students').upsert({ id: loginData.user.id, cpf: cpf, professor_id: preReg.professor_id }, { onConflict: 'id' });
+  const { error: s1 } = await sb.from('students').upsert({ id: loginData.user.id, cpf: cpf, professor_id: preReg.professor_id, gender: preReg.gender||null }, { onConflict: 'id' });
   if(p1) console.error('Erro ao criar perfil:', p1);
   if(s1) console.error('Erro ao vincular aluno:', s1);
   if(p1 || s1) {
@@ -4768,12 +4947,8 @@ function goToMeuTreino(){
     showPage('meu-treino');
   }
 }
-function openStudentTreino(studentId){
-  showProfTab('treino');
-  setTimeout(()=>{
-    const sel = document.getElementById('treino-aluno-select');
-    if(sel){ sel.value = studentId; loadStudentTreino(studentId); }
-  }, 60);
+function openStudentTreino(studentId, studentName){
+  goToTreinoEditor(studentId, studentName || 'Aluno');
 }
 
 async function loadProfAllBookings() {
@@ -6694,6 +6869,7 @@ async function cadastrarAluno() {
   const nome   = (document.getElementById('new-aluno-nome')?.value||'').trim();
   const cpfRaw = (document.getElementById('new-aluno-cpf')?.value||'').replace(/\D/g,'');
   const phone  = (document.getElementById('new-aluno-phone')?.value||'').trim();
+  const gender = (document.getElementById('new-aluno-gender')?.value||'').trim();
   const btn    = document.getElementById('cadastrar-aluno-btn');
   const result = document.getElementById('cadastrar-aluno-result');
 
@@ -6708,6 +6884,7 @@ async function cadastrarAluno() {
     cpf: cpfRaw,
     full_name: nome,
     phone: phone || null,
+    gender: gender || null,
     professor_id: currentUser.id
   });
 
@@ -6723,6 +6900,7 @@ async function cadastrarAluno() {
   document.getElementById('new-aluno-nome').value  = '';
   document.getElementById('new-aluno-cpf').value   = '';
   document.getElementById('new-aluno-phone').value = '';
+  document.getElementById('new-aluno-gender').value = '';
 
   const cpfFmt = cpfRaw.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
   result.hidden = false;
@@ -6786,7 +6964,7 @@ async function loadProfAlunos() {
           title="Anamnese">${anamDone?'Anamnese: Feito':'Anamnese: Pendente'}</span>
         <span style="font-size:.75rem;color:var(--pine);font-weight:700;
           background:rgba(52,106,172,.12);padding:4px 10px;border-radius:20px">Ativo</span>
-        <button onclick="openStudentTreino('${s.id}')"
+        <button onclick="openStudentTreino('${s.id}', '${(p?.full_name||'Aluno').replace(/'/g,"\\'")}')"
           title="Gerenciar treino"
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
             color:var(--pine);font-size:.9rem;line-height:1;transition:background .15s"
