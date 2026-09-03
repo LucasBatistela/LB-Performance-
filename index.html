@@ -262,6 +262,8 @@ img { max-width: 100%; display: block; }
 .chat-record-bar { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding: 0 6px; font-size: .88rem; color: var(--ink-2); }
 .chat-record-bar[hidden] { display: none; }
 .chat-record-cancel { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: none; color: #C0392B; flex-shrink: 0; }
+.chat-record-level { display: flex; align-items: center; gap: 3px; height: 20px; flex-shrink: 0; }
+.chat-record-level span { display: block; width: 3px; height: 3px; min-height: 3px; border-radius: 2px; background: #C0392B; transition: height .09s linear; }
 .chat-record-dot { width: 10px; height: 10px; border-radius: 50%; background: #C0392B; flex-shrink: 0; animation: chat-record-pulse 1s infinite; }
 @keyframes chat-record-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 #duvidas-record-time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); flex-shrink: 0; }
@@ -1916,6 +1918,9 @@ img { max-width: 100%; display: block; }
               <button type="button" onclick="cancelDuvidasRecording()" class="chat-record-cancel" aria-label="Cancelar gravação">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0-.8 13.2A2 2 0 0 1 16.2 21H7.8a2 2 0 0 1-2-1.8L5 6"/></svg>
               </button>
+              <div id="duvidas-record-level" class="chat-record-level" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
               <span class="chat-record-dot"></span>
               <span id="duvidas-record-time">0:00</span>
               <span class="chat-record-hint">Solte para enviar</span>
@@ -5089,6 +5094,9 @@ let duvidasRecordedChunks = [];
 let duvidasRecordStartTime = 0;
 let duvidasRecordTimer = null;
 let duvidasRecordCancelled = false;
+let duvidasAudioCtx = null;
+let duvidasAnalyser = null;
+let duvidasLevelRAF = null;
 
 async function startDuvidasRecording(e){
   if(e) e.preventDefault();
@@ -5113,6 +5121,7 @@ async function startDuvidasRecording(e){
     stream.getTracks().forEach(t=>t.stop());
     const duration = Math.round((Date.now()-duvidasRecordStartTime)/1000);
     stopDuvidasRecordTimer();
+    stopDuvidasLevelMeter();
     document.getElementById('duvidas-record-bar').hidden = true;
     document.getElementById('duvidas-input').hidden = false;
     document.getElementById('duvidas-attach-btn').hidden = false;
@@ -5132,6 +5141,17 @@ async function startDuvidasRecording(e){
   document.getElementById('duvidas-record-bar').hidden = false;
   document.getElementById('duvidas-mic-btn')?.classList.add('is-recording');
   startDuvidasRecordTimer();
+
+  // Medidor de nível — mostra visualmente que a voz está sendo captada
+  try {
+    duvidasAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const source = duvidasAudioCtx.createMediaStreamSource(stream);
+    duvidasAnalyser = duvidasAudioCtx.createAnalyser();
+    duvidasAnalyser.fftSize = 32;
+    duvidasAnalyser.smoothingTimeConstant = 0.6;
+    source.connect(duvidasAnalyser);
+    startDuvidasLevelMeter();
+  } catch(_){ /* medidor é só um extra visual — a gravação segue normal sem ele */ }
 
   // Solta o dedo/mouse em qualquer lugar da tela pra parar e enviar
   const stopOnce = ()=>{
@@ -5156,6 +5176,30 @@ function startDuvidasRecordTimer(){
 function stopDuvidasRecordTimer(){
   clearInterval(duvidasRecordTimer);
   duvidasRecordTimer = null;
+}
+
+function startDuvidasLevelMeter(){
+  const bars = document.querySelectorAll('#duvidas-record-level span');
+  if(!duvidasAnalyser || !bars.length) return;
+  const data = new Uint8Array(duvidasAnalyser.frequencyBinCount);
+  const tick = ()=>{
+    if(!duvidasAnalyser) return;
+    duvidasAnalyser.getByteFrequencyData(data);
+    const step = Math.max(1, Math.floor(data.length/bars.length));
+    bars.forEach((bar,i)=>{
+      const v = data[i*step] || 0;
+      bar.style.height = Math.max(3, Math.round((v/255)*20)) + 'px';
+    });
+    duvidasLevelRAF = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stopDuvidasLevelMeter(){
+  if(duvidasLevelRAF) cancelAnimationFrame(duvidasLevelRAF);
+  duvidasLevelRAF = null;
+  document.querySelectorAll('#duvidas-record-level span').forEach(b=>{ b.style.height='3px'; });
+  if(duvidasAudioCtx){ try{ duvidasAudioCtx.close(); }catch(_){} duvidasAudioCtx=null; }
+  duvidasAnalyser = null;
 }
 function stopDuvidasRecording(){
   if(duvidasMediaRecorder && duvidasMediaRecorder.state!=='inactive') duvidasMediaRecorder.stop();
