@@ -554,10 +554,10 @@ img { max-width: 100%; display: block; }
   line-height: 1.55; min-height: 2.7em; }
 .plan-price-area { margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
 .plan-price { font-family: var(--font-d); font-size: 2.1rem; font-weight: 800; color: var(--ink);
-  letter-spacing: -.02em; }
+  letter-spacing: -.02em; display: flex; align-items: baseline; flex-wrap: nowrap; gap: 3px; }
+/* Fica sempre ao lado do valor (nunca embaixo), no desktop e no celular */
+.plan-price-period { font-size: .8rem; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .plan-period { font-size: .85rem; color: var(--muted); margin-top: 3px; }
-/* Valores embaçados de propósito — a pessoa consulta o preço direto com o Lucas */
-.blur-price { display: inline-block; filter: blur(5.5px); user-select: none; -webkit-user-select: none; }
 .plan-freq-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
 .freq-tab { padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
   font-size: .78rem; font-weight: 700; transition: all .15s; cursor: pointer; background: var(--surface); color: var(--ink); }
@@ -3474,11 +3474,6 @@ const LANGUAGE_OPTIONS = [
   { id:'es-419', label:'Español (Latinoamérica)' },
   { id:'es-ES', label:'Español (España)' },
 ];
-// Borra os valores em R$ (nome/detalhes continuam legíveis) — pra ninguém adivinhar o preço
-// só de olhar, e a pessoa precisar entrar em contato pra consultar.
-function blurMoney(text){
-  return (text||'').replace(/R\$\s?[\d.,]+(?:\/[^\s·]+)?/g, m => `<span class="blur-price">${m}</span>`);
-}
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
   if(!grid||grid.dataset.rendered) return;
@@ -3488,16 +3483,15 @@ function renderPlans() {
     if(p.freqToggle){
       const tabs=p.freqToggle.map((f,fi)=>`<button class="freq-tab${fi===0?' active':''}" onclick="selectFreq(${pi},${fi},this)">${f.label}</button>`).join('');
       priceHTML=`<div class="plan-freq-tabs">${tabs}</div>
-        <div class="plan-price" id="plan-price-${pi}">${blurMoney(p.freqToggle[0].price)}<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mês</span></div>
-        <div class="plan-period" id="plan-detail-${pi}">${blurMoney(p.freqToggle[0].detail+' · '+p.freqToggle[0].trimestral)}</div>`;
+        <div class="plan-price" id="plan-price-${pi}">${p.freqToggle[0].price}<span class="plan-price-period">/mês</span></div>
+        <div class="plan-period" id="plan-detail-${pi}">${p.freqToggle[0].detail} · ${p.freqToggle[0].trimestral}</div>`;
     } else if(p.priceToggle){
       const tabs=p.priceToggle.map((f,fi)=>`<button class="freq-tab${fi===0?' active':''}" onclick="selectPeriod(${pi},${fi},this)">${f.label}</button>`).join('');
       priceHTML=`<div class="plan-freq-tabs">${tabs}</div>
-        <div class="plan-price" id="plan-price-${pi}">${blurMoney(p.priceToggle[0].price)}</div>
-        <div class="plan-period" id="plan-detail-${pi}">${p.priceToggle[0].period}</div>`;
+        <div class="plan-price" id="plan-price-${pi}">${p.priceToggle[0].price}<span class="plan-price-period" id="plan-detail-${pi}">${p.priceToggle[0].period}</span></div>`;
     } else {
-      priceHTML=`<div class="plan-price">${blurMoney(p.price)}</div>
-        <div class="plan-period">${p.period}${p.priceAlt?` · ${blurMoney(p.priceAlt)}`:''}</div>`;
+      priceHTML=`<div class="plan-price">${p.price}<span class="plan-price-period">${p.period}</span></div>
+        ${p.priceAlt?`<div class="plan-period">${p.priceAlt}</div>`:''}`;
     }
     const feats=p.features.map(f=>`<li><span class="feat-check">${UI_ICONS.check}</span>${f}</li>`).join('');
     const nots=(p.notIncluded||[]).map(f=>`<li class="feat-no"><span class="feat-check">${UI_ICONS.x}</span><span style="color:var(--muted)">${f}</span></li>`).join('');
@@ -3521,15 +3515,14 @@ function selectFreq(pi,fi,btn){
   btn.closest('.plan-freq-tabs').querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const f=PLANS[pi].freqToggle[fi];
-  document.getElementById('plan-price-'+pi).innerHTML=blurMoney(f.price)+'<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mês</span>';
-  document.getElementById('plan-detail-'+pi).innerHTML=blurMoney(f.detail+' · '+f.trimestral);
+  document.getElementById('plan-price-'+pi).innerHTML=f.price+'<span class="plan-price-period">/mês</span>';
+  document.getElementById('plan-detail-'+pi).textContent=f.detail+' · '+f.trimestral;
 }
 function selectPeriod(pi,fi,btn){
   btn.closest('.plan-freq-tabs').querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const f=PLANS[pi].priceToggle[fi];
-  document.getElementById('plan-price-'+pi).innerHTML=blurMoney(f.price);
-  document.getElementById('plan-detail-'+pi).textContent=f.period;
+  document.getElementById('plan-price-'+pi).innerHTML=f.price+'<span class="plan-price-period" id="plan-detail-'+pi+'">'+f.period+'</span>';
 }
 
 /* ── Home accordion ───────────────────────────────────────────── */
