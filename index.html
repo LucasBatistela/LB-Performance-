@@ -954,6 +954,48 @@ img { max-width: 100%; display: block; }
 .cal-booking-actions { flex-shrink: 0; white-space: nowrap; }
 #dash-historico-calendar-mode[hidden], #prof-bookings-calendar-mode[hidden],
 #dash-historico-list-mode[hidden], #prof-bookings-list-mode[hidden] { display: none; }
+
+/* ─── MEU TREINO (biblioteca de exercícios, divisões, execução, carga) ───── */
+.exlib-item { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; background: var(--surface-alt); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.exlib-item-name { font-weight: 600; font-size: .88rem; }
+.exlib-item-meta { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+.exlib-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.exlib-item-actions button { background: none; border: none; cursor: pointer; padding: 5px 7px; border-radius: 6px; color: var(--muted); }
+.exlib-item-actions button:hover { background: rgba(52,106,172,.1); color: var(--pine); }
+.treino-division-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px; }
+.treino-division-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.treino-division-name { font-weight: 700; font-size: .92rem; }
+.treino-ex-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+.treino-ex-row:last-child { border-bottom: none; }
+.treino-ex-meta { font-size: .78rem; color: var(--muted); }
+.treino-add-ex-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1.5px dashed var(--border); }
+.treino-add-ex-row select, .treino-add-ex-row input { font-size: .82rem; padding: 8px 10px; }
+.div-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 18px; padding-bottom: 2px; }
+.div-tab { flex-shrink: 0; padding: 9px 18px; border-radius: 999px; font-weight: 700; font-size: .85rem;
+  background: var(--surface-alt); color: var(--muted); border: none; cursor: pointer; white-space: nowrap; }
+.div-tab.on { background: var(--pine); color: #fff; }
+.mt-ex-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.mt-ex-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.mt-ex-name { font-weight: 700; font-size: .98rem; }
+.mt-ex-sets { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.mt-ex-video { width: 100%; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 12px; aspect-ratio: 16/9; }
+.mt-ex-video video, .mt-ex-video iframe { width: 100%; height: 100%; display: block; border: none; }
+.mt-ex-video-ph { width: 100%; aspect-ratio: 16/9; border-radius: var(--radius-sm); background: var(--surface-alt);
+  display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: .82rem; margin-bottom: 12px; }
+.mt-rest-wrap { margin-bottom: 12px; }
+.mt-rest-bar-wrap { height: 10px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+.mt-rest-bar { display: block; height: 100%; background: var(--pine); border-radius: 999px; width: 0%; transition: width 1s linear; }
+.mt-rest-row { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; }
+.mt-rest-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pine); }
+.mt-load-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mt-load-input { width: 90px; font-size: .88rem; padding: 8px 10px; }
+.mt-load-set-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: .84rem; }
+.mt-load-set-label { width: 64px; flex-shrink: 0; color: var(--muted); }
+.mt-load-link { font-size: .78rem; color: var(--pine); cursor: pointer; font-weight: 600; background: none; border: none; padding: 0; }
+.mt-load-saved { font-size: .76rem; color: var(--muted); }
+
 .dash-card-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: .78rem; color: var(--muted);
   text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
 .dash-card-icon { flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--surface-alt);
@@ -1022,10 +1064,14 @@ img { max-width: 100%; display: block; }
     <div class="menu-logo">Lucas<span>.</span></div>
     <button class="menu-close" onclick="closeMenu()">×</button>
   </div>
-  <nav class="menu-nav">
+  <nav class="menu-nav" id="menu-nav-guest">
     <a onclick="showPage('home');closeMenu()">Início</a>
     <a onclick="showPage('sobre');closeMenu()">Sobre</a>
     <a onclick="showPage('planos');closeMenu()">Planos</a>
+  </nav>
+  <nav class="menu-nav" id="menu-nav-auth" hidden>
+    <a onclick="goToMeuTreino();closeMenu()">Meu treino</a>
+    <a onclick="showPage('duvidas');closeMenu()">Chat</a>
   </nav>
   <div class="menu-footer">
     <button id="menu-auth-btn" onclick="showPage('login');closeMenu()">Entrar</button>
@@ -1472,12 +1518,13 @@ img { max-width: 100%; display: block; }
           <div id="dash-proximo-treino"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento.</p></div>
           <button class="btn-primary" onclick="showPage('agendar')" style="margin-top:14px;font-size:.85rem;padding:10px 20px">Agendar nova aula</button>
         </div>
-        <div class="dash-card">
+        <div class="dash-card dash-card-clickable"
+          onclick="if(event.target.closest('[onclick]')!==this) return; showPage('meu-treino')" title="Ver meu treino">
           <div class="dash-card-title">
             <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg></span>
             Plano de treino
           </div>
-          <div id="dash-plano"><p style="color:var(--muted);font-size:.88rem">Seu professor vai vincular seu treino em breve.</p></div>
+          <div id="dash-plano"><p style="color:var(--muted);font-size:.88rem">Toque para ver seus exercícios, séries e registrar sua carga.</p></div>
         </div>
         <div class="dash-card">
           <div class="dash-card-title">
@@ -1636,6 +1683,20 @@ img { max-width: 100%; display: block; }
     </div>
   </div>
 
+  <!-- MEU TREINO (aluno) -->
+  <div class="page" id="page-meu-treino">
+    <div class="dash-wrap">
+      <div class="compact-page-title">
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg></span>
+        Meu treino
+      </div>
+      <div class="div-tabs" id="mt-division-tabs"></div>
+      <div id="mt-content">
+        <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
+      </div>
+    </div>
+  </div>
+
   <!-- DASHBOARD PROFESSOR -->
   <div class="page" id="page-dashboard-prof">
     <div class="dash-wrap">
@@ -1651,6 +1712,7 @@ img { max-width: 100%; display: block; }
       <div class="admin-tabs" style="margin-bottom:24px">
         <button class="admin-tab active" id="ptab-visao" onclick="showProfTab('visao')">Visão Geral</button>
         <button class="admin-tab" id="ptab-alunos" onclick="showProfTab('alunos')">Alunos</button>
+        <button class="admin-tab" id="ptab-treino" onclick="showProfTab('treino')">Treino</button>
         <button class="admin-tab" id="ptab-agendamentos" onclick="showProfTab('agendamentos')">Agendamentos</button>
         <button class="admin-tab" id="ptab-disponibilidade" onclick="showProfTab('disponibilidade')">Disponibilidade</button>
         <button class="admin-tab" id="ptab-anamnese" onclick="showProfTab('anamnese')">Anamnese</button>
@@ -1737,6 +1799,42 @@ img { max-width: 100%; display: block; }
           </div>
           <div id="prof-alunos-list">
             <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Treino -->
+      <div id="prof-tab-treino" hidden>
+        <div class="dash-card" style="margin-bottom:20px">
+          <div class="dash-card-title" style="justify-content:space-between">
+            <span style="display:flex;align-items:center;gap:10px">
+              <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg></span>
+              Biblioteca de exercícios
+            </span>
+            <button class="btn-ghost" style="font-size:.8rem;padding:8px 14px" onclick="openExerciseModal()">+ Novo exercício</button>
+          </div>
+          <p style="font-size:.84rem;color:var(--muted);margin-bottom:14px">Cadastre o exercício uma vez e reaproveite em quantos alunos precisar.</p>
+          <div id="exercise-library-list"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 21c0-3.4 2.9-5.5 6-5.5s6 2.1 6 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15 15.3c2.6.4 4.5 2.2 4.5 5.7"/></svg></span>
+            Montar treino do aluno
+          </div>
+          <div style="margin-bottom:18px;max-width:340px">
+            <label>Aluno</label>
+            <select id="treino-aluno-select" onchange="loadStudentTreino(this.value)">
+              <option value="">Selecione um aluno...</option>
+            </select>
+          </div>
+          <p id="treino-select-hint" style="color:var(--muted);font-size:.88rem">Selecione um aluno acima pra montar o treino dele.</p>
+          <div id="treino-divisions-wrap" hidden>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <span style="font-weight:700;font-size:.88rem">Divisões de treino</span>
+              <button class="btn-ghost" style="font-size:.78rem;padding:7px 12px" onclick="addTrainingDivision()">+ Nova divisão</button>
+            </div>
+            <div id="treino-divisions-list"></div>
           </div>
         </div>
       </div>
@@ -2095,6 +2193,35 @@ img { max-width: 100%; display: block; }
     <div style="display:flex;gap:10px;margin-top:18px">
       <button class="btn-ghost" style="flex:1;justify-content:center" onclick="closeAdminPwdReset()">Cancelar</button>
       <button class="btn-primary" style="flex:1;justify-content:center" id="admin-pwd-reset-btn" onclick="confirmAdminPwdReset()">Redefinir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NOVO/EDITAR EXERCÍCIO (biblioteca do professor) ────────────── -->
+<div id="exercise-modal-overlay" class="overlay" hidden>
+  <div class="modal-box" style="max-width:440px">
+    <div style="font-weight:700;font-size:1.05rem;margin-bottom:16px" id="exercise-modal-title">Novo exercício</div>
+    <input type="hidden" id="exercise-edit-id">
+    <div class="form-row"><label>Nome do exercício</label>
+      <input type="text" id="exercise-name-input" placeholder="Ex: Supino reto com barra">
+    </div>
+    <div class="form-row">
+      <label>Vídeo de demonstração</label>
+      <div class="view-switch" id="exercise-video-mode-switch" style="margin-bottom:10px">
+        <button type="button" class="view-switch-btn on" data-mode="link" onclick="setExerciseVideoMode('link')" title="Link">Link</button>
+        <button type="button" class="view-switch-btn" data-mode="upload" onclick="setExerciseVideoMode('upload')" title="Upload">Upload</button>
+      </div>
+      <input type="text" id="exercise-video-url-input" placeholder="Link do YouTube, Instagram, etc.">
+      <div id="exercise-video-upload-wrap" hidden>
+        <input type="file" id="exercise-video-file-input" accept="video/*">
+        <p style="font-size:.76rem;color:var(--muted);margin-top:6px">O aluno consegue assistir esse vídeo mesmo sem internet, depois de abrir o app pelo menos uma vez online.</p>
+      </div>
+      <div id="exercise-video-upload-status" style="font-size:.78rem;color:var(--muted);margin-top:6px"></div>
+    </div>
+    <div class="auth-error" id="exercise-modal-error"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn-ghost" style="flex:1;justify-content:center" onclick="closeExerciseModal()">Cancelar</button>
+      <button class="btn-primary" style="flex:1;justify-content:center" id="exercise-modal-save-btn" onclick="saveExercise()">Salvar</button>
     </div>
   </div>
 </div>
@@ -2535,13 +2662,407 @@ window.addEventListener('scroll', ()=>{
   document.getElementById('main-nav').classList.toggle('scrolled', window.scrollY > 10);
 });
 
+/* ── MEU TREINO ───────────────────────────────────────────────── */
+let mtExerciseLibrary = [];
+let mtVideoMode = 'link';
+let mtSelectedStudentId = null;
+let mtDivisions = [];
+let mtExercisesByDivision = {};
+
+function setExerciseVideoMode(mode){
+  mtVideoMode = mode;
+  document.querySelectorAll('#exercise-video-mode-switch .view-switch-btn').forEach(b=>{
+    b.classList.toggle('on', b.dataset.mode===mode);
+  });
+  const urlInput = document.getElementById('exercise-video-url-input');
+  const uploadWrap = document.getElementById('exercise-video-upload-wrap');
+  if(urlInput) urlInput.hidden = mode!=='link';
+  if(uploadWrap) uploadWrap.hidden = mode!=='upload';
+}
+
+async function loadExerciseLibrary(){
+  const el = document.getElementById('exercise-library-list');
+  if(!el || !sb || !currentUser) return;
+  const { data, error } = await sb.from('exercises').select('*').eq('professor_id', currentUser.id).order('created_at');
+  if(error){ el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Erro ao carregar exercícios.</p>'; return; }
+  mtExerciseLibrary = data || [];
+  if(!mtExerciseLibrary.length){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhum exercício cadastrado ainda.</p>';
+  } else {
+    el.innerHTML = mtExerciseLibrary.map(ex => `
+      <div class="exlib-item">
+        <div>
+          <div class="exlib-item-name">${ex.name}</div>
+          <div class="exlib-item-meta">${ex.video_storage_path ? 'Vídeo enviado' : (ex.video_url ? 'Vídeo por link' : 'Sem vídeo cadastrado')}</div>
+        </div>
+        <div class="exlib-item-actions">
+          <button onclick="openExerciseModal('${ex.id}')" title="Editar"><span class="icon-inline" style="width:15px;height:15px">${UI_ICONS.edit}</span></button>
+          <button onclick="deleteExercise('${ex.id}')" title="Excluir"><span class="icon-inline" style="width:15px;height:15px">${UI_ICONS.x}</span></button>
+        </div>
+      </div>`).join('');
+  }
+  if(mtSelectedStudentId) renderProfDivisions();
+}
+
+function openExerciseModal(id){
+  document.getElementById('exercise-modal-error').textContent = '';
+  document.getElementById('exercise-edit-id').value = id || '';
+  document.getElementById('exercise-modal-title').textContent = id ? 'Editar exercício' : 'Novo exercício';
+  document.getElementById('exercise-video-upload-status').textContent = '';
+  document.getElementById('exercise-video-file-input').value = '';
+  const ex = id ? mtExerciseLibrary.find(e=>e.id===id) : null;
+  document.getElementById('exercise-name-input').value = ex?.name || '';
+  document.getElementById('exercise-video-url-input').value = ex?.video_url || '';
+  setExerciseVideoMode(ex?.video_storage_path ? 'upload' : 'link');
+  if(ex?.video_storage_path) document.getElementById('exercise-video-upload-status').textContent = 'Já tem um vídeo enviado — escolha outro arquivo só se quiser substituir.';
+  document.getElementById('exercise-modal-overlay').hidden = false;
+}
+function closeExerciseModal(){ document.getElementById('exercise-modal-overlay').hidden = true; }
+
+async function saveExercise(){
+  const id = document.getElementById('exercise-edit-id').value;
+  const name = document.getElementById('exercise-name-input').value.trim();
+  const errEl = document.getElementById('exercise-modal-error');
+  errEl.textContent = '';
+  if(!name){ errEl.textContent = 'Digite o nome do exercício.'; return; }
+  const btn = document.getElementById('exercise-modal-save-btn');
+  btn.disabled = true; const origTxt = btn.textContent; btn.textContent = 'Salvando...';
+  try{
+    let video_url = null, video_storage_path = null;
+    if(mtVideoMode==='link'){
+      video_url = document.getElementById('exercise-video-url-input').value.trim() || null;
+    } else {
+      const file = document.getElementById('exercise-video-file-input').files[0];
+      if(file){
+        document.getElementById('exercise-video-upload-status').textContent = 'Enviando vídeo...';
+        const path = `${currentUser.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+        const { error: upErr } = await sb.storage.from('exercise-videos').upload(path, file, { contentType: file.type||'video/mp4' });
+        if(upErr) throw upErr;
+        video_storage_path = path;
+      } else if(id){
+        const ex = mtExerciseLibrary.find(e=>e.id===id);
+        video_storage_path = ex?.video_storage_path || null;
+      }
+    }
+    const payload = { professor_id: currentUser.id, name, video_url, video_storage_path };
+    const { error } = id
+      ? await sb.from('exercises').update(payload).eq('id', id)
+      : await sb.from('exercises').insert(payload);
+    if(error) throw error;
+    closeExerciseModal();
+    await loadExerciseLibrary();
+  } catch(e){
+    errEl.textContent = 'Erro ao salvar: ' + (e.message||e);
+  } finally {
+    btn.disabled = false; btn.textContent = origTxt;
+  }
+}
+
+async function deleteExercise(id){
+  if(!confirm('Excluir esse exercício da biblioteca? Ele sai de todos os treinos que o usam.')) return;
+  const { error } = await sb.from('exercises').delete().eq('id', id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  await loadExerciseLibrary();
+  if(mtSelectedStudentId) await loadStudentTreino(mtSelectedStudentId);
+}
+
+async function populateTreinoAlunoSelect(){
+  const sel = document.getElementById('treino-aluno-select');
+  if(!sel || !sb || !currentUser) return;
+  const { data: students } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
+  if(!students?.length){ sel.innerHTML = '<option value="">Nenhum aluno ativo</option>'; return; }
+  const profiles = await Promise.all(students.map(s=>sb.from('profiles').select('full_name').eq('id',s.id).single()));
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">Selecione um aluno...</option>' +
+    students.map((s,i)=>`<option value="${s.id}">${profiles[i]?.data?.full_name||'Aluno'}</option>`).join('');
+  if(prevVal) sel.value = prevVal;
+}
+
+async function loadStudentTreino(studentId){
+  mtSelectedStudentId = studentId || null;
+  const wrap = document.getElementById('treino-divisions-wrap');
+  const hint = document.getElementById('treino-select-hint');
+  if(!studentId){ wrap.hidden = true; hint.hidden = false; return; }
+  wrap.hidden = false; hint.hidden = true;
+  const { data: divisions } = await sb.from('training_divisions').select('*')
+    .eq('student_id', studentId).eq('professor_id', currentUser.id).order('order_index');
+  mtDivisions = divisions || [];
+  const divIds = mtDivisions.map(d=>d.id);
+  mtExercisesByDivision = {};
+  if(divIds.length){
+    const { data: tes } = await sb.from('training_exercises').select('*, exercises(name, video_url, video_storage_path)')
+      .in('division_id', divIds).order('order_index');
+    (tes||[]).forEach(te=>{ (mtExercisesByDivision[te.division_id] ||= []).push(te); });
+  }
+  renderProfDivisions();
+}
+
+function renderProfDivisions(){
+  const el = document.getElementById('treino-divisions-list');
+  if(!el) return;
+  if(!mtDivisions.length){
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Nenhuma divisão criada ainda. Clique em "+ Nova divisão" pra começar.</p>';
+    return;
+  }
+  const exOptions = mtExerciseLibrary.map(ex=>`<option value="${ex.id}">${ex.name}</option>`).join('');
+  el.innerHTML = mtDivisions.map(div=>{
+    const exs = mtExercisesByDivision[div.id] || [];
+    const rows = exs.map(te=>`
+      <div class="treino-ex-row">
+        <div>
+          <div style="font-weight:600">${te.exercises?.name||'Exercício'}</div>
+          <div class="treino-ex-meta">${te.sets}x ${te.reps} · descanso ${te.rest_seconds}s</div>
+        </div>
+        <button onclick="removeTrainingExercise('${te.id}')" title="Remover"
+          style="background:none;border:none;cursor:pointer;color:var(--muted)">
+          <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.x}</span>
+        </button>
+      </div>`).join('');
+    return `<div class="treino-division-card">
+      <div class="treino-division-head">
+        <span class="treino-division-name">${div.name}</span>
+        <button onclick="removeTrainingDivision('${div.id}')" title="Excluir divisão"
+          style="background:none;border:none;cursor:pointer;color:var(--muted)">
+          <span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.x}</span>
+        </button>
+      </div>
+      ${rows || '<p style="color:var(--muted);font-size:.84rem">Nenhum exercício nessa divisão ainda.</p>'}
+      <div class="treino-add-ex-row">
+        <select id="add-ex-select-${div.id}" style="flex:1;min-width:160px">
+          <option value="">Escolher exercício...</option>${exOptions}
+        </select>
+        <input type="number" id="add-ex-sets-${div.id}" placeholder="Séries" value="3" min="1" style="width:75px">
+        <input type="text" id="add-ex-reps-${div.id}" placeholder="Reps" value="10" style="width:70px">
+        <input type="number" id="add-ex-rest-${div.id}" placeholder="Descanso(s)" value="60" min="0" style="width:105px">
+        <button class="btn-primary" style="font-size:.78rem;padding:8px 14px" onclick="addTrainingExercise('${div.id}')">Adicionar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addTrainingDivision(){
+  if(!mtSelectedStudentId) return;
+  const name = prompt('Nome da divisão (ex: Treino A, Superior, Segunda-feira...)');
+  if(!name || !name.trim()) return;
+  const { error } = await sb.from('training_divisions').insert({
+    professor_id: currentUser.id, student_id: mtSelectedStudentId, name: name.trim(), order_index: mtDivisions.length
+  });
+  if(error){ alert('Erro ao criar divisão: '+error.message); return; }
+  await loadStudentTreino(mtSelectedStudentId);
+}
+
+async function removeTrainingDivision(id){
+  if(!confirm('Excluir essa divisão e todos os exercícios dela?')) return;
+  const { error } = await sb.from('training_divisions').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await loadStudentTreino(mtSelectedStudentId);
+}
+
+async function addTrainingExercise(divisionId){
+  const exId = document.getElementById(`add-ex-select-${divisionId}`).value;
+  if(!exId){ alert('Escolha um exercício da biblioteca.'); return; }
+  const sets = parseInt(document.getElementById(`add-ex-sets-${divisionId}`).value) || 3;
+  const reps = document.getElementById(`add-ex-reps-${divisionId}`).value.trim() || '10';
+  const rest = parseInt(document.getElementById(`add-ex-rest-${divisionId}`).value) || 60;
+  const order = (mtExercisesByDivision[divisionId]||[]).length;
+  const { error } = await sb.from('training_exercises').insert({
+    division_id: divisionId, professor_id: currentUser.id, student_id: mtSelectedStudentId,
+    exercise_id: exId, sets, reps, rest_seconds: rest, order_index: order
+  });
+  if(error){ alert('Erro ao adicionar exercício: '+error.message); return; }
+  await loadStudentTreino(mtSelectedStudentId);
+}
+
+async function removeTrainingExercise(id){
+  const { error } = await sb.from('training_exercises').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await loadStudentTreino(mtSelectedStudentId);
+}
+
+/* ── Meu treino (visão do aluno) ─────────────────────────────── */
+let mtActiveDivisionId = null;
+let mtStudentDivisions = [];
+let mtStudentExercisesByDivision = {};
+let mtLoadLogsCache = {};
+const mtRestTimers = {};
+
+async function loadMeuTreino(){
+  const tabsEl = document.getElementById('mt-division-tabs');
+  const contentEl = document.getElementById('mt-content');
+  if(!sb || !currentUser || !tabsEl || !contentEl) return;
+  contentEl.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
+  const { data: divisions } = await sb.from('training_divisions').select('*').eq('student_id', currentUser.id).order('order_index');
+  mtStudentDivisions = divisions || [];
+  if(!mtStudentDivisions.length){
+    tabsEl.innerHTML = '';
+    contentEl.innerHTML = '<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Seu professor ainda não montou seu treino. Assim que ele vincular, aparece aqui.</p></div>';
+    return;
+  }
+  const divIds = mtStudentDivisions.map(d=>d.id);
+  const { data: tes } = await sb.from('training_exercises').select('*, exercises(name, video_url, video_storage_path)')
+    .in('division_id', divIds).order('order_index');
+  mtStudentExercisesByDivision = {};
+  (tes||[]).forEach(te=>{ (mtStudentExercisesByDivision[te.division_id] ||= []).push(te); });
+
+  const teIds = (tes||[]).map(t=>t.id);
+  mtLoadLogsCache = {};
+  if(teIds.length){
+    const today = dateToStr(new Date());
+    const { data: logs } = await sb.from('load_logs').select('*')
+      .eq('student_id', currentUser.id).eq('session_date', today).in('training_exercise_id', teIds);
+    (logs||[]).forEach(l=>{ (mtLoadLogsCache[l.training_exercise_id] ||= {})[l.set_number] = l.load; });
+  }
+
+  if(!mtActiveDivisionId || !mtStudentDivisions.some(d=>d.id===mtActiveDivisionId)) mtActiveDivisionId = mtStudentDivisions[0].id;
+  renderMtDivisionTabs();
+  renderMtExercises();
+}
+
+function renderMtDivisionTabs(){
+  const el = document.getElementById('mt-division-tabs');
+  el.innerHTML = mtStudentDivisions.map(d=>
+    `<button class="div-tab ${d.id===mtActiveDivisionId?'on':''}" onclick="mtSetDivision('${d.id}')">${d.name}</button>`).join('');
+}
+function mtSetDivision(id){ mtActiveDivisionId = id; renderMtDivisionTabs(); renderMtExercises(); }
+
+function mtEmbedUrl(url){
+  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{6,})/);
+  if(yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  return null; // Instagram e outras plataformas não têm embed simples sem token de app — abre em nova aba.
+}
+function mtVideoHTML(ex){
+  if(ex?.video_storage_path){
+    const { data } = sb.storage.from('exercise-videos').getPublicUrl(ex.video_storage_path);
+    return `<div class="mt-ex-video"><video src="${data.publicUrl}" controls playsinline preload="metadata"></video></div>`;
+  }
+  if(ex?.video_url){
+    const embed = mtEmbedUrl(ex.video_url);
+    if(embed) return `<div class="mt-ex-video"><iframe src="${embed}" allowfullscreen allow="autoplay; encrypted-media"></iframe></div>`;
+    return `<div class="mt-ex-video-ph"><a href="${ex.video_url}" target="_blank" style="color:var(--pine);font-weight:600">Abrir vídeo do exercício →</a></div>`;
+  }
+  return `<div class="mt-ex-video-ph">Sem vídeo de demonstração</div>`;
+}
+
+function renderMtExercises(){
+  const el = document.getElementById('mt-content');
+  const exs = mtStudentExercisesByDivision[mtActiveDivisionId] || [];
+  if(!exs.length){ el.innerHTML = '<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhum exercício nessa divisão ainda.</p></div>'; return; }
+  el.innerHTML = exs.map(te=>{
+    const ex = te.exercises || {};
+    const saved = mtLoadLogsCache[te.id] || {};
+    const generalVal = saved[0] != null ? saved[0] : '';
+    const hasPerSet = Object.keys(saved).some(k=>k!=='0');
+    const setInputs = Array.from({length: te.sets}).map((_,i)=>{
+      const setNum = i+1;
+      const val = saved[setNum] != null ? saved[setNum] : '';
+      return `<div class="mt-load-set-row">
+        <span class="mt-load-set-label">Série ${setNum}</span>
+        <input type="number" step="0.5" class="mt-load-input" id="mt-load-${te.id}-${setNum}" value="${val}" placeholder="kg">
+      </div>`;
+    }).join('');
+    return `<div class="mt-ex-card">
+      <div class="mt-ex-head">
+        <span class="mt-ex-name">${ex.name||'Exercício'}</span>
+        <span class="mt-ex-sets">${te.sets}x ${te.reps}</span>
+      </div>
+      ${mtVideoHTML(ex)}
+      <div class="mt-rest-wrap">
+        <div class="mt-rest-row">
+          <span>Descanso: ${te.rest_seconds}s</span>
+          <button class="mt-load-link" onclick="mtStartRest('${te.id}', ${te.rest_seconds})">Iniciar descanso</button>
+          <span class="mt-rest-time" id="mt-rest-time-${te.id}"></span>
+        </div>
+        <div class="mt-rest-bar-wrap"><span class="mt-rest-bar" id="mt-rest-bar-${te.id}"></span></div>
+      </div>
+      <div id="mt-load-general-${te.id}" ${hasPerSet?'hidden':''}>
+        <div class="mt-load-row">
+          <input type="number" step="0.5" class="mt-load-input" id="mt-load-${te.id}-0" value="${generalVal}" placeholder="kg (todas as séries)">
+          <button class="btn-primary" style="font-size:.78rem;padding:8px 14px" onclick="mtSaveLoad('${te.id}', 0)">Salvar</button>
+          <button class="mt-load-link" onclick="mtTogglePerSet('${te.id}', true)">Registrar peso por série</button>
+        </div>
+      </div>
+      <div id="mt-load-perset-${te.id}" ${hasPerSet?'':'hidden'}>
+        ${setInputs}
+        <div style="display:flex;gap:10px;margin-top:8px;align-items:center">
+          <button class="btn-primary" style="font-size:.78rem;padding:8px 14px" onclick="mtSaveLoadAllSets('${te.id}', ${te.sets})">Salvar séries</button>
+          <button class="mt-load-link" onclick="mtTogglePerSet('${te.id}', false)">Usar peso único</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function mtTogglePerSet(teId, showPerSet){
+  document.getElementById(`mt-load-general-${teId}`).hidden = showPerSet;
+  document.getElementById(`mt-load-perset-${teId}`).hidden = !showPerSet;
+}
+
+function mtTeProfessorId(teId){
+  for(const arr of Object.values(mtStudentExercisesByDivision)){
+    const found = arr.find(t=>t.id===teId);
+    if(found) return found.professor_id;
+  }
+  return null;
+}
+
+async function mtSaveLoad(teId, setNumber){
+  const input = document.getElementById(`mt-load-${teId}-${setNumber}`);
+  const val = parseFloat(input.value);
+  if(isNaN(val)){ alert('Digite um peso válido.'); return; }
+  const today = dateToStr(new Date());
+  const { error } = await sb.from('load_logs').upsert({
+    training_exercise_id: teId, student_id: currentUser.id, professor_id: mtTeProfessorId(teId),
+    session_date: today, set_number: setNumber, load: val
+  }, { onConflict: 'training_exercise_id,session_date,set_number' });
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+  (mtLoadLogsCache[teId] ||= {})[setNumber] = val;
+  if(typeof showBookingMessage==='function') showBookingMessage('Carga salva.', 'success');
+}
+
+async function mtSaveLoadAllSets(teId, sets){
+  const today = dateToStr(new Date());
+  const rows = [];
+  for(let i=1;i<=sets;i++){
+    const input = document.getElementById(`mt-load-${teId}-${i}`);
+    const val = parseFloat(input.value);
+    if(!isNaN(val)) rows.push({ training_exercise_id: teId, student_id: currentUser.id, professor_id: mtTeProfessorId(teId), session_date: today, set_number: i, load: val });
+  }
+  if(!rows.length){ alert('Digite ao menos um peso.'); return; }
+  const { error } = await sb.from('load_logs').upsert(rows, { onConflict: 'training_exercise_id,session_date,set_number' });
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+  rows.forEach(r=> (mtLoadLogsCache[teId] ||= {})[r.set_number] = r.load);
+  if(typeof showBookingMessage==='function') showBookingMessage('Cargas salvas.', 'success');
+}
+
+function mtStartRest(teId, seconds){
+  if(mtRestTimers[teId]) clearInterval(mtRestTimers[teId]);
+  const bar = document.getElementById(`mt-rest-bar-${teId}`);
+  const timeEl = document.getElementById(`mt-rest-time-${teId}`);
+  if(!bar || !timeEl) return;
+  let remaining = seconds;
+  bar.style.transition = 'none'; bar.style.width = '100%';
+  void bar.offsetWidth;
+  bar.style.transition = `width ${seconds}s linear`;
+  requestAnimationFrame(()=>{ bar.style.width = '0%'; });
+  timeEl.textContent = `${remaining}s`;
+  mtRestTimers[teId] = setInterval(()=>{
+    remaining--;
+    if(remaining <= 0){
+      clearInterval(mtRestTimers[teId]); delete mtRestTimers[teId];
+      timeEl.textContent = 'Descanso concluído';
+      return;
+    }
+    timeEl.textContent = `${remaining}s`;
+  }, 1000);
+}
+
 /* ── Page routing ─────────────────────────────────────────────── */
 let currentPage = 'home';
 let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student' };
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student' };
   if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -2565,6 +3086,7 @@ function showPage(id, opts) {
   if(id==='notificacoes') renderNotifHistoryPage('hoje');
   if(id==='duvidas') renderDuvidasPage();
   if(id==='perfil-aluno') fillProfileCard();
+  if(id==='meu-treino') loadMeuTreino();
   const backBtn = document.getElementById('nav-back-btn');
   if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
@@ -4223,17 +4745,35 @@ async function loadProfDashboard() {
 
 /* ── Professor tabs ───────────────────────────────────────────── */
 function showProfTab(tab) {
-  ['visao','alunos','agendamentos','disponibilidade','anamnese','perfil'].forEach(t=>{
+  ['visao','alunos','treino','agendamentos','disponibilidade','anamnese','perfil'].forEach(t=>{
     const el = document.getElementById('prof-tab-'+t);
     const btn = document.getElementById('ptab-'+t);
     if(el) el.hidden = t!==tab;
     if(btn) btn.classList.toggle('active', t===tab);
   });
   if(tab==='alunos') loadProfAlunos();
+  if(tab==='treino'){ loadExerciseLibrary(); populateTreinoAlunoSelect(); }
   if(tab==='agendamentos') loadProfAllBookings();
   if(tab==='disponibilidade') renderProfDisponibilidade();
   if(tab==='anamnese') renderProfAnamnese();
   if(tab==='perfil') fillProfProfileCard();
+}
+
+function goToMeuTreino(){
+  if(!currentUser || !currentProfile) { showPage('login'); return; }
+  if(currentProfile.role==='professor'){
+    showPage('dashboard-prof');
+    setTimeout(()=>showProfTab('treino'), 50);
+  } else {
+    showPage('meu-treino');
+  }
+}
+function openStudentTreino(studentId){
+  showProfTab('treino');
+  setTimeout(()=>{
+    const sel = document.getElementById('treino-aluno-select');
+    if(sel){ sel.value = studentId; loadStudentTreino(studentId); }
+  }, 60);
 }
 
 async function loadProfAllBookings() {
@@ -4868,6 +5408,13 @@ function updateNavAvatar() {
       menuAuthBtn.textContent = 'Entrar';
       menuAuthBtn.onclick = ()=>{ showPage('login'); closeMenu(); };
     }
+  }
+  const guestNav = document.getElementById('menu-nav-guest');
+  const authNav = document.getElementById('menu-nav-auth');
+  if(guestNav && authNav){
+    const logged = !!(currentUser && currentProfile);
+    guestNav.hidden = logged;
+    authNav.hidden = !logged;
   }
   initNotifBell();
 }
@@ -6239,6 +6786,12 @@ async function loadProfAlunos() {
           title="Anamnese">${anamDone?'Anamnese: Feito':'Anamnese: Pendente'}</span>
         <span style="font-size:.75rem;color:var(--pine);font-weight:700;
           background:rgba(52,106,172,.12);padding:4px 10px;border-radius:20px">Ativo</span>
+        <button onclick="openStudentTreino('${s.id}')"
+          title="Gerenciar treino"
+          style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
+            color:var(--pine);font-size:.9rem;line-height:1;transition:background .15s"
+          onmouseover="this.style.background='rgba(52,106,172,.1)'"
+          onmouseout="this.style.background='none'"><span class="icon-inline" style="width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg></span></button>
         <button onclick="openAdminPwdReset('${s.id}', '${(p?.full_name||'Aluno').replace(/'/g,"\\'")}')"
           title="Redefinir senha"
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
