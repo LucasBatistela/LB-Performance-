@@ -556,6 +556,8 @@ img { max-width: 100%; display: block; }
 .plan-price { font-family: var(--font-d); font-size: 2.1rem; font-weight: 800; color: var(--ink);
   letter-spacing: -.02em; }
 .plan-period { font-size: .85rem; color: var(--muted); margin-top: 3px; }
+/* Valores embaçados de propósito — a pessoa consulta o preço direto com o Lucas */
+.blur-price { display: inline-block; filter: blur(5.5px); user-select: none; -webkit-user-select: none; }
 .plan-freq-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
 .freq-tab { padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
   font-size: .78rem; font-weight: 700; transition: all .15s; cursor: pointer; background: var(--surface); color: var(--ink); }
@@ -1225,7 +1227,7 @@ img { max-width: 100%; display: block; }
         </div>
         <div class="cred-card">
           <div class="cred-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5"/><path d="m21 8-3-3 1.5-1.5a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1L21 8Z"/><path d="M8 21l-3-3 1.5-1.5a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1L8 21Z"/><path d="m3 21 3-3"/><path d="m16 3 3-3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
           <div>
             <div class="cred-label">Atuação atual</div>
@@ -3335,6 +3337,9 @@ function closeMenu() {
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMenu(); });
 
 /* ── Plans data ───────────────────────────────────────────────── */
+// PENDENTE: "Treino personalizado no" está incompleto de propósito nos 4 planos —
+// falta o nome da plataforma própria (substituindo o MFIT, que não será mais usado).
+// Completar assim que o Lucas decidir o nome.
 const PLANS = [
   {
     id:'entrada-online', icon:'wifi', name:'Entrada Online', badge:'',
@@ -3343,7 +3348,7 @@ const PLANS = [
     features:[
       'Anamnese online',
       'Entrevista inicial por vídeo',
-      'Treino personalizado no MFIT',
+      'Treino personalizado no',
       'Suporte WhatsApp (retorno em até 24h)',
     ],
     notIncluded:['Videochamadas mensais','Suporte em tempo real'],
@@ -3358,7 +3363,7 @@ const PLANS = [
     features:[
       'Anamnese online',
       'Entrevista por vídeo',
-      'Treino personalizado no MFIT',
+      'Treino personalizado no',
       'Suporte WhatsApp 9h–20h (resposta rápida)',
       '2 videochamadas por mês',
     ],
@@ -3375,7 +3380,7 @@ const PLANS = [
     features:[
       'Anamnese online',
       'Entrevista presencial ou por vídeo',
-      'Treino personalizado no MFIT',
+      'Treino personalizado no',
       'Sessões presenciais conforme frequência',
     ],
     notIncluded:[],
@@ -3388,7 +3393,7 @@ const PLANS = [
     features:[
       'Anamnese online',
       'Entrevista presencial ou por vídeo',
-      'Treino personalizado no MFIT',
+      'Treino personalizado no',
       '1 sessão presencial/semana (4/mês)',
       'Suporte WhatsApp 9h–20h',
       '2 videochamadas por mês',
@@ -3469,6 +3474,11 @@ const LANGUAGE_OPTIONS = [
   { id:'es-419', label:'Español (Latinoamérica)' },
   { id:'es-ES', label:'Español (España)' },
 ];
+// Borra os valores em R$ (nome/detalhes continuam legíveis) — pra ninguém adivinhar o preço
+// só de olhar, e a pessoa precisar entrar em contato pra consultar.
+function blurMoney(text){
+  return (text||'').replace(/R\$\s?[\d.,]+(?:\/[^\s·]+)?/g, m => `<span class="blur-price">${m}</span>`);
+}
 function renderPlans() {
   const grid=document.getElementById('plans-grid');
   if(!grid||grid.dataset.rendered) return;
@@ -3478,16 +3488,16 @@ function renderPlans() {
     if(p.freqToggle){
       const tabs=p.freqToggle.map((f,fi)=>`<button class="freq-tab${fi===0?' active':''}" onclick="selectFreq(${pi},${fi},this)">${f.label}</button>`).join('');
       priceHTML=`<div class="plan-freq-tabs">${tabs}</div>
-        <div class="plan-price" id="plan-price-${pi}">${p.freqToggle[0].price}<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mês</span></div>
-        <div class="plan-period" id="plan-detail-${pi}">${p.freqToggle[0].detail} · ${p.freqToggle[0].trimestral}</div>`;
+        <div class="plan-price" id="plan-price-${pi}">${blurMoney(p.freqToggle[0].price)}<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mês</span></div>
+        <div class="plan-period" id="plan-detail-${pi}">${blurMoney(p.freqToggle[0].detail+' · '+p.freqToggle[0].trimestral)}</div>`;
     } else if(p.priceToggle){
       const tabs=p.priceToggle.map((f,fi)=>`<button class="freq-tab${fi===0?' active':''}" onclick="selectPeriod(${pi},${fi},this)">${f.label}</button>`).join('');
       priceHTML=`<div class="plan-freq-tabs">${tabs}</div>
-        <div class="plan-price" id="plan-price-${pi}">${p.priceToggle[0].price}</div>
+        <div class="plan-price" id="plan-price-${pi}">${blurMoney(p.priceToggle[0].price)}</div>
         <div class="plan-period" id="plan-detail-${pi}">${p.priceToggle[0].period}</div>`;
     } else {
-      priceHTML=`<div class="plan-price">${p.price}</div>
-        <div class="plan-period">${p.period}${p.priceAlt?` · ${p.priceAlt}`:''}</div>`;
+      priceHTML=`<div class="plan-price">${blurMoney(p.price)}</div>
+        <div class="plan-period">${p.period}${p.priceAlt?` · ${blurMoney(p.priceAlt)}`:''}</div>`;
     }
     const feats=p.features.map(f=>`<li><span class="feat-check">${UI_ICONS.check}</span>${f}</li>`).join('');
     const nots=(p.notIncluded||[]).map(f=>`<li class="feat-no"><span class="feat-check">${UI_ICONS.x}</span><span style="color:var(--muted)">${f}</span></li>`).join('');
@@ -3511,14 +3521,14 @@ function selectFreq(pi,fi,btn){
   btn.closest('.plan-freq-tabs').querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const f=PLANS[pi].freqToggle[fi];
-  document.getElementById('plan-price-'+pi).textContent=f.price;
-  document.getElementById('plan-detail-'+pi).textContent=f.detail+' · '+f.trimestral;
+  document.getElementById('plan-price-'+pi).innerHTML=blurMoney(f.price)+'<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mês</span>';
+  document.getElementById('plan-detail-'+pi).innerHTML=blurMoney(f.detail+' · '+f.trimestral);
 }
 function selectPeriod(pi,fi,btn){
   btn.closest('.plan-freq-tabs').querySelectorAll('.freq-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const f=PLANS[pi].priceToggle[fi];
-  document.getElementById('plan-price-'+pi).textContent=f.price;
+  document.getElementById('plan-price-'+pi).innerHTML=blurMoney(f.price);
   document.getElementById('plan-detail-'+pi).textContent=f.period;
 }
 
