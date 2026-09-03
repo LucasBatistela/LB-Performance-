@@ -2326,31 +2326,13 @@ img { max-width: 100%; display: block; }
 
 <script>
 'use strict';
-/* ── MUST BE FIRST: Template capture ─────────────────────────── */
-const TEMPLATE_HTML = document.documentElement.outerHTML;
-
 /* ── State ────────────────────────────────────────────────────── */
+// state.admin (e-mail/EmailJS) começa com o valor gravado no arquivo na hora do deploy
+// e é substituído pelo valor real assim que loadProfessorSettings() carrega do Supabase
+// (ver saveConfig() e loadProfessorSettings()). O resto de "state" (bookings/anamnese/
+// disponibilidade) é histórico de uma versão antiga do site e não é mais usado — os dados
+// de verdade vivem no Supabase.
 let state = JSON.parse(document.getElementById('site-state').textContent);
-
-/* ── Artifact ─────────────────────────────────────────────────── */
-let artifactAPI = null;
-async function initArtifact() {
-  try {
-    if (window.claude && typeof window.claude.use === 'function')
-      artifactAPI = await window.claude.use('artifact');
-  } catch(_) { artifactAPI = null; }
-}
-function generatePublishHTML(s) {
-  return ('<!DOCTYPE html>\n' + TEMPLATE_HTML).replace(
-    /<script id="site-state" type="application\/json">[\s\S]*?<\/script>/,
-    '<script id="site-state" type="application/json">\n' + JSON.stringify(s, null, 2) + '\n<\/script>'
-  );
-}
-async function publishState(s) {
-  if (!artifactAPI) { state = s; return { ok: true }; }
-  try { await artifactAPI.publish(generatePublishHTML(s)); state = s; return { ok: true }; }
-  catch(e) { return { ok: false, error: e }; }
-}
 
 /* ── Date utils ───────────────────────────────────────────────── */
 const DAYS_S  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -3814,27 +3796,6 @@ async function submitBooking(dateStr, time){
   showBookingMessage('Você precisa entrar com sua conta de aluno pra agendar.', 'error');
   showPage('login');
 }
-function showConfirmation(b){
-  const d=strToDate(b.date);
-  const dayFull=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][d.getDay()];
-  const typeLabel=b.type==='presencial'?'Presencial':'Online (videochamada)';
-  const freqLabel=b.isFixed?'Horário fixo (semanal)':'Aula avulsa';
-  document.getElementById('confirm-content').innerHTML=`
-    <div class="modal-icon" style="display:flex;align-items:center;justify-content:center;background:rgba(52,106,172,.1);color:var(--pine)"><span class="icon-inline" style="width:26px;height:26px">${UI_ICONS.check}</span></div>
-    <div class="modal-title">Agendamento confirmado!</div>
-    <div class="modal-detail">
-      <strong>${b.name}</strong><br>
-      ${dayFull}, ${d.getDate()} de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][d.getMonth()]} · ${b.time}<br>
-      ${typeLabel} · ${freqLabel}
-    </div>
-    <div class="modal-policy" style="display:flex;align-items:flex-start;gap:8px"><span class="icon-inline warn" style="width:16px;height:16px;flex-shrink:0;margin-top:2px">${UI_ICONS.warn}</span><span>Cancele com pelo menos <strong>1 hora de antecedência</strong> para não ser cobrado. Em caso de falta sem aviso, a sessão será cobrada normalmente.</span></div>
-    <div class="modal-actions">
-      <a href="https://wa.me/5512981112070?text=${encodeURIComponent('Olá Lucas! Acabei de agendar uma aula.\n\nNome: '+b.name+'\nData: '+dayFull+', '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'\nHorário: '+b.time+'\nModalidade: '+typeLabel+'\nFrequência: '+freqLabel)}"
-        target="_blank" class="btn-primary" style="justify-content:center">Confirmar via WhatsApp</a>
-      <button class="btn-ghost" onclick="closeConfirm()" style="justify-content:center">Fechar</button>
-    </div>`;
-  document.getElementById('confirm-overlay').hidden=false;
-}
 function closeConfirm(){ document.getElementById('confirm-overlay').hidden=true; renderCalendar(); }
 
 /* ── Toast ───────────────────────────────────────────────────── */
@@ -3960,15 +3921,6 @@ document.getElementById('confirm-overlay').addEventListener('click', e=>{
 document.getElementById('admin-pwd-reset-overlay').addEventListener('click', e=>{
   if(e.target===document.getElementById('admin-pwd-reset-overlay')) closeAdminPwdReset();
 });
-function checkPendingConfirm(){
-  try {
-    const raw=sessionStorage.getItem('pending_confirm');
-    if(!raw) return;
-    sessionStorage.removeItem('pending_confirm');
-    setTimeout(()=>showConfirmation(JSON.parse(raw)), 400);
-  } catch(_){}
-}
-
 /* ── Anamnese sections definition ─────────────────────────────── */
 const ANAMNESE_SECTIONS = [
   { num:1, title:'Identificação', fields:`
@@ -4407,7 +4359,35 @@ async function enviarPedidoAnamnese(studentId, studentName){
   });
   showToast(`✅ Pedido enviado pra ${studentName}!`);
 }
+// Carrega o e-mail de contato + config do EmailJS de um professor a partir do Supabase
+// (professor_settings) e atualiza state.admin. Chamado tanto pro professor (com o próprio id)
+// quanto pro aluno (com o id do professor dele) — precisa estar disponível pros dois lados,
+// já que quem dispara o e-mail de confirmação/cancelamento é o navegador de quem faz a ação.
+async function loadProfessorSettings(professorId){
+  if(!sb || !professorId) return;
+  try {
+    const { data, error } = await sb.from('professor_settings').select('*').eq('professor_id', professorId).maybeSingle();
+    if(error){ console.warn('Erro ao carregar configurações do professor:', error); return; }
+    if(data){
+      state.admin = {
+        ...state.admin,
+        email: data.contact_email || '',
+        emailjs: {
+          serviceId:           data.emailjs_service_id || '',
+          templateId:          data.emailjs_template_id || '',
+          cancelTemplateId:    data.emailjs_cancel_template_id || '',
+          resetCodeTemplateId: data.emailjs_reset_template_id || '',
+          publicKey:           data.emailjs_public_key || ''
+        }
+      };
+    }
+    // Se ainda não existe linha no banco pra esse professor, mantém o valor que veio
+    // gravado no arquivo (fallback só até a 1ª vez que ele salvar em Configurações).
+  } catch(e){ console.warn('Erro ao carregar configurações do professor:', e); }
+}
+
 async function saveConfig(){
+  if(!sb || !currentUser){ showToast('❌ Sistema indisponível.'); return; }
   const email=(document.getElementById('cfg-email')?.value)||state.admin.email;
   const emailjs={
     serviceId:        (document.getElementById('cfg-ejs-service')?.value||'').trim(),
@@ -4416,9 +4396,17 @@ async function saveConfig(){
     resetCodeTemplateId: (document.getElementById('cfg-ejs-reset-template')?.value||'').trim(),
     publicKey:        (document.getElementById('cfg-ejs-pubkey')?.value||'').trim()
   };
-  const res=await publishState({...state,admin:{...state.admin,email,emailjs}});
-  if(res.ok){ state.admin.email=email; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
-  else showToast('Erro ao salvar.');
+  const { error } = await sb.from('professor_settings').upsert({
+    professor_id: currentUser.id,
+    contact_email: email,
+    emailjs_service_id: emailjs.serviceId,
+    emailjs_template_id: emailjs.templateId,
+    emailjs_cancel_template_id: emailjs.cancelTemplateId,
+    emailjs_reset_template_id: emailjs.resetCodeTemplateId,
+    emailjs_public_key: emailjs.publicKey
+  }, { onConflict: 'professor_id' });
+  if(!error){ state.admin.email=email; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
+  else showToast('❌ Erro ao salvar: '+error.message);
 }
 
 /* ── Expose anamnese page via URL param ───────────────────────── */
@@ -4731,9 +4719,15 @@ async function loadUserAndRedirect(user) {
     } catch(_){}
   }
   updateNavAvatar();
-  if(profile?.role==='professor') { await loadProfDashboard(); showPage('dashboard-prof'); }
-  else if(profile?.role==='student') { await loadAlunoDashboard(); showPage('dashboard-aluno'); }
-  else { showPage('home'); }
+  if(profile?.role==='professor') {
+    await loadProfDashboard();
+    await loadProfessorSettings(user.id);
+    showPage('dashboard-prof');
+  } else if(profile?.role==='student') {
+    await loadAlunoDashboard();
+    if(currentStudentData?.professor_id) await loadProfessorSettings(currentStudentData.professor_id);
+    showPage('dashboard-aluno');
+  } else { showPage('home'); }
 }
 
 async function logout() {
@@ -7095,8 +7089,6 @@ async function saveProfProfile() {
 async function init(){
   initSupabase();
   if(isRecoveryURL()) { isPasswordRecoveryFlow = true; showPage('redefinir-senha'); }
-  await initArtifact();
-  checkPendingConfirm();
   checkURLParams();
   checkOAuthError();
   renderHomeAccordion();
