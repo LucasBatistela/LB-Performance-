@@ -1372,18 +1372,6 @@ img { max-width: 100%; display: block; }
       </div>
       <div class="dash-phrase" id="dash-phrase" style="display:flex;align-items:center;gap:10px"><span class="icon-inline" style="width:20px;height:20px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v4"/><path d="M22 10v4"/><rect x="4" y="7" width="3.5" height="10" rx="1"/><rect x="16.5" y="7" width="3.5" height="10" rx="1"/><path d="M7.5 12h9"/></svg></span><span id="dash-phrase-text">Carregando...</span></div>
 
-      <!-- ANAMNESE — ação prioritária, fica logo no topo -->
-      <div class="dash-card is-highlight">
-        <div class="dash-card-title">
-          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="m8.5 16 2 2 4-4"/></svg></span>
-          Anamnese
-        </div>
-        <div id="dash-anam-status" style="margin-bottom:14px"></div>
-        <button class="btn-primary" id="dash-anam-form-btn" onclick="showPage('anamnese')" style="width:100%;justify-content:center">
-          Preencher anamnese →
-        </button>
-      </div>
-
       <p class="dash-section-label">Meu treino</p>
       <div class="dash-grid">
         <div class="dash-card">
@@ -1430,7 +1418,21 @@ img { max-width: 100%; display: block; }
           <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
           Histórico de agendamentos
         </div>
-        <div id="dash-historico"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento ainda.</p></div>
+        <div id="dash-historico-toggle-wrap"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento ainda.</p></div>
+        <div id="dash-historico" hidden></div>
+      </div>
+
+      <!-- ANAMNESE — vai por último, depois do resto do painel -->
+      <p class="dash-section-label">Anamnese</p>
+      <div class="dash-card is-highlight">
+        <div class="dash-card-title">
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="m8.5 16 2 2 4-4"/></svg></span>
+          Anamnese
+        </div>
+        <div id="dash-anam-status" style="margin-bottom:14px"></div>
+        <button class="btn-primary" id="dash-anam-form-btn" onclick="showPage('anamnese')" style="width:100%;justify-content:center">
+          Preencher anamnese →
+        </button>
       </div>
 
     </div>
@@ -3606,6 +3608,10 @@ async function loadAlunoDashboard() {
           <button onclick="cancelarAgendamento('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
         </div>
       </div>`).join('');
+    document.getElementById('dash-historico-toggle-wrap').innerHTML = `
+      <button class="btn-ghost" style="font-size:.78rem;white-space:nowrap" onclick="toggleDashHistorico(this)">
+        ${bookings.length} agendamento${bookings.length>1?'s':''} — ver histórico <span class="ficha-hist-chev" style="display:inline-block;transition:transform .15s">▾</span>
+      </button>`;
   }
   if(student?.professor_id) {
     const { data: pp } = await sb.from('profiles').select('full_name').eq('id',student.professor_id).single();
@@ -3918,6 +3924,14 @@ async function renderProfAnamnese() {
   }).join('');
 
   el.innerHTML = `<p style="font-size:.85rem;color:var(--ink-2);margin-bottom:16px">A 1ª ficha o aluno preenche livre, direto pelo painel dele. A partir da 2ª, ele só consegue enviar depois que você liberar aqui.</p>${rows}`;
+}
+
+function toggleDashHistorico(btn){
+  const el = document.getElementById('dash-historico');
+  if(!el) return;
+  el.hidden = !el.hidden;
+  const chev = btn?.querySelector('.ficha-hist-chev');
+  if(chev) chev.style.transform = el.hidden ? '' : 'rotate(180deg)';
 }
 
 function toggleFichaHistory(studentId, btn){
