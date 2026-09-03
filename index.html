@@ -905,6 +905,54 @@ img { max-width: 100%; display: block; }
 .dash-card-clickable { cursor: pointer; }
 .dash-card-clickable:hover { border-color: var(--pine); box-shadow: 0 12px 28px -16px rgba(52,106,172,.3); transform: translateY(-2px); }
 .dash-card-clickable:active { transform: translateY(0); }
+
+/* ─── CALENDÁRIO DE AGENDAMENTOS (histórico do aluno / agendamentos do professor) ── */
+.view-switch { display: flex; gap: 4px; background: var(--surface-alt); border-radius: 999px; padding: 3px; flex-shrink: 0; }
+.view-switch-btn { border: none; background: none; padding: 5px 11px; border-radius: 999px; font-size: .85rem; cursor: pointer; color: var(--muted); line-height: 1; }
+.view-switch-btn.on { background: var(--surface); color: var(--pine); box-shadow: 0 1px 4px rgba(13,26,46,.12); }
+.cal-widget { margin-top: 4px; }
+.cal-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.cal-view-tabs { display: flex; gap: 4px; background: var(--surface-alt); border-radius: 999px; padding: 3px; }
+.cal-view-btn { border: none; background: none; padding: 6px 12px; border-radius: 999px; font-size: .8rem; font-weight: 600; cursor: pointer; color: var(--muted); }
+.cal-view-btn.on { background: var(--pine); color: #fff; }
+.cal-nav { display: flex; align-items: center; gap: 10px; }
+.cal-nav-btn { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; font-size: 1rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; }
+.cal-nav-btn:hover { background: var(--surface-alt); }
+.cal-nav-label { font-weight: 700; font-size: .9rem; min-width: 120px; text-align: center; }
+.cal-filter { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.cal-filter select { padding: 7px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface); font-size: .85rem; }
+.cal-week-grid { display: flex; flex-direction: column; gap: 8px; }
+.cal-week-day { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+.cal-week-day.is-today { border-color: var(--pine); background: rgba(52,106,172,.04); }
+.cal-week-day-head { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; display: flex; gap: 6px; }
+.cal-week-day-head span { color: var(--ink); }
+.cal-empty { color: var(--muted); font-size: .82rem; margin: 0; }
+.cal-month-weekdays { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 6px; }
+.cal-month-weekdays span { text-align: center; font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.cal-month-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.cal-month-cell { aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; position: relative; }
+.cal-month-cell:hover { border-color: var(--pine); }
+.cal-month-cell.is-out { opacity: .35; }
+.cal-month-cell.is-today { border-color: var(--pine); background: rgba(52,106,172,.06); }
+.cal-month-cell.has-items .cal-month-daynum { font-weight: 800; color: var(--pine); }
+.cal-month-daynum { font-size: .82rem; }
+.cal-month-dot { font-size: .62rem; font-weight: 700; color: #fff; background: var(--pine); border-radius: 999px; min-width: 15px; height: 15px; padding: 0 3px; display: flex; align-items: center; justify-content: center; }
+.cal-day-detail { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--border); }
+.cal-day-detail[hidden] { display: none; }
+.cal-day-detail-head { font-weight: 700; font-size: .88rem; margin-bottom: 10px; }
+.cal-summary { display: flex; flex-direction: column; gap: 6px; }
+.cal-summary-row { display: grid; grid-template-columns: 70px 1fr 30px; align-items: center; gap: 10px; border: none; background: none; padding: 6px 4px; cursor: pointer; border-radius: var(--radius-sm); text-align: left; }
+.cal-summary-row:hover { background: var(--surface-alt); }
+.cal-summary-month { font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+.cal-summary-bar-wrap { height: 10px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; }
+.cal-summary-bar { display: block; height: 100%; background: var(--pine); border-radius: 999px; transition: width .3s; }
+.cal-summary-count { font-size: .8rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.cal-booking-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+.cal-booking-row:last-child { border-bottom: none; }
+.cal-booking-actions { flex-shrink: 0; white-space: nowrap; }
+#dash-historico-calendar-mode[hidden], #prof-bookings-calendar-mode[hidden],
+#dash-historico-list-mode[hidden], #prof-bookings-list-mode[hidden] { display: none; }
 .dash-card-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: .78rem; color: var(--muted);
   text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
 .dash-card-icon { flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--surface-alt);
@@ -1455,14 +1503,38 @@ img { max-width: 100%; display: block; }
       </div>
 
       <p class="dash-section-label">Histórico</p>
-      <div class="dash-card dash-card-clickable" id="dash-historico-card"
-        onclick="if(event.target.closest('[onclick]')!==this) return; document.getElementById('dash-historico-toggle-wrap').querySelector('button')?.click()" title="Ver histórico">
-        <div class="dash-card-title">
-          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
-          Histórico de agendamentos
+      <div class="dash-card" id="dash-historico-card" title="Histórico de agendamentos">
+        <div class="dash-card-title" style="justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
+            Histórico de agendamentos
+          </span>
+          <div class="view-switch" id="aluno-hist-view-switch">
+            <button type="button" class="view-switch-btn on" onclick="setHistoricoViewMode('aluno','list')" title="Lista">📋</button>
+            <button type="button" class="view-switch-btn" onclick="setHistoricoViewMode('aluno','calendar')" title="Calendário">📅</button>
+          </div>
         </div>
-        <div id="dash-historico-toggle-wrap"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento ainda.</p></div>
-        <div id="dash-historico" hidden></div>
+        <div id="dash-historico-list-mode">
+          <div id="dash-historico-toggle-wrap"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento ainda.</p></div>
+          <div id="dash-historico" hidden></div>
+        </div>
+        <div id="dash-historico-calendar-mode" hidden>
+          <div class="cal-widget">
+            <div class="cal-toolbar">
+              <div class="cal-view-tabs" id="aluno-cal-view-tabs">
+                <button type="button" class="cal-view-btn on" data-view="week" onclick="calSetView('aluno','week')">Semana</button>
+                <button type="button" class="cal-view-btn" data-view="month" onclick="calSetView('aluno','month')">Mês</button>
+                <button type="button" class="cal-view-btn" data-view="summary" onclick="calSetView('aluno','summary')">Resumo</button>
+              </div>
+              <div class="cal-nav">
+                <button type="button" class="cal-nav-btn" onclick="calNav('aluno',-1)" aria-label="Anterior">‹</button>
+                <span id="aluno-cal-label" class="cal-nav-label"></span>
+                <button type="button" class="cal-nav-btn" onclick="calNav('aluno',1)" aria-label="Próximo">›</button>
+              </div>
+            </div>
+            <div id="aluno-cal-body"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ANAMNESE — vai por último, depois do resto do painel -->
@@ -1671,11 +1743,42 @@ img { max-width: 100%; display: block; }
       <!-- Agendamentos -->
       <div id="prof-tab-agendamentos" hidden>
         <div class="dash-card">
-          <div class="dash-card-title">
-            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
-            Todos os agendamentos
+          <div class="dash-card-title" style="justify-content:space-between">
+            <span style="display:flex;align-items:center;gap:10px">
+              <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
+              Todos os agendamentos
+            </span>
+            <div class="view-switch" id="prof-hist-view-switch">
+              <button type="button" class="view-switch-btn on" onclick="setHistoricoViewMode('prof','list')" title="Lista">📋</button>
+              <button type="button" class="view-switch-btn" onclick="setHistoricoViewMode('prof','calendar')" title="Calendário">📅</button>
+            </div>
           </div>
-          <div id="prof-all-bookings"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+          <div id="prof-bookings-list-mode">
+            <div id="prof-all-bookings"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+          </div>
+          <div id="prof-bookings-calendar-mode" hidden>
+            <div class="cal-filter">
+              <label for="prof-cal-student-filter" style="font-size:.78rem;color:var(--muted)">Filtrar por aluno:</label>
+              <select id="prof-cal-student-filter" onchange="calSetStudentFilter(this.value)">
+                <option value="">Todos os alunos</option>
+              </select>
+            </div>
+            <div class="cal-widget">
+              <div class="cal-toolbar">
+                <div class="cal-view-tabs" id="prof-cal-view-tabs">
+                  <button type="button" class="cal-view-btn on" data-view="week" onclick="calSetView('prof','week')">Semana</button>
+                  <button type="button" class="cal-view-btn" data-view="month" onclick="calSetView('prof','month')">Mês</button>
+                  <button type="button" class="cal-view-btn" data-view="summary" onclick="calSetView('prof','summary')">Resumo</button>
+                </div>
+                <div class="cal-nav">
+                  <button type="button" class="cal-nav-btn" onclick="calNav('prof',-1)" aria-label="Anterior">‹</button>
+                  <span id="prof-cal-label" class="cal-nav-label"></span>
+                  <button type="button" class="cal-nav-btn" onclick="calNav('prof',1)" aria-label="Próximo">›</button>
+                </div>
+              </div>
+              <div id="prof-cal-body"></div>
+            </div>
+          </div>
         </div>
       </div>
       <!-- Disponibilidade -->
@@ -2061,6 +2164,8 @@ async function publishState(s) {
 /* ── Date utils ───────────────────────────────────────────────── */
 const DAYS_S  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const MONTHS_S = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const DAYS_FULL = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 function dateToStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -2094,6 +2199,11 @@ function expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, fromDat
   });
   return out;
 }
+/* Se o calendário estiver aberto (em vez da lista), atualiza ele também depois de cancelar/desfixar */
+function refreshBookingCalendarsIfVisible(){
+  if(document.getElementById('dash-historico-calendar-mode')?.hidden===false) renderBookingsCalendar('aluno');
+  if(document.getElementById('prof-bookings-calendar-mode')?.hidden===false) renderBookingsCalendar('prof');
+}
 /* Cancela só essa semana do horário fixo — as próximas continuam normalmente */
 async function cancelarOcorrenciaFixa(sourceId, date){
   if(!sb) return;
@@ -2103,6 +2213,7 @@ async function cancelarOcorrenciaFixa(sourceId, date){
   showToast('✅ Essa semana foi cancelada.');
   if(currentProfile?.role==='professor'){ loadProfDashboard(); loadProfAllBookings(); }
   else { loadAlunoDashboard(); }
+  refreshBookingCalendarsIfVisible();
 }
 /* Encerra o horário fixo de vez — as próximas semanas deixam de ser reservadas automaticamente */
 async function desfixarAgendamento(bookingId){
@@ -2113,6 +2224,7 @@ async function desfixarAgendamento(bookingId){
   showToast('✅ Horário desfixado.');
   if(currentProfile?.role==='professor'){ loadProfDashboard(); loadProfAllBookings(); }
   else { loadAlunoDashboard(); }
+  refreshBookingCalendarsIfVisible();
 }
 /* Junta os agendamentos reais do aluno com as próximas ocorrências projetadas dos horários fixos dele */
 async function getStudentUpcomingBookings(studentId, weeksAhead){
@@ -2136,6 +2248,222 @@ async function getStudentUpcomingBookings(studentId, weeksAhead){
   }
   return [...real, ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
 }
+
+/* ═══ Calendário de agendamentos (Histórico do aluno / Agendamentos do professor) ═══
+   Alterna entre a lista de sempre e uma visão de calendário (Semana / Mês / Resumo anual). ── */
+const calState = {
+  aluno: { view:'week', anchor:new Date() },
+  prof:  { view:'week', anchor:new Date(), studentId:'' }
+};
+
+function setHistoricoViewMode(ctx, mode){
+  const listEl = document.getElementById(ctx==='aluno' ? 'dash-historico-list-mode' : 'prof-bookings-list-mode');
+  const calEl = document.getElementById(ctx==='aluno' ? 'dash-historico-calendar-mode' : 'prof-bookings-calendar-mode');
+  const switchEl = document.getElementById(ctx+'-hist-view-switch');
+  if(listEl) listEl.hidden = mode!=='list';
+  if(calEl) calEl.hidden = mode!=='calendar';
+  const btns = switchEl?.querySelectorAll('.view-switch-btn');
+  if(btns){ btns[0].classList.toggle('on', mode==='list'); btns[1].classList.toggle('on', mode==='calendar'); }
+  if(mode==='calendar'){
+    if(ctx==='prof') populateProfCalStudentFilter();
+    renderBookingsCalendar(ctx);
+  }
+}
+
+function calSetView(ctx, view){
+  calState[ctx].view = view;
+  document.querySelectorAll(`#${ctx}-cal-view-tabs .cal-view-btn`).forEach(b=>b.classList.toggle('on', b.dataset.view===view));
+  renderBookingsCalendar(ctx);
+}
+function calNav(ctx, dir){
+  const st = calState[ctx];
+  const d = new Date(st.anchor);
+  if(st.view==='week') d.setDate(d.getDate() + dir*7);
+  else if(st.view==='month') d.setMonth(d.getMonth() + dir);
+  else d.setFullYear(d.getFullYear() + dir);
+  st.anchor = d;
+  renderBookingsCalendar(ctx);
+}
+function calSetStudentFilter(v){ calState.prof.studentId = v; renderBookingsCalendar('prof'); }
+
+async function populateProfCalStudentFilter(){
+  const sel = document.getElementById('prof-cal-student-filter');
+  if(!sel || !sb || !currentUser) return;
+  const { data: students } = await sb.from('students').select('id').eq('professor_id',currentUser.id);
+  const current = sel.value;
+  if(!students?.length){ sel.innerHTML = '<option value="">Todos os alunos</option>'; return; }
+  const names = await Promise.all(students.map(s=>sb.from('profiles').select('full_name').eq('id',s.id).single()));
+  const opts = students.map((s,i)=>`<option value="${s.id}">${names[i].data?.full_name||'Aluno'}</option>`).join('');
+  sel.innerHTML = `<option value="">Todos os alunos</option>${opts}`;
+  sel.value = current || '';
+}
+
+function getWeekRange(anchor){
+  const start = new Date(anchor); start.setHours(0,0,0,0);
+  start.setDate(start.getDate() - start.getDay());
+  const end = new Date(start); end.setDate(end.getDate()+7);
+  return [start, end];
+}
+function getMonthRange(anchor){
+  const start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const end = new Date(anchor.getFullYear(), anchor.getMonth()+1, 1);
+  return [start, end];
+}
+function groupCalByDate(bookings){
+  const map = {};
+  bookings.forEach(b=>{ (map[b.date] ||= []).push(b); });
+  return map;
+}
+async function fetchCalBookings(ctx, fromDate, toDateExclusive){
+  if(!sb || !currentUser) return [];
+  if(ctx==='aluno') return getBookingsInRange({ studentId: currentUser.id, fromDate, toDateExclusive });
+  return getBookingsInRange({ professorId: currentUser.id, studentId: calState.prof.studentId||undefined, fromDate, toDateExclusive });
+}
+async function fetchCalNames(bookings){
+  const ids = [...new Set(bookings.map(b=>b.student_id).filter(Boolean))];
+  if(!ids.length || !sb) return {};
+  const { data } = await sb.from('profiles').select('id,full_name').in('id', ids);
+  const map = {};
+  (data||[]).forEach(p=>{ map[p.id]=p.full_name; });
+  return map;
+}
+function renderCalBookingRow(b, ctx, names){
+  const who = ctx==='prof' ? (' — ' + (names?.[b.student_id]||'Aluno')) : '';
+  const fixedTag = b.is_fixed ? ' <span title="Reservado toda semana automaticamente">🔁</span>' : '';
+  const actions = b.virtual
+    ? `<button onclick="cancelarOcorrenciaFixa('${b.source_id}','${b.date}')" style="color:#C0392B;font-size:.75rem;margin-left:10px;cursor:pointer">Cancelar</button>
+       <button onclick="desfixarAgendamento('${b.source_id}')" style="color:var(--muted);font-size:.75rem;margin-left:8px;cursor:pointer">Desfixar</button>`
+    : `<button onclick="${ctx==='prof'?'profCancelBooking':'cancelarAgendamento'}('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:10px;cursor:pointer">Cancelar</button>
+       ${b.is_fixed?`<button onclick="desfixarAgendamento('${b.id}')" style="color:var(--muted);font-size:.75rem;margin-left:8px;cursor:pointer">Desfixar</button>`:''}`;
+  return `<div class="cal-booking-row">
+    <div class="cal-booking-main"><strong>${b.time}</strong>${who}${fixedTag}</div>
+    <div class="cal-booking-actions">${actions}</div>
+  </div>`;
+}
+
+async function renderBookingsCalendar(ctx){
+  const st = calState[ctx];
+  const bodyEl = document.getElementById(ctx+'-cal-body');
+  if(!bodyEl) return;
+  bodyEl.innerHTML = '<p style="color:var(--muted);font-size:.88rem;padding:12px 0">Carregando...</p>';
+  if(st.view==='week') await renderCalWeek(ctx);
+  else if(st.view==='month') await renderCalMonth(ctx);
+  else await renderCalSummary(ctx);
+}
+async function renderCalWeek(ctx){
+  const st = calState[ctx];
+  const bodyEl = document.getElementById(ctx+'-cal-body');
+  const labelEl = document.getElementById(ctx+'-cal-label');
+  const [start,end] = getWeekRange(st.anchor);
+  const lastDay = new Date(end); lastDay.setDate(lastDay.getDate()-1);
+  if(labelEl) labelEl.textContent = `${start.getDate()} ${MONTHS_S[start.getMonth()]} – ${lastDay.getDate()} ${MONTHS_S[lastDay.getMonth()]}`;
+  const bookings = await fetchCalBookings(ctx, start, end);
+  const byDate = groupCalByDate(bookings);
+  const names = ctx==='prof' ? await fetchCalNames(bookings) : null;
+  const todayStr = dateToStr(new Date());
+  let html = '';
+  for(let i=0;i<7;i++){
+    const d = new Date(start); d.setDate(d.getDate()+i);
+    const ds = dateToStr(d);
+    const items = byDate[ds] || [];
+    html += `<div class="cal-week-day${ds===todayStr?' is-today':''}">
+      <div class="cal-week-day-head">${DAYS_S[d.getDay()]} <span>${d.getDate()} de ${MONTHS_S[d.getMonth()]}</span></div>
+      ${items.length ? items.map(b=>renderCalBookingRow(b,ctx,names)).join('') : '<p class="cal-empty">Nenhum agendamento.</p>'}
+    </div>`;
+  }
+  bodyEl.innerHTML = `<div class="cal-week-grid">${html}</div>`;
+}
+async function renderCalMonth(ctx){
+  const st = calState[ctx];
+  const bodyEl = document.getElementById(ctx+'-cal-body');
+  const labelEl = document.getElementById(ctx+'-cal-label');
+  const [start,end] = getMonthRange(st.anchor);
+  if(labelEl) labelEl.textContent = `${MONTHS_FULL[start.getMonth()]} ${start.getFullYear()}`;
+  const gridStart = new Date(start); gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const gridEnd = new Date(end);
+  const trailDays = (7 - gridEnd.getDay()) % 7;
+  gridEnd.setDate(gridEnd.getDate() + trailDays);
+  const bookings = await fetchCalBookings(ctx, gridStart, gridEnd);
+  const byDate = groupCalByDate(bookings);
+  const names = ctx==='prof' ? await fetchCalNames(bookings) : null;
+  st._monthBookings = byDate;
+  st._monthNames = names;
+  const todayStr = dateToStr(new Date());
+  let cells = '';
+  const cursor = new Date(gridStart);
+  while(cursor < gridEnd){
+    const ds = dateToStr(cursor);
+    const items = byDate[ds]||[];
+    const inMonth = cursor.getMonth()===start.getMonth();
+    cells += `<button type="button" class="cal-month-cell${inMonth?'':' is-out'}${ds===todayStr?' is-today':''}${items.length?' has-items':''}"
+      onclick="calShowDayDetail('${ctx}','${ds}')">
+      <span class="cal-month-daynum">${cursor.getDate()}</span>
+      ${items.length?`<span class="cal-month-dot">${items.length>1?items.length:''}</span>`:''}
+    </button>`;
+    cursor.setDate(cursor.getDate()+1);
+  }
+  bodyEl.innerHTML = `
+    <div class="cal-month-weekdays">${DAYS_S.map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="cal-month-grid">${cells}</div>
+    <div id="${ctx}-cal-day-detail" class="cal-day-detail" hidden></div>`;
+}
+function calShowDayDetail(ctx, ds){
+  const st = calState[ctx];
+  const el = document.getElementById(ctx+'-cal-day-detail');
+  if(!el) return;
+  const items = st._monthBookings?.[ds] || [];
+  const d = strToDate(ds);
+  el.hidden = false;
+  el.innerHTML = `<div class="cal-day-detail-head">${DAYS_FULL[d.getDay()]}, ${d.getDate()} de ${MONTHS_FULL[d.getMonth()]}</div>
+    ${items.length ? items.map(b=>renderCalBookingRow(b,ctx,st._monthNames)).join('') : '<p class="cal-empty">Nenhum agendamento.</p>'}`;
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+async function renderCalSummary(ctx){
+  const st = calState[ctx];
+  const bodyEl = document.getElementById(ctx+'-cal-body');
+  const labelEl = document.getElementById(ctx+'-cal-label');
+  const year = st.anchor.getFullYear();
+  if(labelEl) labelEl.textContent = String(year);
+  const start = new Date(year,0,1), end = new Date(year+1,0,1);
+  const bookings = await fetchCalBookings(ctx, start, end);
+  const counts = new Array(12).fill(0);
+  bookings.forEach(b=>{ counts[strToDate(b.date).getMonth()]++; });
+  const max = Math.max(1, ...counts);
+  bodyEl.innerHTML = `<div class="cal-summary">${counts.map((c,i)=>`
+      <button type="button" class="cal-summary-row" onclick="calGoToMonth('${ctx}',${year},${i})">
+        <span class="cal-summary-month">${MONTHS_S[i]}</span>
+        <span class="cal-summary-bar-wrap"><span class="cal-summary-bar" style="width:${c?Math.max(8,Math.round(c/max*100)):0}%"></span></span>
+        <span class="cal-summary-count">${c}</span>
+      </button>`).join('')}</div>`;
+}
+function calGoToMonth(ctx, year, monthIdx){
+  calState[ctx].anchor = new Date(year, monthIdx, 1);
+  calSetView(ctx, 'month');
+}
+
+/* Junta os agendamentos reais com as próximas ocorrências projetadas dos horários fixos, num intervalo de datas —
+   versão genérica usada pelo calendário (aceita professorId e/ou studentId como filtro). */
+async function getBookingsInRange(opts){
+  if(!sb) return [];
+  const fromStr = dateToStr(opts.fromDate), toStr = dateToStr(opts.toDateExclusive);
+  let realQuery = sb.from('bookings').select('*').eq('status','confirmed').gte('date',fromStr).lt('date',toStr).order('date').order('time');
+  let anchorQuery = sb.from('bookings').select('*').eq('is_fixed', true);
+  if(opts.professorId){ realQuery = realQuery.eq('professor_id', opts.professorId); anchorQuery = anchorQuery.eq('professor_id', opts.professorId); }
+  if(opts.studentId){ realQuery = realQuery.eq('student_id', opts.studentId); anchorQuery = anchorQuery.eq('student_id', opts.studentId); }
+  const [realRes, anchorRes] = await Promise.all([realQuery, anchorQuery]);
+  const real = realRes.data || [];
+  const anchors = anchorRes.data || [];
+  let virtual = [];
+  if(anchors.length){
+    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date').in('booking_id', anchors.map(a=>a.id));
+    const skipsByBooking = {};
+    (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
+    const physicalKeySet = new Set(real.map(b=>b.date+'|'+b.time));
+    virtual = expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, opts.fromDate, opts.toDateExclusive);
+  }
+  return [...real, ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
+}
+
 /* Junta os agendamentos reais do professor com as próximas ocorrências projetadas dos horários fixos, num intervalo de datas */
 async function getProfessorBookingsInRange(profId, fromDate, toDateExclusive){
   const fromStr = dateToStr(fromDate), toStr = dateToStr(toDateExclusive);
@@ -3960,6 +4288,7 @@ async function profCancelBooking(id) {
     p_link: 'dashboard-aluno'
   }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
   loadProfAllBookings();
+  refreshBookingCalendarsIfVisible();
 }
 
 const DIAS_UTEIS=['Segunda','Terça','Quarta','Quinta','Sexta']; // di=0..4 → dow=1..5
@@ -4172,11 +4501,14 @@ function toggleDashHistorico(btn){
 
 /* ── "Próximo treino" (painel do aluno) leva direto pro histórico de agendamentos ── */
 function abrirHistoricoTreinos(){
-  const el = document.getElementById('dash-historico');
-  if(!el) return;
-  if(el.hidden){
-    const btn = document.getElementById('dash-historico-toggle-wrap')?.querySelector('button');
-    if(btn) toggleDashHistorico(btn);
+  // Se estiver no modo calendário, mantém — senão garante que a lista esteja expandida
+  const calMode = document.getElementById('dash-historico-calendar-mode');
+  if(calMode && calMode.hidden){
+    const el = document.getElementById('dash-historico');
+    if(el && el.hidden){
+      const btn = document.getElementById('dash-historico-toggle-wrap')?.querySelector('button');
+      if(btn) toggleDashHistorico(btn);
+    }
   }
   document.getElementById('dash-historico-card')?.scrollIntoView({behavior:'smooth', block:'center'});
 }
@@ -4478,6 +4810,7 @@ async function cancelarAgendamento(id) {
     } catch(e){ console.warn('Falha ao notificar professor:',e); }
   }
   await loadAlunoDashboard();
+  refreshBookingCalendarsIfVisible();
 }
 
 function isRecoveryURL() {
