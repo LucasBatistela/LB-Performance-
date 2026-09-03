@@ -253,9 +253,27 @@ img { max-width: 100%; display: block; }
 .chat-file-preview { padding: 0 16px 8px; font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 10px; background: var(--surface); }
 .chat-inputbar { display: flex; gap: 8px; align-items: center; padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
 .chat-attach-btn, .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chat-attach-btn[hidden], .chat-send-btn[hidden], #duvidas-input[hidden] { display: none; }
 .chat-attach-btn { background: var(--surface-alt); color: var(--ink-2); }
 .chat-attach-btn:hover { background: var(--border); }
 .chat-attach-btn svg { width: 18px; height: 18px; }
+.chat-mic-btn { touch-action: none; -webkit-user-select: none; user-select: none; }
+.chat-mic-btn.is-recording { background: #C0392B; color: #fff; }
+.chat-record-bar { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding: 0 6px; font-size: .88rem; color: var(--ink-2); }
+.chat-record-bar[hidden] { display: none; }
+.chat-record-cancel { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: none; color: #C0392B; flex-shrink: 0; }
+.chat-record-dot { width: 10px; height: 10px; border-radius: 50%; background: #C0392B; flex-shrink: 0; animation: chat-record-pulse 1s infinite; }
+@keyframes chat-record-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+#duvidas-record-time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+.chat-record-hint { color: var(--muted); font-size: .78rem; margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-media-preview-box { max-width: 460px; width: 100%; padding: 20px; position: relative; }
+.chat-media-preview-close { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(0,0,0,.5); color: #fff; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.chat-media-preview-close svg { width: 18px; height: 18px; }
+.chat-media-preview-content { border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 14px; background: #000;
+  display: flex; align-items: center; justify-content: center; max-height: 60vh; }
+.chat-media-preview-content img, .chat-media-preview-content video { max-width: 100%; max-height: 60vh; display: block; }
+.chat-media-preview-actions { display: flex; align-items: center; gap: 10px; }
 .chat-send-btn { background: var(--pine); color: #fff; }
 .chat-send-btn:hover { background: var(--pine-h); }
 .chat-send-btn:disabled { opacity: .6; cursor: default; }
@@ -1886,15 +1904,26 @@ img { max-width: 100%; display: block; }
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>
             <span>Selecione uma conversa pra começar</span>
           </div>
-          <div id="duvidas-file-preview" hidden class="chat-file-preview"></div>
           <div id="duvidas-inputbar" class="chat-inputbar">
-            <button type="button" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo" class="chat-attach-btn">
+            <button type="button" id="duvidas-attach-btn" onclick="document.getElementById('duvidas-file-input').click()" title="Anexar foto ou vídeo" class="chat-attach-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.83 18.4a2 2 0 0 1-2.83-2.83l8.49-8.49"/></svg>
             </button>
             <input type="file" id="duvidas-file-input" accept="image/*,video/*" style="display:none" onchange="handleDuvidasFileSelect(this)">
             <textarea id="duvidas-input" rows="1" placeholder="Escreva sua mensagem..." class="chat-input-pill"
               oninput="autoResizeDuvidasInput(this)"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDuvidaMessage();}"></textarea>
+            <div id="duvidas-record-bar" class="chat-record-bar" hidden>
+              <button type="button" onclick="cancelDuvidasRecording()" class="chat-record-cancel" aria-label="Cancelar gravação">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0-.8 13.2A2 2 0 0 1 16.2 21H7.8a2 2 0 0 1-2-1.8L5 6"/></svg>
+              </button>
+              <span class="chat-record-dot"></span>
+              <span id="duvidas-record-time">0:00</span>
+              <span class="chat-record-hint">Solte para enviar</span>
+            </div>
+            <button type="button" id="duvidas-mic-btn" class="chat-attach-btn chat-mic-btn" aria-label="Gravar áudio" title="Segure para gravar um áudio"
+              onpointerdown="startDuvidasRecording(event)" oncontextmenu="return false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19v3"/><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/></svg>
+            </button>
             <button onclick="sendDuvidaMessage()" id="duvidas-send-btn" class="chat-send-btn" aria-label="Enviar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
             </button>
@@ -1910,6 +1939,22 @@ img { max-width: 100%; display: block; }
 <div id="confirm-overlay" class="overlay" hidden>
   <div class="modal-box">
     <div id="confirm-content"></div>
+  </div>
+</div>
+
+<!-- ─── PRÉVIA DE MÍDIA DO CHAT — foto/vídeo antes de enviar ───────── -->
+<div id="duvidas-media-preview-overlay" class="overlay" style="z-index:1100;align-items:center" hidden>
+  <div class="modal-box chat-media-preview-box">
+    <button type="button" onclick="cancelDuvidasMediaPreview()" class="chat-media-preview-close" aria-label="Cancelar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div id="duvidas-media-preview-content" class="chat-media-preview-content"></div>
+    <div class="chat-media-preview-actions">
+      <input type="text" id="duvidas-media-caption" placeholder="Adicionar legenda (opcional)" class="chat-input-pill" style="width:100%">
+      <button type="button" onclick="confirmSendDuvidasMedia()" class="chat-send-btn" aria-label="Enviar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -2674,8 +2719,9 @@ function showAppMessage(message, type='success', duration=3200){
     const timer=setTimeout(finish, duration);
   });
 }
-/* ── Mensagem central — só pro fluxo de agendamento (confirmado/não realizado) ── */
-function showBookingMessage(message, type='success', duration=3200){
+/* ── Mensagem central — só pro fluxo de agendamento (confirmado/não realizado) ──
+   Fica fixa na tela até o aluno/professor tocar em qualquer lugar ou selecionar outro campo. ── */
+function showBookingMessage(message, type='success'){
   return new Promise(resolve=>{
     const overlay=document.getElementById('booking-msg-overlay');
     const popup=document.getElementById('booking-msg-popup');
@@ -2688,11 +2734,16 @@ function showBookingMessage(message, type='success', duration=3200){
     void popup.offsetWidth;
     requestAnimationFrame(()=>popup.classList.add('show'));
     let done=false;
-    const finish=()=>{ if(done) return; done=true; clearTimeout(timer);
-      popup.classList.remove('show'); popup.removeEventListener('click',finish);
+    const finish=()=>{ if(done) return; done=true;
+      popup.classList.remove('show');
+      overlay.removeEventListener('click',finish);
+      document.removeEventListener('focusin',onFocusElsewhere);
       setTimeout(()=>{ overlay.hidden=true; }, 260); resolve(); };
-    popup.addEventListener('click',finish);
-    const timer=setTimeout(finish, duration);
+    // Toca em qualquer lugar da tela (dentro ou fora do card) fecha o aviso
+    overlay.addEventListener('click',finish);
+    // Selecionar outro campo (fora do aviso) também fecha
+    const onFocusElsewhere = e=>{ if(!popup.contains(e.target)) finish(); };
+    document.addEventListener('focusin',onFocusElsewhere);
   });
 }
 
@@ -4778,7 +4829,7 @@ async function renderDuvidasStudentSummary(profId){
   const lastMsg = lastRes.data?.[0];
   const unread = unreadRes.data?.length || 0;
   const preview = lastMsg
-    ? `${lastMsg.sender_role==='student'?'Você: ':''}${escHtml(lastMsg.body || (lastMsg.media_type==='video'?'📹 Enviou um vídeo':'📷 Enviou uma foto'))}`
+    ? `${lastMsg.sender_role==='student'?'Você: ':''}${escHtml(lastMsg.body || (lastMsg.media_type==='video'?'📹 Enviou um vídeo':lastMsg.media_type==='audio'?'🎤 Enviou um áudio':'📷 Enviou uma foto'))}`
     : 'Nenhuma mensagem ainda — manda a primeira dúvida!';
   const time = lastMsg ? notifClockTime(lastMsg.created_at) : '';
   el.innerHTML = `<div onclick="openDuvidasStudentThread()" class="chat-list-row" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer">
@@ -4835,7 +4886,7 @@ async function renderDuvidasConversationsList(){
 
   el.innerHTML = rows.map(r=>{
     const preview = r.last
-      ? `${r.last.sender_role==='professor'?'Você: ':''}${escHtml(r.last.body || (r.last.media_type==='video'?'📹 Enviou um vídeo':'📷 Enviou uma foto'))}`
+      ? `${r.last.sender_role==='professor'?'Você: ':''}${escHtml(r.last.body || (r.last.media_type==='video'?'📹 Enviou um vídeo':r.last.media_type==='audio'?'🎤 Enviou um áudio':'📷 Enviou uma foto'))}`
       : 'Nenhuma mensagem ainda';
     const time = r.last ? notifClockTime(r.last.created_at) : '';
     const active = r.id === duvidasCurrentStudentId;
@@ -4947,6 +4998,8 @@ function renderDuvidasMessages(){
     const isMine = m.sender_role===mine;
     const media = m.media_url ? (m.media_type==='video'
       ? `<video src="${m.media_url}" controls></video>`
+      : m.media_type==='audio'
+      ? `<audio src="${m.media_url}" controls></audio>`
       : `<img src="${m.media_url}" alt="Anexo">`) : '';
     const dateLabel = duvidasDateLabel(m.created_at);
     let divider = '';
@@ -4994,18 +5047,152 @@ function handleDuvidasFileSelect(input){
   }
   if(file.size > 25*1024*1024){ showToast('❌ Arquivo muito grande (máx. 25MB).'); input.value=''; return; }
   duvidasPendingFile = file;
-  const prev = document.getElementById('duvidas-file-preview');
-  if(prev){
-    prev.hidden = false;
-    prev.innerHTML = `<span class="icon-inline" style="width:14px;height:14px">${UI_ICONS.clip}</span><span>${file.name}</span><button onclick="clearDuvidasFile()" style="color:#C0392B;background:none;border:none;cursor:pointer;font-size:.8rem">Remover</button>`;
-  }
+  openDuvidasMediaPreview(file);
 }
 function clearDuvidasFile(){
   duvidasPendingFile = null;
   const input = document.getElementById('duvidas-file-input');
   if(input) input.value='';
-  const prev = document.getElementById('duvidas-file-preview');
-  if(prev) prev.hidden = true;
+}
+
+/* ── Prévia de mídia antes de enviar — a foto/vídeo abre em tela cheia, sem "anexado" no chat ── */
+let duvidasMediaPreviewURL = null;
+function openDuvidasMediaPreview(file){
+  const content = document.getElementById('duvidas-media-preview-content');
+  const caption = document.getElementById('duvidas-media-caption');
+  if(!content) return;
+  if(duvidasMediaPreviewURL){ URL.revokeObjectURL(duvidasMediaPreviewURL); }
+  duvidasMediaPreviewURL = URL.createObjectURL(file);
+  content.innerHTML = file.type.startsWith('video/')
+    ? `<video src="${duvidasMediaPreviewURL}" controls autoplay muted playsinline></video>`
+    : `<img src="${duvidasMediaPreviewURL}" alt="Prévia">`;
+  if(caption) caption.value = '';
+  document.getElementById('duvidas-media-preview-overlay').hidden = false;
+}
+function cancelDuvidasMediaPreview(){
+  document.getElementById('duvidas-media-preview-overlay').hidden = true;
+  if(duvidasMediaPreviewURL){ URL.revokeObjectURL(duvidasMediaPreviewURL); duvidasMediaPreviewURL = null; }
+  clearDuvidasFile();
+}
+async function confirmSendDuvidasMedia(){
+  const caption = document.getElementById('duvidas-media-caption');
+  const input = document.getElementById('duvidas-input');
+  if(input) input.value = caption?.value || '';
+  document.getElementById('duvidas-media-preview-overlay').hidden = true;
+  if(duvidasMediaPreviewURL){ URL.revokeObjectURL(duvidasMediaPreviewURL); duvidasMediaPreviewURL = null; }
+  await sendDuvidaMessage();
+}
+
+/* ── Áudio — segure o microfone pra gravar, solte pra enviar (estilo WhatsApp) ── */
+let duvidasMediaRecorder = null;
+let duvidasRecordedChunks = [];
+let duvidasRecordStartTime = 0;
+let duvidasRecordTimer = null;
+let duvidasRecordCancelled = false;
+
+async function startDuvidasRecording(e){
+  if(e) e.preventDefault();
+  if(duvidasMediaRecorder) return;
+  if(!navigator.mediaDevices?.getUserMedia){ showToast('❌ Seu navegador não permite gravar áudio.'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(err){ showToast('❌ Não foi possível acessar o microfone.'); return; }
+
+  duvidasRecordCancelled = false;
+  duvidasRecordedChunks = [];
+  const mimeType = ['audio/webm','audio/mp4','audio/ogg'].find(t=>window.MediaRecorder?.isTypeSupported?.(t)) || '';
+  try {
+    duvidasMediaRecorder = mimeType ? new MediaRecorder(stream, {mimeType}) : new MediaRecorder(stream);
+  } catch(err){
+    showToast('❌ Gravação de áudio não suportada neste navegador.');
+    stream.getTracks().forEach(t=>t.stop());
+    return;
+  }
+  duvidasMediaRecorder.ondataavailable = ev=>{ if(ev.data.size>0) duvidasRecordedChunks.push(ev.data); };
+  duvidasMediaRecorder.onstop = ()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    const duration = Math.round((Date.now()-duvidasRecordStartTime)/1000);
+    stopDuvidasRecordTimer();
+    document.getElementById('duvidas-record-bar').hidden = true;
+    document.getElementById('duvidas-input').hidden = false;
+    document.getElementById('duvidas-attach-btn').hidden = false;
+    document.getElementById('duvidas-send-btn').hidden = false;
+    document.getElementById('duvidas-mic-btn')?.classList.remove('is-recording');
+    const recorder = duvidasMediaRecorder;
+    duvidasMediaRecorder = null;
+    if(duvidasRecordCancelled || duration < 1) return;
+    const blob = new Blob(duvidasRecordedChunks, {type: recorder.mimeType || 'audio/webm'});
+    sendDuvidaAudioMessage(blob);
+  };
+  duvidasMediaRecorder.start();
+  duvidasRecordStartTime = Date.now();
+  document.getElementById('duvidas-input').hidden = true;
+  document.getElementById('duvidas-attach-btn').hidden = true;
+  document.getElementById('duvidas-send-btn').hidden = true;
+  document.getElementById('duvidas-record-bar').hidden = false;
+  document.getElementById('duvidas-mic-btn')?.classList.add('is-recording');
+  startDuvidasRecordTimer();
+
+  // Solta o dedo/mouse em qualquer lugar da tela pra parar e enviar
+  const stopOnce = ()=>{
+    document.removeEventListener('pointerup', stopOnce);
+    document.removeEventListener('pointercancel', stopOnce);
+    stopDuvidasRecording();
+  };
+  document.addEventListener('pointerup', stopOnce);
+  document.addEventListener('pointercancel', stopOnce);
+}
+
+function startDuvidasRecordTimer(){
+  const el = document.getElementById('duvidas-record-time');
+  const tick = ()=>{
+    const secs = Math.floor((Date.now()-duvidasRecordStartTime)/1000);
+    const m = Math.floor(secs/60), s = secs%60;
+    if(el) el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+  };
+  tick();
+  duvidasRecordTimer = setInterval(tick, 250);
+}
+function stopDuvidasRecordTimer(){
+  clearInterval(duvidasRecordTimer);
+  duvidasRecordTimer = null;
+}
+function stopDuvidasRecording(){
+  if(duvidasMediaRecorder && duvidasMediaRecorder.state!=='inactive') duvidasMediaRecorder.stop();
+}
+function cancelDuvidasRecording(){
+  duvidasRecordCancelled = true;
+  stopDuvidasRecording();
+}
+
+async function sendDuvidaAudioMessage(blob){
+  if(!sb || !currentUser || !currentProfile || !duvidasCurrentProfessorId || !duvidasCurrentStudentId) return;
+  const micBtn = document.getElementById('duvidas-mic-btn');
+  if(micBtn) micBtn.disabled = true;
+  const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+  const path = `${duvidasCurrentProfessorId}/${duvidasCurrentStudentId}/${Date.now()}.${ext}`;
+  const { error: upErr } = await sb.storage.from('chat-media').upload(path, blob, { contentType: blob.type||'audio/webm' });
+  if(micBtn) micBtn.disabled = false;
+  if(upErr){ showToast('❌ Erro ao enviar áudio: '+upErr.message); return; }
+  const { data: pub } = sb.storage.from('chat-media').getPublicUrl(path);
+  const mediaUrl = pub?.publicUrl || null;
+  const studentName = currentProfile.role==='student' ? currentProfile.full_name : null;
+  const { data: insRow, error } = await sb.from('chat_messages').insert({
+    professor_id: duvidasCurrentProfessorId, student_id: duvidasCurrentStudentId,
+    student_name: studentName, sender_role: currentProfile.role,
+    body: null, media_url: mediaUrl, media_type: 'audio'
+  }).select().single();
+  if(error){ showToast('❌ Erro ao enviar mensagem: '+error.message); return; }
+  duvidasMessages.push(insRow);
+  renderDuvidasMessages();
+  const recipientId = currentProfile.role==='professor' ? duvidasCurrentStudentId : duvidasCurrentProfessorId;
+  const senderName = currentProfile.full_name || (currentProfile.role==='professor'?'Seu professor':'Aluno');
+  sb.rpc('create_notification', {
+    p_recipient_id: recipientId, p_type: 'chat_message',
+    p_title: `Nova mensagem de ${senderName}`,
+    p_body: '🎤 Enviou um áudio',
+    p_link: 'duvidas', p_related_id: currentProfile.role==='professor' ? duvidasCurrentStudentId : null
+  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
 }
 
 async function sendDuvidaMessage(){
@@ -5072,7 +5259,7 @@ async function loadAlunoDuvidasPreview(){
   el.innerHTML = last
     ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="overflow:hidden">
-          <div style="font-size:.85rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last.sender_role==='student'?'Você: ':''}${escHtml(last.body||(last.media_type==='video'?'Enviou um vídeo':'Enviou uma foto'))}</div>
+          <div style="font-size:.85rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last.sender_role==='student'?'Você: ':''}${escHtml(last.body||(last.media_type==='video'?'Enviou um vídeo':last.media_type==='audio'?'Enviou um áudio':'Enviou uma foto'))}</div>
           <div style="font-size:.75rem;color:var(--muted);margin-top:2px">${notifClockTime(last.created_at)}</div>
         </div>
         ${unread?`<span class="nav-bell-badge" style="position:static">${unread>9?'9+':unread}</span>`:''}
