@@ -737,6 +737,23 @@ img { max-width: 100%; display: block; }
   .bottom-popup { max-width: 100%; }
 }
 
+/* ─── MENSAGEM CENTRAL — confirmação/erro de agendamento ─────────── */
+.center-msg-overlay { position: fixed; inset: 0; z-index: 1250; display: flex;
+  align-items: center; justify-content: center; background: rgba(13,26,46,.5); padding: 20px; }
+.center-msg-overlay[hidden] { display: none; }
+.center-msg-popup { pointer-events: auto; max-width: 360px; width: 100%; text-align: center;
+  background: var(--surface); border-radius: calc(var(--radius) + 6px);
+  padding: 32px 26px; box-shadow: 0 24px 60px -16px rgba(13,26,46,.5);
+  transform: scale(.9); opacity: 0;
+  transition: transform .28s cubic-bezier(.16,1,.3,1), opacity .24s; cursor: pointer; }
+.center-msg-popup.show { transform: scale(1); opacity: 1; }
+.center-msg-icon { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(52,106,172,.12); color: var(--pine); }
+.center-msg-icon.is-error { background: rgba(192,57,43,.13); color: #C0392B; }
+.center-msg-icon svg { width: 28px; height: 28px; }
+.center-msg-text { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--ink); line-height: 1.4; }
+
 /* ─── FOOTER ──────────────────────────────────────────────────── */
 .footer { border-top: 1px solid var(--border); padding: 44px 24px; background: var(--ground); }
 .footer-inner { max-width: var(--max-w); margin: 0 auto;
@@ -1918,6 +1935,14 @@ img { max-width: 100%; display: block; }
   </div>
 </div>
 
+<!-- ─── MENSAGEM DE AGENDAMENTO — centralizada na tela ────────────── -->
+<div id="booking-msg-overlay" class="center-msg-overlay" hidden>
+  <div class="center-msg-popup" id="booking-msg-popup">
+    <span class="center-msg-icon" id="booking-msg-icon"></span>
+    <p class="center-msg-text" id="booking-msg-text"></p>
+  </div>
+</div>
+
 <!-- ─── APP MESSAGE (substitui alert()) — pop-up inferior ─────────── -->
 <div id="app-msg-overlay" class="bottom-popup-wrap" hidden>
   <div class="bottom-popup" id="app-msg-popup">
@@ -2532,7 +2557,7 @@ async function submitBooking(dateStr, time){
   // Fluxo Supabase — aluno logado
   if(currentUser && currentProfile?.role==='student' && sb) {
     const professorId = currentStudentData?.professor_id;
-    if(!professorId){ alert('Erro: professor não vinculado. Contate o suporte.'); return; }
+    if(!professorId){ showBookingMessage('Erro: professor não vinculado. Contate o suporte.', 'error'); return; }
     const { data: inserted, error } = await sb.from('bookings').insert({
       student_id: currentUser.id,
       professor_id: professorId,
@@ -2544,10 +2569,10 @@ async function submitBooking(dateStr, time){
     }).select().single();
     if(error){
       if(error.code==='23505'){
-        alert('Esse horário acabou de ser reservado por outro aluno. Escolha outro horário.');
+        showBookingMessage('Esse horário acabou de ser reservado por outro aluno. Escolha outro horário.', 'error');
         await renderCalendar();
       } else {
-        alert('Erro ao confirmar: ' + error.message);
+        showBookingMessage('Agendamento não realizado: ' + error.message, 'error');
       }
       return;
     }
@@ -2569,7 +2594,7 @@ async function submitBooking(dateStr, time){
     }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
     await loadAlunoDashboard();
     showPage('dashboard-aluno');
-    showToast('✅ Agendamento confirmado! Verifique seu e-mail.');
+    showBookingMessage('Agendamento confirmado! Verifique seu e-mail.', 'success');
     return;
   }
 
@@ -2649,6 +2674,28 @@ function showAppMessage(message, type='success', duration=3200){
     const timer=setTimeout(finish, duration);
   });
 }
+/* ── Mensagem central — só pro fluxo de agendamento (confirmado/não realizado) ── */
+function showBookingMessage(message, type='success', duration=3200){
+  return new Promise(resolve=>{
+    const overlay=document.getElementById('booking-msg-overlay');
+    const popup=document.getElementById('booking-msg-popup');
+    const iconEl=document.getElementById('booking-msg-icon');
+    iconEl.classList.toggle('is-error', type==='error');
+    iconEl.innerHTML = type==='error' ? APP_ICON_WARN : APP_ICON_CHECK;
+    document.getElementById('booking-msg-text').textContent = message;
+    overlay.hidden=false;
+    popup.classList.remove('show');
+    void popup.offsetWidth;
+    requestAnimationFrame(()=>popup.classList.add('show'));
+    let done=false;
+    const finish=()=>{ if(done) return; done=true; clearTimeout(timer);
+      popup.classList.remove('show'); popup.removeEventListener('click',finish);
+      setTimeout(()=>{ overlay.hidden=true; }, 260); resolve(); };
+    popup.addEventListener('click',finish);
+    const timer=setTimeout(finish, duration);
+  });
+}
+
 function showAppConfirm(message){
   return new Promise(resolve=>{
     const overlay=document.getElementById('app-confirm-overlay');
