@@ -53,7 +53,7 @@
   --pine-h:      #2a5590;
   --citrus:      #879cbb;
   --border:      #C2CDE0;
-  --muted:       #7A8EB0;
+  --muted:       #5C7299;
   --hero-bg:     #000000;
   --hero-citrus: #879cbb;
   --radius:      14px;
@@ -101,6 +101,11 @@ input, textarea, select {
 }
 input:focus, textarea:focus, select:focus { border-color: var(--pine); }
 textarea { resize: vertical; min-height: 100px; }
+/* Indicador de foco pra navegação por teclado (Tab) — não aparece em clique/toque com mouse/dedo */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible,
+select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--pine); outline-offset: 2px;
+}
 label { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
 fieldset { border: none; }
 .pwd-field { position: relative; }
@@ -392,8 +397,7 @@ img { max-width: 100%; display: block; }
 .page-header-inner { max-width: var(--max-w); margin: 0 auto; position: relative; text-align: left; }
 .page-header .eyebrow { color: var(--hero-citrus); margin-bottom: 4px; }
 .page-header h1 { font-family: var(--font-d); font-size: clamp(1.3rem,2.6vw,1.9rem);
-  font-weight: 800; line-height: 1.15; letter-spacing: -.01em; margin-top: 2px; max-width: 100%;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  font-weight: 800; line-height: 1.15; letter-spacing: -.01em; margin-top: 2px; max-width: 100%; }
 
 .sobre-body { max-width: var(--max-w); margin: 0 auto; padding: 72px 24px; }
 
@@ -613,16 +617,6 @@ img { max-width: 100%; display: block; }
 .icon-inline.good { color: var(--good); }
 .icon-inline.warn { color: var(--warn); }
 .icon-inline.crit { color: var(--crit); }
-
-/* ─── TOAST ──────────────────────────────────────────────────── */
-.toast {
-  position: fixed; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(20px);
-  background: #1a2e4a; color: #fff; padding: 14px 28px; border-radius: 50px;
-  font-size: .92rem; font-weight: 600; z-index: 9999;
-  opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none;
-  white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,.25);
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ─── ADMIN ───────────────────────────────────────────────────── */
 .overlay { position: fixed; inset: 0; z-index: 990; display: flex;
@@ -960,8 +954,8 @@ img { max-width: 100%; display: block; }
   padding: 12px 14px; background: var(--surface-alt); border-radius: var(--radius-sm); margin-bottom: 8px; }
 .exlib-item-name { font-weight: 600; font-size: .88rem; }
 .exlib-item-meta { font-size: .76rem; color: var(--muted); margin-top: 2px; }
-.exlib-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.exlib-item-actions button { background: none; border: none; cursor: pointer; padding: 5px 7px; border-radius: 6px; color: var(--muted); }
+.exlib-item-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.exlib-item-actions button { background: none; border: none; cursor: pointer; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--muted); }
 .exlib-item-actions button:hover { background: rgba(52,106,172,.1); color: var(--pine); }
 .treino-division-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px; }
 .treino-division-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -1357,7 +1351,7 @@ img { max-width: 100%; display: block; }
         </div>
         <form id="auth-form-aluno" autocomplete="on" onsubmit="loginAluno();return false;">
           <div class="form-row"><label>CPF</label>
-            <input type="text" id="login-cpf" name="username" autocomplete="username" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"></div>
+            <input type="text" id="login-cpf" name="username" autocomplete="username" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"></div>
           <div class="form-row"><label>Senha</label>
             <div class="pwd-field">
               <input type="password" id="login-senha-aluno" name="password" autocomplete="current-password" placeholder="••••••••"
@@ -1449,7 +1443,7 @@ img { max-width: 100%; display: block; }
             Informe seu CPF. Vamos enviar um código de verificação pro e-mail de contato cadastrado com seu professor.
           </p>
           <div class="form-row"><label>CPF</label>
-            <input type="text" id="reset-cpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"
+            <input type="text" id="reset-cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"
               onkeydown="if(event.key==='Enter')requestStudentResetCode()">
           </div>
           <button class="btn-primary" style="width:100%;justify-content:center;margin-top:8px" id="reset-request-btn" onclick="requestStudentResetCode()">
@@ -1795,7 +1789,7 @@ img { max-width: 100%; display: block; }
             <div style="display:flex;gap:12px;flex-wrap:wrap">
               <div style="flex:1;min-width:160px">
                 <label>CPF</label>
-                <input type="text" id="new-aluno-cpf" placeholder="000.000.000-00"
+                <input type="text" id="new-aluno-cpf" inputmode="numeric" placeholder="000.000.000-00"
                   maxlength="14" oninput="maskCPF(this)">
               </div>
               <div style="flex:1;min-width:160px">
@@ -1851,12 +1845,12 @@ img { max-width: 100%; display: block; }
             Montar treino do aluno
           </div>
           <div style="margin-bottom:12px;max-width:480px;display:flex;gap:8px;flex-wrap:wrap">
-            <select id="treino-aluno-gender-filter" onchange="renderTreinoAlunoOptions()" style="width:150px;flex-shrink:0">
+            <select id="treino-aluno-gender-filter" onchange="renderTreinoAlunoOptions()" style="width:110px;flex-shrink:1;min-width:90px">
               <option value="">Todos</option>
               <option value="F">Feminino</option>
               <option value="M">Masculino</option>
             </select>
-            <div style="position:relative;flex:1;min-width:180px">
+            <div style="position:relative;flex:1;min-width:140px">
               <span class="icon-inline" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
               </span>
@@ -2329,7 +2323,6 @@ img { max-width: 100%; display: block; }
 </div>
 
 <!-- ─── TOAST ────────────────────────────────────────────────────── -->
-<div id="site-toast" class="toast"></div>
 
 <script>
 'use strict';
@@ -2829,7 +2822,7 @@ async function saveExercise(){
 }
 
 async function deleteExercise(id){
-  if(!confirm('Excluir esse exercício da biblioteca? Ele sai de todos os treinos que o usam.')) return;
+  if(!await showAppConfirm('Excluir esse exercício da biblioteca? Ele sai de todos os treinos que o usam.')) return;
   const { error } = await sb.from('exercises').delete().eq('id', id);
   if(error){ alert('Erro ao excluir: '+error.message); return; }
   await loadExerciseLibrary();
@@ -3031,7 +3024,7 @@ async function saveDivision(){
 }
 
 async function removeTrainingDivision(id){
-  if(!confirm('Excluir essa divisão e todos os exercícios dela?')) return;
+  if(!await showAppConfirm('Excluir essa divisão e todos os exercícios dela?')) return;
   const { error } = await sb.from('training_divisions').delete().eq('id', id);
   if(error){ alert('Erro: '+error.message); return; }
   await loadStudentTreino(mtSelectedStudentId);
@@ -3136,7 +3129,7 @@ function renderMtExercises(){
       const val = saved[setNum] != null ? saved[setNum] : '';
       return `<div class="mt-load-set-row">
         <span class="mt-load-set-label">Série ${setNum}</span>
-        <input type="number" step="0.5" class="mt-load-input" id="mt-load-${te.id}-${setNum}" value="${val}" placeholder="kg">
+        <input type="number" step="0.5" inputmode="decimal" class="mt-load-input" id="mt-load-${te.id}-${setNum}" value="${val}" placeholder="kg">
       </div>`;
     }).join('');
     return `<div class="mt-ex-card">
@@ -3155,7 +3148,7 @@ function renderMtExercises(){
       </div>
       <div id="mt-load-general-${te.id}" ${hasPerSet?'hidden':''}>
         <div class="mt-load-row">
-          <input type="number" step="0.5" class="mt-load-input" id="mt-load-${te.id}-0" value="${generalVal}" placeholder="kg (todas as séries)">
+          <input type="number" step="0.5" inputmode="decimal" class="mt-load-input" id="mt-load-${te.id}-0" value="${generalVal}" placeholder="kg (todas as séries)">
           <button class="btn-primary" style="font-size:.78rem;padding:8px 14px" onclick="mtSaveLoad('${te.id}', 0)">Salvar</button>
           <button class="mt-load-link" onclick="mtTogglePerSet('${te.id}', true)">Registrar peso por série</button>
         </div>
@@ -3255,7 +3248,7 @@ function showPage(id, opts) {
   if(!opts.isBack && currentPage && currentPage !== id) pageHistory.push(currentPage);
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const el = document.getElementById('page-'+id);
-  if(el){ el.classList.add('active'); currentPage=id; }
+  if(el){ el.classList.add('active'); currentPage=id; if(!opts.isBack) syncHashForPage(id); }
   window.scrollTo(0,0);
   if(id==='agendar') renderCalendar();
   if(id==='planos') renderPlans();
@@ -3273,6 +3266,24 @@ function goBack() {
   const prev = pageHistory.pop();
   showPage(prev || 'home', { isBack:true });
 }
+
+/* ── Roteamento por hash: botão Voltar do navegador/gesto do Android,
+   links diretos (notificação, e-mail, WhatsApp), e refresh não perde a página ── */
+function isRouteHash(h){ return /^#[a-z0-9-]+$/i.test(h||''); }
+function syncHashForPage(id){
+  if(!id) return;
+  // Nunca mexe no hash se ele tiver cara de callback de autenticação (token de
+  // recuperação de senha, login com Google etc.) — evita apagar algo que o
+  // Supabase ainda precise ler.
+  if(location.hash && !isRouteHash(location.hash)) return;
+  const target = '#'+id;
+  if(location.hash === target) return;
+  try { history.pushState({ page:id }, '', target); } catch(_){}
+}
+window.addEventListener('popstate', e=>{
+  const id = (e.state && e.state.page) || (isRouteHash(location.hash) ? location.hash.slice(1) : 'home');
+  showPage(id, { isBack:true });
+});
 
 /* ── Gestos de arrastar (mobile): esquerda→direita volta, direita→esquerda avança ── */
 function swipeBackAction(){
@@ -3691,12 +3702,22 @@ function renderBookingForm(){
     <div class="form-row"><p style="font-size:.88rem;color:var(--ink-2)">Agendando como <strong>${nomeVal}</strong></p></div>
     <input type="hidden" id="b-name" value="${nomeVal}">
     <input type="hidden" id="b-email" value="${emailVal}">
-    <input type="hidden" id="b-phone" value="${phoneVal}">` : `
-    <div class="form-row-2">
-      <div class="form-row"><label>Nome completo *</label><input type="text" id="b-name" required></div>
-      <div class="form-row"><label>E-mail *</label><input type="email" id="b-email" required></div>
-    </div>
-    <div class="form-row"><label>Telefone / WhatsApp *</label><input type="tel" id="b-phone" required></div>`;
+    <input type="hidden" id="b-phone" value="${phoneVal}">` : '';
+  if(!loggedAsStudent){
+    document.getElementById('booking-form-area').innerHTML = `
+      <div class="booking-form">
+        <p class="slots-label" style="margin-top:8px">Dados para agendamento</p>
+        <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:20px">${dayFull}, ${d.getDate()} de ${meses[d.getMonth()]} · ${selTime}</p>
+        <div class="form-row" style="text-align:center;padding:18px 4px">
+          <p style="font-size:.92rem;color:var(--ink-2);margin-bottom:14px">Pra agendar você precisa ter uma conta de aluno. Se já tem cadastro, entre. Se ainda não tem, fale com o professor pra liberar seu acesso.</p>
+          <div class="modal-actions" style="justify-content:center">
+            <button class="btn-primary" onclick="showPage('login')">Entrar</button>
+            <a class="btn-secondary" href="https://wa.me/5512981112070?text=${encodeURIComponent('Olá Lucas! Quero agendar uma aula, mas ainda não tenho cadastro.')}" target="_blank" rel="noopener">Pedir cadastro</a>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
   document.getElementById('booking-form-area').innerHTML=`
     <div class="booking-form">
       <p class="slots-label" style="margin-top:8px">Dados para agendamento</p>
@@ -3789,27 +3810,9 @@ async function submitBooking(dateStr, time){
     return;
   }
 
-  // Fluxo legado (sem login)
-  const name=document.getElementById('b-name').value.trim();
-  const email=document.getElementById('b-email').value.trim();
-  const phone=document.getElementById('b-phone').value.trim();
-  if(!name||!email||!phone){
-    alert('Preencha todos os campos obrigatórios.'); return;
-  }
-  const booking={
-    id: Date.now()+'', date:dateStr, time, name, email, phone,
-    type:typeEl.value, isFixed, obs,
-    createdAt: new Date().toISOString()
-  };
-  const newState={...state, bookings:[...state.bookings, booking]};
-  try { sessionStorage.setItem('pending_confirm', JSON.stringify(booking)); } catch(_){}
-  const res=await publishState(newState);
-  if(!res.ok){
-    try { sessionStorage.removeItem('pending_confirm'); } catch(_){}
-    alert('Erro ao confirmar agendamento. Tente novamente.'); return;
-  }
-  if(!artifactAPI) { showConfirmation(booking); return; }
-  // artifact.publish triggers reload; confirmation shown via sessionStorage
+  // Sem login: o formulário nem chega a aparecer (ver renderBookingForm) — isso aqui é só uma trava de segurança.
+  showBookingMessage('Você precisa entrar com sua conta de aluno pra agendar.', 'error');
+  showPage('login');
 }
 function showConfirmation(b){
   const d=strToDate(b.date);
@@ -6857,13 +6860,7 @@ async function saveConfigLanguage(){
 }
 
 /* ── CADASTRO DE ALUNOS ───────────────────────────────────────── */
-function maskCPF(input) {
-  let v = input.value.replace(/\D/g,'').slice(0,11);
-  if(v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-  else if(v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-  else if(v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
-  input.value = v;
-}
+// maskCPF já está definida mais acima no arquivo (reaproveitada aqui).
 
 async function cadastrarAluno() {
   const nome   = (document.getElementById('new-aluno-nome')?.value||'').trim();
@@ -7104,6 +7101,13 @@ async function init(){
   checkOAuthError();
   renderHomeAccordion();
   await checkExistingSession();
+  // Link direto: se a URL já veio com uma página específica (ex.: favorito, link de notificação),
+  // abre nela em vez de sempre cair no dashboard/início. A proteção de rota do showPage() já
+  // cuida de mandar pro login se a página exigir e o usuário não estiver logado.
+  if(isRouteHash(location.hash)){
+    const initialId = location.hash.slice(1);
+    if(initialId !== currentPage) showPage(initialId, { isBack:true });
+  }
 }
 init();
 </script>
