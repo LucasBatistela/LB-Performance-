@@ -2073,6 +2073,88 @@ function getNext5Days() {
   }
   return days;
 }
+/* ── Horário fixo semanal — projeta as próximas ocorrências sem precisar criar uma linha por semana ──
+   anchors: linhas de "bookings" com is_fixed=true (cada uma define um dia da semana + horário).
+   skipsByBooking: {[bookingId]: Set(dateStr)} — semanas puladas (cancelamento pontual, sem desfixar).
+   physicalKeySet: Set('data|hora') que já tem linha física — evita duplicar. ── */
+function expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, fromDate, toDateExclusive){
+  const out = [];
+  (anchors||[]).forEach(anchor=>{
+    const dow = strToDate(anchor.date).getDay();
+    const skips = skipsByBooking[anchor.id] || new Set();
+    const cursor = new Date(fromDate); cursor.setHours(0,0,0,0);
+    while(cursor.getDay()!==dow) cursor.setDate(cursor.getDate()+1);
+    while(cursor < toDateExclusive){
+      const ds = dateToStr(cursor);
+      if(ds !== anchor.date && !skips.has(ds) && !physicalKeySet.has(ds+'|'+anchor.time)){
+        out.push({ ...anchor, id: null, date: ds, is_fixed: true, virtual: true, source_id: anchor.id });
+      }
+      cursor.setDate(cursor.getDate()+7);
+    }
+  });
+  return out;
+}
+/* Cancela só essa semana do horário fixo — as próximas continuam normalmente */
+async function cancelarOcorrenciaFixa(sourceId, date){
+  if(!sb) return;
+  if(!(await showAppConfirm('Cancelar só essa semana? As próximas semanas do horário fixo continuam reservadas normalmente.'))) return;
+  const { error } = await sb.from('fixed_booking_skips').insert({ booking_id: sourceId, skip_date: date });
+  if(error){ showToast('❌ Erro ao cancelar: '+error.message); return; }
+  showToast('✅ Essa semana foi cancelada.');
+  if(currentProfile?.role==='professor'){ loadProfDashboard(); loadProfAllBookings(); }
+  else { loadAlunoDashboard(); }
+}
+/* Encerra o horário fixo de vez — as próximas semanas deixam de ser reservadas automaticamente */
+async function desfixarAgendamento(bookingId){
+  if(!sb) return;
+  if(!(await showAppConfirm('Desfixar este horário? Ele deixa de ser reservado automaticamente toda semana — a partir de agora fica livre pra qualquer aluno.'))) return;
+  const { error } = await sb.from('bookings').update({is_fixed:false}).eq('id',bookingId);
+  if(error){ showToast('❌ Erro ao desfixar: '+error.message); return; }
+  showToast('✅ Horário desfixado.');
+  if(currentProfile?.role==='professor'){ loadProfDashboard(); loadProfAllBookings(); }
+  else { loadAlunoDashboard(); }
+}
+/* Junta os agendamentos reais do aluno com as próximas ocorrências projetadas dos horários fixos dele */
+async function getStudentUpcomingBookings(studentId, weeksAhead){
+  weeksAhead = weeksAhead || 8;
+  const todayStr = dateToStr(new Date());
+  const [realRes, anchorRes] = await Promise.all([
+    sb.from('bookings').select('*').eq('student_id',studentId).gte('date',todayStr).eq('status','confirmed').order('date').order('time'),
+    sb.from('bookings').select('*').eq('student_id',studentId).eq('is_fixed',true)
+  ]);
+  const real = realRes.data || [];
+  const anchors = anchorRes.data || [];
+  let virtual = [];
+  if(anchors.length){
+    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date').in('booking_id', anchors.map(a=>a.id));
+    const skipsByBooking = {};
+    (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
+    const physicalKeySet = new Set(real.map(b=>b.date+'|'+b.time));
+    const from = new Date();
+    const to = new Date(); to.setDate(to.getDate() + weeksAhead*7);
+    virtual = expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, from, to);
+  }
+  return [...real, ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
+}
+/* Junta os agendamentos reais do professor com as próximas ocorrências projetadas dos horários fixos, num intervalo de datas */
+async function getProfessorBookingsInRange(profId, fromDate, toDateExclusive){
+  const fromStr = dateToStr(fromDate), toStr = dateToStr(toDateExclusive);
+  const [realRes, anchorRes] = await Promise.all([
+    sb.from('bookings').select('*').eq('professor_id',profId).gte('date',fromStr).lt('date',toStr).eq('status','confirmed').order('date').order('time'),
+    sb.from('bookings').select('*').eq('professor_id',profId).eq('is_fixed',true)
+  ]);
+  const real = realRes.data || [];
+  const anchors = anchorRes.data || [];
+  let virtual = [];
+  if(anchors.length){
+    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date').in('booking_id', anchors.map(a=>a.id));
+    const skipsByBooking = {};
+    (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
+    const physicalKeySet = new Set(real.map(b=>b.date+'|'+b.time));
+    virtual = expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, fromDate, toDateExclusive);
+  }
+  return [...real, ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
+}
 let SESSION_DURATION_MIN = 45;
 function generateSlotsForWindow(startStr, endStr, durationMin){
   if(!startStr || !endStr) return [];
@@ -2472,14 +2554,30 @@ async function refreshScheduleData(){
   profWeeklySchedule = prof?.weekly_schedule || {};
   SESSION_DURATION_MIN = prof?.session_duration_min || 45;
 
-  const { data: bookings } = await sb.from('bookings').select('date,time')
-    .eq('professor_id', profId).eq('status','confirmed');
-  profBookingsCache = bookings || [];
-
   const today=new Date();
   const todayStr=dateToStr(today);
   const future=new Date(today); future.setDate(future.getDate()+9);
   const futureStr=dateToStr(future);
+
+  const { data: bookings } = await sb.from('bookings').select('id,date,time,is_fixed')
+    .eq('professor_id', profId).eq('status','confirmed');
+  profBookingsCache = bookings || [];
+
+  // Horário fixo semanal — bloqueia o horário nas próximas semanas mesmo sem uma linha física por semana.
+  // Busca à parte (sem filtro de status): a série continua ativa mesmo se a semana da própria linha-âncora
+  // tiver sido cancelada — só o "Desfixar" encerra a série de verdade.
+  const { data: fixedAnchors } = await sb.from('bookings').select('*')
+    .eq('professor_id', profId).eq('is_fixed', true);
+  if(fixedAnchors?.length){
+    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date')
+      .in('booking_id', fixedAnchors.map(a=>a.id));
+    const skipsByBooking = {};
+    (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
+    const physicalKeySet = new Set((bookings||[]).map(b=>b.date+'|'+b.time));
+    const virtualBusy = expandFixedOccurrences(fixedAnchors, skipsByBooking, physicalKeySet, today, future);
+    profBookingsCache = profBookingsCache.concat(virtualBusy);
+  }
+
   const { data: exceptions } = await sb.from('schedule_exceptions').select('*')
     .eq('professor_id', profId).gte('date', todayStr).lte('date', futureStr);
   profExceptionsMap={};
@@ -2625,6 +2723,7 @@ async function submitBooking(dateStr, time){
       time: time,
       type: typeEl.value,
       status: 'confirmed',
+      is_fixed: isFixed,
       obs: obs
     }).select().single();
     if(error){
@@ -2640,7 +2739,7 @@ async function submitBooking(dateStr, time){
       id: inserted.id, date:dateStr, time,
       name: currentProfile.full_name||'Aluno',
       email: currentProfile.email||'', phone: currentProfile.phone||'',
-      type: typeEl.value, isFixed: false, obs,
+      type: typeEl.value, isFixed, obs,
       createdAt: new Date().toISOString()
     };
     // Envia email de confirmação e volta ao dashboard (sem modal) — só se o aluno tiver e-mail de contato salvo
@@ -2649,12 +2748,12 @@ async function submitBooking(dateStr, time){
     sb.rpc('create_notification', {
       p_recipient_id: professorId, p_type: 'booking_new',
       p_title: `Novo agendamento de ${currentProfile.full_name||'aluno'}`,
-      p_body: `${formatDate(dateStr)} às ${time}`,
+      p_body: `${formatDate(dateStr)} às ${time}${isFixed?' · fixo (toda semana)':''}`,
       p_link: 'dashboard-prof'
     }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
     await loadAlunoDashboard();
     showPage('dashboard-aluno');
-    showBookingMessage('Agendamento confirmado! Verifique seu e-mail.', 'success');
+    showBookingMessage(isFixed ? 'Agendamento fixo confirmado! Esse horário será reservado toda semana automaticamente.' : 'Agendamento confirmado! Verifique seu e-mail.', 'success');
     return;
   }
 
@@ -3706,19 +3805,22 @@ async function loadAlunoDashboard() {
     return converted ? `${converted} (seu fuso) <span style="color:var(--muted);font-weight:400">· ${timeStr} horário do professor</span>` : timeStr;
   };
 
-  const today = new Date().toISOString().slice(0,10);
-  const { data: bookings } = await sb.from('bookings').select('*')
-    .eq('student_id',currentUser.id).gte('date',today).eq('status','confirmed').order('date').order('time').limit(8);
+  const bookings = await getStudentUpcomingBookings(currentUser.id);
   if(bookings?.length) {
     const next = bookings[0];
     document.getElementById('dash-proximo-treino').innerHTML = `
       <div class="dash-booking-date">${formatDate(next.date)} às ${bookingTimeLabel(next.date, next.time)}</div>
-      <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado</div>`;
+      <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado${next.is_fixed?' · <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>`;
     document.getElementById('dash-historico').innerHTML = bookings.map(b=>`
       <div class="dash-booking-item">
-        <div class="dash-booking-date">${formatDate(b.date)} às ${bookingTimeLabel(b.date, b.time)}</div>
+        <div class="dash-booking-date">${formatDate(b.date)} às ${bookingTimeLabel(b.date, b.time)}${b.is_fixed?' <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>
         <div class="dash-booking-meta"><span class="icon-inline good" style="width:13px;height:13px">${UI_ICONS.check}</span> Confirmado
-          <button onclick="cancelarAgendamento('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
+          ${b.virtual
+            ? `<button onclick="cancelarOcorrenciaFixa('${b.source_id}','${b.date}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
+               <button onclick="desfixarAgendamento('${b.source_id}')" style="color:var(--muted);font-size:.75rem;margin-left:12px;cursor:pointer">Desfixar</button>`
+            : `<button onclick="cancelarAgendamento('${b.id}')" style="color:#C0392B;font-size:.75rem;margin-left:12px;cursor:pointer">Cancelar</button>
+               ${b.is_fixed ? `<button onclick="desfixarAgendamento('${b.id}')" style="color:var(--muted);font-size:.75rem;margin-left:12px;cursor:pointer">Desfixar</button>` : ''}`
+          }
         </div>
       </div>`).join('');
     document.getElementById('dash-historico-toggle-wrap').innerHTML = `
@@ -3749,15 +3851,15 @@ async function loadProfDashboard() {
   document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
   // Atualiza avatar na nav
   updateNavAvatar();
-  const today = new Date().toISOString().slice(0,10);
+  const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+  const tomorrowDate = new Date(todayDate); tomorrowDate.setDate(tomorrowDate.getDate()+1);
 
-  const { data: hoje } = await sb.from('bookings').select('*')
-    .eq('professor_id',currentUser.id).eq('date',today).eq('status','confirmed').order('time');
+  const hoje = await getProfessorBookingsInRange(currentUser.id, todayDate, tomorrowDate);
   if(hoje?.length) {
     const names = await Promise.all(hoje.map(b=>sb.from('profiles').select('full_name,phone').eq('id',b.student_id).single()));
     document.getElementById('prof-agenda-hoje').innerHTML = hoje.map((b,i)=>`
       <div class="dash-booking-item">
-        <div class="dash-booking-date">${b.time} — ${names[i].data?.full_name||'Aluno'}</div>
+        <div class="dash-booking-date">${b.time} — ${names[i].data?.full_name||'Aluno'}${b.is_fixed?' <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>
         <div class="dash-booking-meta">${names[i].data?.phone||''}</div>
       </div>`).join('');
   }
@@ -3774,14 +3876,13 @@ async function loadProfDashboard() {
       </div>`).join('');
   }
 
-  const { data: proximos } = await sb.from('bookings').select('*')
-    .eq('professor_id',currentUser.id).gt('date',today).eq('status','confirmed')
-    .order('date').order('time').limit(8);
+  const proximosUntil = new Date(tomorrowDate); proximosUntil.setDate(proximosUntil.getDate()+60);
+  const proximos = (await getProfessorBookingsInRange(currentUser.id, tomorrowDate, proximosUntil)).slice(0,8);
   if(proximos?.length) {
     const pn = await Promise.all(proximos.map(b=>sb.from('profiles').select('full_name').eq('id',b.student_id).single()));
     document.getElementById('prof-proximos').innerHTML = proximos.map((b,i)=>`
       <div class="dash-booking-item">
-        <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}</div>
+        <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}${b.is_fixed?' <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>
         <div class="dash-booking-meta">${pn[i].data?.full_name||'Aluno'}</div>
       </div>`).join('');
   }
@@ -3807,9 +3908,25 @@ function showProfTab(tab) {
 async function loadProfAllBookings() {
   const el = document.getElementById('prof-all-bookings');
   if(!el||!sb) return;
-  const { data: bookings } = await sb.from('bookings').select('*')
-    .eq('professor_id', currentUser.id).neq('status','cancelled')
+  // Histórico completo (passado + futuro) das reservas reais, sem limite de data pra trás.
+  const { data: real } = await sb.from('bookings').select('*')
+    .eq('professor_id', currentUser.id).eq('status','confirmed')
     .order('date').order('time');
+  // Projeta as próximas ocorrências dos horários fixos (só faz sentido daqui pra frente).
+  const { data: fixedAnchors } = await sb.from('bookings').select('*')
+    .eq('professor_id', currentUser.id).eq('is_fixed', true);
+  let virtual = [];
+  if(fixedAnchors?.length){
+    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date')
+      .in('booking_id', fixedAnchors.map(a=>a.id));
+    const skipsByBooking = {};
+    (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
+    const physicalKeySet = new Set((real||[]).map(b=>b.date+'|'+b.time));
+    const fromDate = new Date(); fromDate.setHours(0,0,0,0);
+    const toDate = new Date(fromDate); toDate.setDate(toDate.getDate()+90);
+    virtual = expandFixedOccurrences(fixedAnchors, skipsByBooking, physicalKeySet, fromDate, toDate);
+  }
+  const bookings = [...(real||[]), ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
   if(!bookings?.length){ el.innerHTML='<p style="color:var(--muted);font-size:.88rem">Nenhum agendamento.</p>'; return; }
   const names = await Promise.all(bookings.map(b=>sb.from('profiles').select('full_name,phone').eq('id',b.student_id).single()));
   el.innerHTML=`<div style="overflow-x:auto"><table class="bookings-table">
@@ -3817,12 +3934,18 @@ async function loadProfAllBookings() {
     <tbody>${bookings.map((b,i)=>{
       const d=new Date(b.date+'T12:00:00');
       const ds=`${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
+      const fixoTag = b.is_fixed ? ' <span title="Reservado toda semana automaticamente">🔁</span>' : '';
+      const actions = b.virtual
+        ? `<button style="font-size:.75rem;color:#C0392B" onclick="cancelarOcorrenciaFixa('${b.source_id}','${b.date}')">Cancelar</button>
+           <button style="font-size:.75rem;color:var(--muted);margin-left:8px" onclick="desfixarAgendamento('${b.source_id}')">Desfixar</button>`
+        : `<button style="font-size:.75rem;color:#C0392B" onclick="profCancelBooking('${b.id}')">Cancelar</button>
+           ${b.is_fixed ? `<button style="font-size:.75rem;color:var(--muted);margin-left:8px" onclick="desfixarAgendamento('${b.id}')">Desfixar</button>` : ''}`;
       return `<tr>
-        <td>${ds}</td><td>${b.time}</td>
+        <td>${ds}${fixoTag}</td><td>${b.time}</td>
         <td>${names[i].data?.full_name||'Aluno'}</td>
         <td><span class="booking-tag ${b.type==='presencial'?'tag-presencial':'tag-online'}">${b.type||''}</span></td>
         <td style="font-size:.82rem">${names[i].data?.phone||''}</td>
-        <td><button style="font-size:.75rem;color:#C0392B" onclick="profCancelBooking('${b.id}')">Cancelar</button></td>
+        <td>${actions}</td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
 }
