@@ -101,6 +101,24 @@ input, textarea, select {
 }
 input:focus, textarea:focus, select:focus { border-color: var(--pine); }
 textarea { resize: vertical; min-height: 100px; }
+/* Normaliza o <select> nativo dentro da anamnese — sem isso, o Safari/Chrome
+   no celular soma o próprio espaçamento interno da setinha ao nosso padding,
+   e o texto some deslocado pra direita (fica desalinhado com os campos de
+   texto ao lado). Removemos o estilo nativo e desenhamos a seta a mão, do
+   mesmo jeito nos dois temas (a cor acompanha --muted via mask). */
+.anamnese-form-wrap select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  padding-right: 40px;
+  background-image: none;
+}
+.select-wrap { position: relative; }
+.select-wrap::after {
+  content: ''; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  width: 12px; height: 8px; pointer-events: none;
+  background-color: var(--muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
 /* Indicador de foco pra navegação por teclado (Tab) — não aparece em clique/toque com mouse/dedo */
 a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible,
 select:focus-visible, [tabindex]:focus-visible {
@@ -4302,10 +4320,10 @@ const ANAMNESE_SECTIONS = [
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Sexo *</label>
-        <select name="sexo" required>
+        <div class="select-wrap"><select name="sexo" required>
           <option value="">Selecione…</option>
           <option>Masculino</option><option>Feminino</option><option>Prefiro não informar</option>
-        </select>
+        </select></div>
       </div>
       <div class="form-row"><label>Profissão *</label><input name="profissao" required></div>
     </div>
@@ -4320,9 +4338,9 @@ const ANAMNESE_SECTIONS = [
   },
   { num:2, title:'Dados físicos', fields:`
     <div class="form-row-2">
-      <div class="form-row"><label>Peso atual (kg) *</label><input name="peso" type="number" step="0.1" required>
+      <div class="form-row"><label>Peso atual (kg) *</label><input name="peso" type="number" step="0.1" inputmode="decimal" required>
         <p style="font-size:.78rem;color:var(--muted);margin-top:4px">Não sabe o peso exato? Pode estimar — ajustamos na primeira avaliação.</p></div>
-      <div class="form-row"><label>Altura (cm) *</label><input name="altura" type="number" required>
+      <div class="form-row"><label>Altura (cm) *</label><input name="altura" type="number" inputmode="numeric" required>
         <p style="font-size:.78rem;color:var(--muted);margin-top:4px">Pensa em metros? Ex: 1,70m = 170cm.</p></div>
     </div>
     <p style="font-size:.82rem;color:var(--muted);margin-top:6px">O percentual de gordura será medido pelo treinador na avaliação física.</p>`
@@ -4378,12 +4396,12 @@ const ANAMNESE_SECTIONS = [
       <input name="dc_outro" placeholder="Descreva…"></div>
     <div class="form-row-2" style="margin-top:8px">
       <div class="form-row"><label>Está em processo de reabilitação?</label>
-        <select name="reab"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+        <div class="select-wrap"><select name="reab"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
       <div class="form-row"><label>Se sim, descreva</label><input name="reab_desc" placeholder="Tipo e fase da reabilitação…"></div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Pós-cirúrgico?</label>
-        <select name="cirurgia"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+        <div class="select-wrap"><select name="cirurgia"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
       <div class="form-row"><label>Se sim, qual cirurgia e quando?</label><input name="cirurgia_desc" placeholder="Ex: joelho, há 3 meses…"></div>
     </div>
     <div class="form-row"><label>Lesões atuais ou recentes</label>
@@ -4395,37 +4413,37 @@ const ANAMNESE_SECTIONS = [
     <div class="form-row"><label>Restrições físicas</label>
       <textarea name="restricoes" rows="2" placeholder="Movimentos, posturas ou esforços que deve evitar…"></textarea></div>
     <div class="form-row"><label>Está na menopausa?</label>
-      <select name="menopausa"><option value="">Prefiro não informar / Não se aplica</option>
-        <option>Não</option><option>Sim</option><option>Em transição (perimenopausa)</option></select></div>
+      <div class="select-wrap"><select name="menopausa"><option value="">Prefiro não informar / Não se aplica</option>
+        <option>Não</option><option>Sim</option><option>Em transição (perimenopausa)</option></select></div></div>
     <div class="form-row"><label>Tem liberação médica para atividade física?</label>
-      <select name="liberacao" required>
+      <div class="select-wrap"><select name="liberacao" required>
         <option value="">Selecione…</option>
         <option>Sim, tenho liberação médica</option>
         <option>Não consultei médico recentemente</option>
         <option>Médico indicou restrições (descreva nas observações)</option>
-      </select></div>`
+      </select></div></div>`
   },
   { num:6, title:'Histórico de atividade física', fields:`
     <div class="form-row"><label>Nível atual de atividade física *</label>
-      <select name="nivel_atv" required>
+      <div class="select-wrap"><select name="nivel_atv" required>
         <option value="">Selecione…</option>
         <option>Sedentário (sem atividade regular)</option>
         <option>Levemente ativo (1–2x/semana)</option>
         <option>Moderadamente ativo (3–4x/semana)</option>
         <option>Muito ativo (5+ vezes/semana)</option>
-      </select></div>
+      </select></div></div>
     <div class="form-row-2">
       <div class="form-row"><label>Pratica exercício atualmente?</label>
-        <select name="exer_atual"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+        <div class="select-wrap"><select name="exer_atual"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
       <div class="form-row"><label>Se sim, qual atividade?</label><input name="exer_qual" placeholder="Corrida, academia, pilates…"></div>
     </div>
     <div class="form-row"><label>Experiência com musculação / funcional</label>
-      <select name="exp_muscu"><option value="">Selecione…</option>
+      <div class="select-wrap"><select name="exp_muscu"><option value="">Selecione…</option>
         <option>Nenhuma</option><option>Pouca (menos de 6 meses)</option>
-        <option>Moderada (6 meses – 2 anos)</option><option>Muita (2+ anos)</option></select></div>
+        <option>Moderada (6 meses – 2 anos)</option><option>Muita (2+ anos)</option></select></div></div>
     <div class="form-row-2">
       <div class="form-row"><label>Já treinou com personal trainer?</label>
-        <select name="personal_ant"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div>
+        <div class="select-wrap"><select name="personal_ant"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
       <div class="form-row"><label>Se sim, por quanto tempo?</label><input name="personal_tempo" placeholder="Ex: 6 meses, 2 anos…"></div>
     </div>
     <div class="form-row-2">
@@ -4446,30 +4464,30 @@ const ANAMNESE_SECTIONS = [
   { num:7, title:'Estilo de vida', fields:`
     <div class="form-row-2">
       <div class="form-row"><label>Qualidade do sono *</label>
-        <select name="sono" required><option value="">Selecione…</option>
-          <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div>
+        <div class="select-wrap"><select name="sono" required><option value="">Selecione…</option>
+          <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div></div>
       <div class="form-row"><label>Horas de sono por noite</label>
-        <select name="horas_sono"><option value="">Selecione…</option>
-          <option>Menos de 5h</option><option>5–6h</option><option>7–8h</option><option>Mais de 8h</option></select></div>
+        <div class="select-wrap"><select name="horas_sono"><option value="">Selecione…</option>
+          <option>Menos de 5h</option><option>5–6h</option><option>7–8h</option><option>Mais de 8h</option></select></div></div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Nível de estresse *</label>
-        <select name="estresse" required><option value="">Selecione…</option>
-          <option>Baixo</option><option>Moderado</option><option>Alto</option><option>Muito alto</option></select></div>
+        <div class="select-wrap"><select name="estresse" required><option value="">Selecione…</option>
+          <option>Baixo</option><option>Moderado</option><option>Alto</option><option>Muito alto</option></select></div></div>
       <div class="form-row"><label>Hidratação diária</label>
-        <select name="agua"><option value="">Selecione…</option>
-          <option>Menos de 1L</option><option>1–2L</option><option>2–3L</option><option>Mais de 3L</option></select></div>
+        <div class="select-wrap"><select name="agua"><option value="">Selecione…</option>
+          <option>Menos de 1L</option><option>1–2L</option><option>2–3L</option><option>Mais de 3L</option></select></div></div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Consumo de álcool</label>
-        <select name="alcool"><option value="">Selecione…</option>
-          <option>Não consumo</option><option>Raramente</option><option>Socialmente</option><option>Regularmente</option></select></div>
+        <div class="select-wrap"><select name="alcool"><option value="">Selecione…</option>
+          <option>Não consumo</option><option>Raramente</option><option>Socialmente</option><option>Regularmente</option></select></div></div>
       <div class="form-row"><label>Fuma?</label>
-        <select name="fumo"><option value="">Selecione…</option><option>Não</option><option>Sim</option><option>Ex-fumante</option></select></div>
+        <div class="select-wrap"><select name="fumo"><option value="">Selecione…</option><option>Não</option><option>Sim</option><option>Ex-fumante</option></select></div></div>
     </div>
     <div class="form-row"><label>Como você avalia sua alimentação?</label>
-      <select name="alimentacao"><option value="">Selecione…</option>
-        <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div>
+      <div class="select-wrap"><select name="alimentacao"><option value="">Selecione…</option>
+        <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div></div>
     <div class="form-row"><label>Usa suplementos?</label>
       <input name="suplementos" placeholder="Proteína, creatina, vitaminas… ou 'Não'"></div>`
   },
@@ -4486,11 +4504,11 @@ const ANAMNESE_SECTIONS = [
       </div></div>
     <div class="form-row-2" style="margin-top:16px">
       <div class="form-row"><label>Horário preferido</label>
-        <select name="horario_pref"><option value="">Selecione…</option>
-          <option>Manhã (6h–12h)</option><option>Tarde (12h–18h)</option><option>Noite (18h–22h)</option><option>Flexível</option></select></div>
+        <div class="select-wrap"><select name="horario_pref"><option value="">Selecione…</option>
+          <option>Manhã (6h–12h)</option><option>Tarde (12h–18h)</option><option>Noite (18h–22h)</option><option>Flexível</option></select></div></div>
       <div class="form-row"><label>Modalidade desejada</label>
-        <select name="modalidade_pref"><option value="">Selecione…</option>
-          <option>Presencial</option><option>Online</option><option>Não tenho certeza</option></select></div>
+        <div class="select-wrap"><select name="modalidade_pref"><option value="">Selecione…</option>
+          <option>Presencial</option><option>Online</option><option>Não tenho certeza</option></select></div></div>
     </div>`
   },
   { num:9, title:'Afinidades pessoais', fields:`
@@ -4509,9 +4527,9 @@ const ANAMNESE_SECTIONS = [
   },
   { num:11, title:'Contexto', fields:`
     <div class="form-row"><label>Como você conheceu o Lucas?</label>
-      <select name="origem"><option value="">Selecione…</option>
+      <div class="select-wrap"><select name="origem"><option value="">Selecione…</option>
         <option>Instagram</option><option>Indicação de amigo ou familiar</option>
-        <option>Google</option><option>Studio10</option><option>Outro</option></select></div>
+        <option>Google</option><option>Studio10</option><option>Outro</option></select></div></div>
     <div class="form-row"><label>Como conheceu (detalhe, se quiser)</label>
       <input name="origem_det" placeholder="Ex: indicação da Maria…"></div>`
   },
