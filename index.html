@@ -119,6 +119,28 @@ textarea { resize: vertical; min-height: 100px; }
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
 }
+/* Campos de texto livre da anamnese — mesmo comportamento do campo de
+   digitar do chat: começa com 1 linha, cresce junto com o que o aluno
+   escreve até uns 3 linhas, e depois disso passa a rolar por dentro em vez
+   de crescer pra sempre ou esconder o texto numa linha só. */
+.anamnese-form-wrap textarea {
+  resize: none; min-height: 46px; max-height: 84px; overflow-y: auto;
+  line-height: 1.4; transition: height .1s;
+}
+/* Campo de data com máscara (DD/MM/AAAA) + ícone de calendário no canto —
+   o input[type=date] nativo fica invisível, empilhado sobre o ícone, então
+   tocar no ícone abre o calendário do celular normalmente. */
+.date-field { position: relative; }
+.date-field input[type="text"] { padding-right: 44px; }
+.date-field-icon {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--muted); pointer-events: none;
+}
+.date-field-icon svg { width: 100%; height: 100%; }
+.date-field-native {
+  position: absolute; right: 0; top: 0; width: 40px; height: 100%;
+  opacity: 0; padding: 0; border: none; cursor: pointer;
+}
 /* Indicador de foco pra navegação por teclado (Tab) — não aparece em clique/toque com mouse/dedo */
 a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible,
 select:focus-visible, [tabindex]:focus-visible {
@@ -3805,6 +3827,7 @@ const UI_ICONS = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
   key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
   bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
@@ -4316,7 +4339,13 @@ const ANAMNESE_SECTIONS = [
   { num:1, title:'Identificação', fields:`
     <div class="form-row-2">
       <div class="form-row"><label>Nome completo *</label><input name="nome" required></div>
-      <div class="form-row"><label>Data de nascimento *</label><input name="nascimento" type="date" required></div>
+      <div class="form-row"><label>Data de nascimento *</label>
+        <div class="date-field">
+          <input type="text" name="nascimento" id="anam-nascimento" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required oninput="maskDateField(this)">
+          <span class="date-field-icon">${UI_ICONS.calendar}</span>
+          <input type="date" class="date-field-native" id="anam-nascimento-native" tabindex="-1" aria-hidden="true" oninput="syncDateFromNative(this,'anam-nascimento')">
+        </div>
+      </div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Sexo *</label>
@@ -4329,11 +4358,29 @@ const ANAMNESE_SECTIONS = [
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>E-mail *</label><input name="email" type="email" required></div>
-      <div class="form-row"><label>Telefone/WhatsApp *</label><input name="telefone" type="tel" required></div>
+      <div class="form-row"><label>Telefone/WhatsApp *</label>
+        <div class="phone-field">
+          <button type="button" class="phone-field-country" id="anam-telefone-country-btn" onclick="openPhoneCountryPicker('anam-telefone')">
+            <span class="pfc-flag" id="anam-telefone-flag">🇧🇷</span>
+            <span class="pfc-dial" id="anam-telefone-dial">+55</span>
+          </button>
+          <input type="tel" name="telefone" id="anam-telefone" required placeholder="(11) 99999-9999" oninput="maskPhoneField(this,'anam-telefone')">
+        </div>
+        <input type="hidden" name="telefone_ddi" id="anam-telefone-ddi" value="55">
+      </div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Nome — Contato de emergência</label><input name="emerg_nome"></div>
-      <div class="form-row"><label>Telefone — Contato de emergência</label><input name="emerg_tel" type="tel"></div>
+      <div class="form-row"><label>Telefone — Contato de emergência</label>
+        <div class="phone-field">
+          <button type="button" class="phone-field-country" id="anam-emerg-tel-country-btn" onclick="openPhoneCountryPicker('anam-emerg-tel')">
+            <span class="pfc-flag" id="anam-emerg-tel-flag">🇧🇷</span>
+            <span class="pfc-dial" id="anam-emerg-tel-dial">+55</span>
+          </button>
+          <input type="tel" name="emerg_tel" id="anam-emerg-tel" placeholder="(11) 99999-9999" oninput="maskPhoneField(this,'anam-emerg-tel')">
+        </div>
+        <input type="hidden" name="emerg_tel_ddi" id="anam-emerg-tel-ddi" value="55">
+      </div>
     </div>`
   },
   { num:2, title:'Dados físicos', fields:`
@@ -4358,7 +4405,7 @@ const ANAMNESE_SECTIONS = [
       </div>
     </div>
     <div class="form-row" style="margin-top:16px"><label>Outro objetivo ou detalhes adicionais</label>
-      <input name="obj_outro" placeholder="Descreva…"></div>`
+      <textarea name="obj_outro" rows="1" placeholder="Descreva…" oninput="autoResizeAnamTextarea(this)"></textarea></div>`
   },
   { num:4, title:'PAR-Q — Prontidão para atividade física', fields:`
     <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:20px">Responda com sinceridade. Se responder <strong>Sim</strong> a qualquer questão, uma liberação médica poderá ser necessária antes de iniciar.</p>
@@ -4393,25 +4440,25 @@ const ANAMNESE_SECTIONS = [
       </div>
     </div>
     <div class="form-row" style="margin-top:16px"><label>Outras doenças crônicas não listadas</label>
-      <input name="dc_outro" placeholder="Descreva…"></div>
+      <textarea name="dc_outro" rows="1" placeholder="Descreva…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row-2" style="margin-top:8px">
       <div class="form-row"><label>Está em processo de reabilitação?</label>
         <div class="select-wrap"><select name="reab"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
-      <div class="form-row"><label>Se sim, descreva</label><input name="reab_desc" placeholder="Tipo e fase da reabilitação…"></div>
+      <div class="form-row"><label>Se sim, descreva</label><textarea name="reab_desc" rows="1" placeholder="Tipo e fase da reabilitação…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Pós-cirúrgico?</label>
         <div class="select-wrap"><select name="cirurgia"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
-      <div class="form-row"><label>Se sim, qual cirurgia e quando?</label><input name="cirurgia_desc" placeholder="Ex: joelho, há 3 meses…"></div>
+      <div class="form-row"><label>Se sim, qual cirurgia e quando?</label><textarea name="cirurgia_desc" rows="1" placeholder="Ex: joelho, há 3 meses…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     </div>
     <div class="form-row"><label>Lesões atuais ou recentes</label>
-      <textarea name="lesoes" rows="2" placeholder="Descreva localização e gravidade…"></textarea></div>
+      <textarea name="lesoes" rows="1" placeholder="Descreva localização e gravidade…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row"><label>Medicamentos em uso</label>
-      <input name="medicamentos" placeholder="Nome e finalidade…"></div>
+      <textarea name="medicamentos" rows="1" placeholder="Nome e finalidade…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row"><label>Alergias conhecidas</label>
-      <input name="alergias" placeholder="Medicamentos, alimentos, materiais…"></div>
+      <textarea name="alergias" rows="1" placeholder="Medicamentos, alimentos, materiais…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row"><label>Restrições físicas</label>
-      <textarea name="restricoes" rows="2" placeholder="Movimentos, posturas ou esforços que deve evitar…"></textarea></div>
+      <textarea name="restricoes" rows="1" placeholder="Movimentos, posturas ou esforços que deve evitar…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row"><label>Está na menopausa?</label>
       <div class="select-wrap"><select name="menopausa"><option value="">Prefiro não informar / Não se aplica</option>
         <option>Não</option><option>Sim</option><option>Em transição (perimenopausa)</option></select></div></div>
@@ -4435,7 +4482,7 @@ const ANAMNESE_SECTIONS = [
     <div class="form-row-2">
       <div class="form-row"><label>Pratica exercício atualmente?</label>
         <div class="select-wrap"><select name="exer_atual"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
-      <div class="form-row"><label>Se sim, qual atividade?</label><input name="exer_qual" placeholder="Corrida, academia, pilates…"></div>
+      <div class="form-row"><label>Se sim, qual atividade?</label><textarea name="exer_qual" rows="1" placeholder="Corrida, academia, pilates…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     </div>
     <div class="form-row"><label>Experiência com musculação / funcional</label>
       <div class="select-wrap"><select name="exp_muscu"><option value="">Selecione…</option>
@@ -4444,13 +4491,13 @@ const ANAMNESE_SECTIONS = [
     <div class="form-row-2">
       <div class="form-row"><label>Já treinou com personal trainer?</label>
         <div class="select-wrap"><select name="personal_ant"><option value="">Selecione…</option><option>Não</option><option>Sim</option></select></div></div>
-      <div class="form-row"><label>Se sim, por quanto tempo?</label><input name="personal_tempo" placeholder="Ex: 6 meses, 2 anos…"></div>
+      <div class="form-row"><label>Se sim, por quanto tempo?</label><textarea name="personal_tempo" rows="1" placeholder="Ex: 6 meses, 2 anos…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     </div>
     <div class="form-row-2">
       <div class="form-row"><label>Modalidade esportiva que pratica ou gostaria de praticar</label>
-        <input name="modalidade_esportiva" placeholder="Ex: corrida, futebol, natação…"></div>
+        <textarea name="modalidade_esportiva" rows="1" placeholder="Ex: corrida, futebol, natação…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
       <div class="form-row"><label>Há quanto tempo pratica essa atividade?</label>
-        <input name="modalidade_esportiva_tempo" placeholder="Ex: 1 ano, ainda não pratico…"></div>
+        <textarea name="modalidade_esportiva_tempo" rows="1" placeholder="Ex: 1 ano, ainda não pratico…" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     </div>
     <div class="form-row" style="margin-top:16px"><label>Tipo de treino preferido (marque todos que gosta)</label>
       <div class="check-group" style="margin-top:8px">
@@ -4489,7 +4536,7 @@ const ANAMNESE_SECTIONS = [
       <div class="select-wrap"><select name="alimentacao"><option value="">Selecione…</option>
         <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div></div>
     <div class="form-row"><label>Usa suplementos?</label>
-      <input name="suplementos" placeholder="Proteína, creatina, vitaminas… ou 'Não'"></div>`
+      <textarea name="suplementos" rows="1" placeholder="Proteína, creatina, vitaminas… ou 'Não'" oninput="autoResizeAnamTextarea(this)"></textarea></div>`
   },
   { num:8, title:'Disponibilidade', fields:`
     <div class="form-row"><label>Dias disponíveis para treinar (marque todos)</label>
@@ -4514,16 +4561,16 @@ const ANAMNESE_SECTIONS = [
   { num:9, title:'Afinidades pessoais', fields:`
     <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:20px">Só pra gente se conhecer melhor — não influencia o treino.</p>
     <div class="form-row"><label>3 bandas ou artistas favoritos</label>
-      <input name="afin_musica" placeholder="Ex: Legião Urbana, Djavan, Charlie Brown Jr."></div>
+      <textarea name="afin_musica" rows="1" placeholder="Ex: Legião Urbana, Djavan, Charlie Brown Jr." oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row" style="margin-top:16px"><label>3 filmes favoritos</label>
-      <input name="afin_filmes" placeholder="Ex: Cidade de Deus, Interestelar, Clube da Luta"></div>
+      <textarea name="afin_filmes" rows="1" placeholder="Ex: Cidade de Deus, Interestelar, Clube da Luta" oninput="autoResizeAnamTextarea(this)"></textarea></div>
     <div class="form-row" style="margin-top:16px"><label>3 séries favoritas</label>
-      <input name="afin_series" placeholder="Ex: Breaking Bad, Round 6, Chernobyl"></div>`
+      <textarea name="afin_series" rows="1" placeholder="Ex: Breaking Bad, Round 6, Chernobyl" oninput="autoResizeAnamTextarea(this)"></textarea></div>`
   },
   { num:10, title:'Observações livres', fields:`
     <p style="font-size:.88rem;color:var(--ink-2);margin-bottom:16px">Escreva qualquer informação que considere importante para o seu treinador saber. Pode ser algo sobre sua rotina, seu histórico, suas preocupações ou expectativas.</p>
     <div class="form-row"><label>Observações</label>
-      <textarea name="observacoes" rows="5" placeholder="Escreva à vontade…"></textarea></div>`
+      <textarea name="observacoes" rows="1" placeholder="Escreva à vontade…" oninput="autoResizeAnamTextarea(this)"></textarea></div>`
   },
   { num:11, title:'Contexto', fields:`
     <div class="form-row"><label>Como você conheceu o Lucas?</label>
@@ -4531,7 +4578,7 @@ const ANAMNESE_SECTIONS = [
         <option>Instagram</option><option>Indicação de amigo ou familiar</option>
         <option>Google</option><option>Studio10</option><option>Outro</option></select></div></div>
     <div class="form-row"><label>Como conheceu (detalhe, se quiser)</label>
-      <input name="origem_det" placeholder="Ex: indicação da Maria…"></div>`
+      <textarea name="origem_det" rows="1" placeholder="Ex: indicação da Maria…" oninput="autoResizeAnamTextarea(this)"></textarea></div>`
   },
 ];
 
@@ -4595,6 +4642,7 @@ async function deleteAnamDraft(){
 function fillSectionFromData(){
   const fields=document.querySelectorAll('#anamnese-sections input, #anamnese-sections textarea, #anamnese-sections select');
   fields.forEach(f=>{
+    if(!f.name) return; // ex.: o input[type=date] escondido do seletor de calendário, não guarda dado próprio
     const val = anamData[f.name];
     if(val===undefined || val===null) return;
     if(f.type==='checkbox'){ f.checked = Array.isArray(val) && val.includes(f.value); }
@@ -4628,6 +4676,15 @@ function renderAnamneseSection(){
     </div>`;
   // Preenche com o rascunho salvo (in-memory ou vindo do Supabase)
   fillSectionFromData();
+  // Seção 1 (Identificação) tem os campos de telefone com seletor de país —
+  // sincroniza a bandeirinha/DDI exibidos com o que tiver salvo (ou Brasil por padrão).
+  if(anamCurrentSection===0){
+    initPhoneFieldCountry('anam-telefone', document.getElementById('anam-telefone-ddi')?.value || '55');
+    initPhoneFieldCountry('anam-emerg-tel', document.getElementById('anam-emerg-tel-ddi')?.value || '55');
+  }
+  // Ajusta a altura dos campos de texto livre pro que já tiver sido restaurado do rascunho
+  // (senão o campo nasce baixinho mesmo com um texto grande já salvo dentro).
+  document.querySelectorAll('#anamnese-sections textarea').forEach(t=>autoResizeAnamTextarea(t));
   // PAR-Q listener
   if(anamCurrentSection===3){
     document.querySelectorAll('input[name^="parq"]').forEach(r=>{
@@ -4662,6 +4719,7 @@ function collectSectionData(){
   const sec=ANAMNESE_SECTIONS[anamCurrentSection];
   const fields=document.querySelectorAll('#anamnese-sections input, #anamnese-sections textarea, #anamnese-sections select');
   fields.forEach(f=>{
+    if(!f.name) return; // ex.: o input[type=date] escondido do seletor de calendário, não guarda dado próprio
     if(f.type==='checkbox'){ if(f.checked){ if(!anamData[f.name]) anamData[f.name]=[]; anamData[f.name].push(f.value); } }
     else if(f.type==='radio'){ if(f.checked) anamData[f.name]=f.value; }
     else if(f.value) anamData[f.name]=f.value;
@@ -5082,6 +5140,38 @@ function maskCPF(input) {
   input.value = v;
 }
 
+/* ── Campo de data com máscara DD/MM/AAAA + calendário nativo (anamnese) ── */
+// Mesma lógica progressiva do maskCPF/maskBrazilPhone: reformata o valor
+// inteiro a cada tecla, sem travar o cursor.
+function maskDateField(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,8);
+  if(v.length>4) v=v.replace(/(\d{2})(\d{2})(\d{1,4})/,'$1/$2/$3');
+  else if(v.length>2) v=v.replace(/(\d{2})(\d{1,2})/,'$1/$2');
+  input.value = v;
+}
+
+// Chamado quando o aluno escolhe uma data no calendário nativo (o input[type=date]
+// escondido em cima do ícone) — converte o valor ISO (AAAA-MM-DD) pro formato
+// DD/MM/AAAA exibido no campo de texto e dispara os eventos de autosave normalmente.
+function syncDateFromNative(nativeInput, textFieldId) {
+  if(!nativeInput.value) return;
+  const [y,m,d] = nativeInput.value.split('-');
+  const textEl = document.getElementById(textFieldId);
+  if(!textEl) return;
+  textEl.value = `${d}/${m}/${y}`;
+  textEl.dispatchEvent(new Event('input', {bubbles:true}));
+  textEl.dispatchEvent(new Event('change', {bubbles:true}));
+}
+
+// Campo de texto livre da anamnese cresce junto com o que o aluno escreve,
+// até o limite de altura definido no CSS (~3 linhas) — a partir daí passa a
+// rolar por dentro, igual ao campo de digitar do chat.
+function autoResizeAnamTextarea(el){
+  if(!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 // Campo de login do aluno aceita CPF OU e-mail: só aplica a máscara de CPF
 // enquanto o que foi digitado ainda só tem números/pontuação — assim que
 // aparece letra ou @ (é um e-mail), deixa digitar livremente.
@@ -5124,6 +5214,10 @@ function setPhoneFieldCountry(fieldId, country) {
   const dialEl = document.getElementById(fieldId+'-dial');
   if(flagEl) flagEl.textContent = country.f;
   if(dialEl) dialEl.textContent = '+'+country.d;
+  // Campos que guardam o DDI num input escondido (ex.: anamnese, que salva tudo
+  // genericamente por atributo name) — mantém esse valor sincronizado também.
+  const ddiEl = document.getElementById(fieldId+'-ddi');
+  if(ddiEl) ddiEl.value = country.d;
 }
 
 // Inicializa o seletor de um campo a partir de um DDI salvo (ex: profiles.phone_country).
