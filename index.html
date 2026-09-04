@@ -1531,6 +1531,11 @@ img { max-width: 100%; display: block; }
       </div>
       <div class="dash-phrase" id="dash-phrase" style="display:flex;align-items:center;gap:10px"><span class="icon-inline" style="width:20px;height:20px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v4"/><path d="M22 10v4"/><rect x="4" y="7" width="3.5" height="10" rx="1"/><rect x="16.5" y="7" width="3.5" height="10" rx="1"/><path d="M7.5 12h9"/></svg></span><span id="dash-phrase-text">Carregando...</span></div>
 
+      <!-- Âncora: enquanto o aluno não preenche a anamnese, o bloco #dash-anamnese-section
+           é movido pra cá via JS (positionAnamneseSection). Depois de preenchida, ele volta
+           pro final do painel (posição original, no fim do HTML). -->
+      <div id="dash-anamnese-slot-top"></div>
+
       <p class="dash-section-label">Meu treino</p>
       <div class="dash-grid">
         <div class="dash-card dash-card-clickable"
@@ -1609,17 +1614,21 @@ img { max-width: 100%; display: block; }
         </div>
       </div>
 
-      <!-- ANAMNESE — vai por último, depois do resto do painel -->
-      <p class="dash-section-label">Anamnese</p>
-      <div class="dash-card is-highlight">
-        <div class="dash-card-title">
-          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="m8.5 16 2 2 4-4"/></svg></span>
-          Anamnese
+      <!-- ANAMNESE — posição padrão (fim do painel). Enquanto não preenchida, JS
+           (positionAnamneseSection) move esse bloco inteiro pra logo abaixo da frase
+           de motivação; assim que preenchida, ele volta pra cá (final da página). -->
+      <div id="dash-anamnese-section">
+        <p class="dash-section-label">Anamnese</p>
+        <div class="dash-card is-highlight">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="m8.5 16 2 2 4-4"/></svg></span>
+            Anamnese
+          </div>
+          <div id="dash-anam-status" style="margin-bottom:14px"></div>
+          <button class="btn-primary" id="dash-anam-form-btn" onclick="showPage('anamnese')" style="width:100%;justify-content:center">
+            Preencher anamnese →
+          </button>
         </div>
-        <div id="dash-anam-status" style="margin-bottom:14px"></div>
-        <button class="btn-primary" id="dash-anam-form-btn" onclick="showPage('anamnese')" style="width:100%;justify-content:center">
-          Preencher anamnese →
-        </button>
       </div>
 
     </div>
@@ -5274,12 +5283,29 @@ function formatDate(dateStr) {
   return `${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dt.getDay()]}, ${d}/${String(m).padStart(2,'0')}`;
 }
 
+// Enquanto o aluno não tem nenhuma ficha de anamnese enviada, o bloco inteiro
+// (título + card) é movido pra logo abaixo da frase de motivação, no topo do
+// painel — assim ele não passa despercebido. Assim que a 1ª ficha é enviada,
+// o bloco volta pra sua posição original, no final da página.
+function positionAnamneseSection(filled){
+  const section = document.getElementById('dash-anamnese-section');
+  const topSlot = document.getElementById('dash-anamnese-slot-top');
+  const wrap    = document.querySelector('#page-dashboard-aluno .dash-wrap');
+  if(!section || !topSlot || !wrap) return;
+  if(!filled){
+    if(topSlot.nextElementSibling !== section) topSlot.after(section);
+  } else {
+    if(wrap.lastElementChild !== section) wrap.appendChild(section);
+  }
+}
+
 async function refreshDashAnamCard(){
   const el = document.getElementById('dash-anam-status');
   const btn = document.getElementById('dash-anam-form-btn');
   if(!el || !sb || !currentUser) return;
   const { data: fichas } = await sb.from('anamnese_responses').select('submitted_at')
     .eq('student_id', currentUser.id).order('submitted_at',{ascending:false});
+  positionAnamneseSection(fichas?.length > 0);
   const { data: studentRow } = await sb.from('students').select('anamnese_unlocked').eq('id', currentUser.id).single();
   const unlocked = studentRow?.anamnese_unlocked !== false; // default liberado se a coluna ainda não existir
   if(currentStudentData) currentStudentData.anamnese_unlocked = studentRow?.anamnese_unlocked;
