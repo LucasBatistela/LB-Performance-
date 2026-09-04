@@ -4676,12 +4676,13 @@ function renderAnamneseSection(){
     </div>`;
   // Preenche com o rascunho salvo (in-memory ou vindo do Supabase)
   fillSectionFromData();
-  // Seção 1 (Identificação) tem os campos de telefone com seletor de país —
-  // sincroniza a bandeirinha/DDI exibidos com o que tiver salvo (ou Brasil por padrão).
-  if(anamCurrentSection===0){
-    initPhoneFieldCountry('anam-telefone', document.getElementById('anam-telefone-ddi')?.value || '55');
-    initPhoneFieldCountry('anam-emerg-tel', document.getElementById('anam-emerg-tel-ddi')?.value || '55');
-  }
+  // A seção com os campos de telefone (Identificação) precisa sincronizar a
+  // bandeirinha/DDI exibidos com o que tiver salvo (ou Brasil por padrão) —
+  // chama sempre (não só na seção 1) porque é inofensivo nas outras seções
+  // (os elementos simplesmente não existem lá) e evita qualquer problema de
+  // ordem/timing entre o carregamento do rascunho e a montagem da tela.
+  initPhoneFieldCountry('anam-telefone', document.getElementById('anam-telefone-ddi')?.value || '55');
+  initPhoneFieldCountry('anam-emerg-tel', document.getElementById('anam-emerg-tel-ddi')?.value || '55');
   // Ajusta a altura dos campos de texto livre pro que já tiver sido restaurado do rascunho
   // (senão o campo nasce baixinho mesmo com um texto grande já salvo dentro).
   document.querySelectorAll('#anamnese-sections textarea').forEach(t=>autoResizeAnamTextarea(t));
@@ -5203,9 +5204,13 @@ function maskBrazilPhone(input) {
 // Dispatcher chamado no oninput de cada campo de telefone: só aplica a
 // máscara de DDD+número quando o país selecionado for o Brasil (+55);
 // para os demais países, deixa o aluno/professor digitar livremente.
+// Se por qualquer motivo o país ainda não foi inicializado pra esse campo
+// (ex.: seletor recém-criado na tela, estado não sincronizado a tempo),
+// assume Brasil por padrão em vez de simplesmente não formatar nada —
+// é o que a bandeirinha já mostra na tela de qualquer forma.
 function maskPhoneField(input, fieldId) {
   const st = phoneFieldState[fieldId];
-  if(st && st.d === '55') maskBrazilPhone(input);
+  if(!st || st.d === '55') maskBrazilPhone(input);
 }
 
 function setPhoneFieldCountry(fieldId, country) {
