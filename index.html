@@ -4816,15 +4816,30 @@ async function loginProfessor() {
 
 async function loadUserAndRedirect(user) {
   currentUser = user;
-  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  // maybeSingle() (não single()): se ainda não existe perfil pra esse usuário, retorna null
+  // em vez de estourar erro 406 e travar o resto do redirecionamento.
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
-  // Auto-recuperação via RPC (bypassa RLS)
-  const needsRecovery = user.email?.endsWith('@alunos.lb') && (!profile || !profile.full_name);
+  // Auto-recuperação via RPC (bypassa RLS) — cobre tanto CPF quanto login com Google
+  // vinculado a um e-mail pré-cadastrado que ainda não tinha perfil criado.
+  const needsRecovery = !profile || !profile.full_name;
   if(needsRecovery) {
     const { error: recErr } = await sb.rpc('recover_student_profile');
     if(recErr) console.error('Erro recover_student_profile:', recErr);
-    const { data: recovered } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    const { data: recovered } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
     profile = recovered;
+  }
+
+  // Se mesmo depois da tentativa de recuperação não existe perfil nem pré-cadastro
+  // correspondente, essa conta ficou "órfã" (autenticada, mas sem cadastro de verdade).
+  // Em vez de travar em branco, avisa e desloga em vez de deixar preso.
+  if(!profile) {
+    console.error('Conta autenticada sem perfil/pré-cadastro correspondente:', user.id, user.email);
+    showToast('❌ Sua conta não tem um cadastro válido. Peça ao seu professor para te cadastrar novamente.');
+    await sb.auth.signOut();
+    currentUser = null;
+    showPage('login');
+    return;
   }
 
   // Limpa pré-cadastro pendente sempre que o aluno já tem perfil ativo (cobre logins normais, não só o primeiro acesso)
@@ -4946,7 +4961,7 @@ async function loadAlunoDashboard() {
   document.getElementById('dash-phrase-text').textContent = `"${phrase}"`;
   refreshDashAnamCard();
 
-  const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked, must_change_password').eq('id',currentUser.id).single();
+  const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked, must_change_password').eq('id',currentUser.id).maybeSingle();
   currentStudentData = student;
 
   // Fuso do professor (horário "de referência" dos agendamentos) vs. fuso salvo do aluno
