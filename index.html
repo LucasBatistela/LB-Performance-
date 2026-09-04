@@ -1357,7 +1357,7 @@ img { max-width: 100%; display: block; }
         </div>
         <form id="auth-form-aluno" autocomplete="on" onsubmit="loginAluno();return false;">
           <div class="form-row"><label>CPF ou e-mail</label>
-            <input type="text" id="login-identifier" name="username" autocomplete="username" placeholder="000.000.000-00 ou seu@email.com" maxlength="120" oninput="maskIdentifier(this)"></div>
+            <input type="text" id="login-identifier" name="username" autocomplete="username" placeholder="" maxlength="120" oninput="maskIdentifier(this)"></div>
           <div class="form-row"><label>Senha</label>
             <div class="pwd-field">
               <input type="password" id="login-senha-aluno" name="password" autocomplete="current-password" placeholder="••••••••"
@@ -1401,7 +1401,7 @@ img { max-width: 100%; display: block; }
   <div class="page" id="page-redefinir-senha">
     <div class="auth-wrap">
       <div class="compact-page-title" style="justify-content:center">
-        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg></span>
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
         Redefinir senha
       </div>
       <div class="auth-card">
@@ -1438,7 +1438,7 @@ img { max-width: 100%; display: block; }
   <div class="page" id="page-esqueci-senha-aluno">
     <div class="auth-wrap">
       <div class="compact-page-title" style="justify-content:center">
-        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg></span>
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
         Esqueci minha senha
       </div>
       <div class="auth-card">
@@ -1789,27 +1789,27 @@ img { max-width: 100%; display: block; }
           </p>
           <div style="display:flex;flex-direction:column;gap:14px">
             <div>
-              <label>Nome completo</label>
+              <label>Nome completo *</label>
               <input type="text" id="new-aluno-nome" placeholder="Nome completo do aluno">
             </div>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
               <div style="flex:1;min-width:160px">
-                <label>CPF</label>
+                <label>CPF *</label>
                 <input type="text" id="new-aluno-cpf" inputmode="numeric" placeholder="000.000.000-00"
                   maxlength="14" oninput="maskCPF(this)">
               </div>
               <div style="flex:1;min-width:160px">
-                <label>E-mail</label>
+                <label>E-mail *</label>
                 <input type="email" id="new-aluno-email" placeholder="aluno@email.com">
               </div>
             </div>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
               <div style="flex:1;min-width:160px">
-                <label>WhatsApp</label>
+                <label>WhatsApp *</label>
                 <input type="tel" id="new-aluno-phone" placeholder="(11) 99999-9999">
               </div>
               <div style="flex:1;min-width:160px">
-                <label>Gênero</label>
+                <label>Gênero (opcional)</label>
                 <select id="new-aluno-gender">
                   <option value="">Prefiro não informar</option>
                   <option value="F">Feminino</option>
@@ -2036,7 +2036,7 @@ img { max-width: 100%; display: block; }
 
       <div class="dash-card" id="config-security-card" style="margin-top:20px">
         <div class="dash-card-title">
-          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg></span>
+          <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
           Alterar senha
         </div>
         <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px" id="config-security-hint">
@@ -3473,7 +3473,7 @@ const UI_ICONS = {
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
-  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M19 4v4M19 4h-4"/></svg>',
+  key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>',
   bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
@@ -6987,6 +6987,7 @@ async function cadastrarAluno() {
   if(!nome)              { showToast('❌ Informe o nome do aluno.'); return; }
   if(cpfRaw.length!==11) { showToast('❌ CPF inválido — 11 dígitos obrigatórios.'); return; }
   if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('❌ Informe um e-mail válido — obrigatório pra ele conseguir logar com e-mail também.'); return; }
+  if(!phone)             { showToast('❌ Informe o WhatsApp do aluno.'); return; }
 
   btn.disabled=true; btn.textContent='Salvando…';
   result.hidden=true;
