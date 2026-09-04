@@ -4926,20 +4926,22 @@ function maskEmail(email) {
   return `${visible}${'*'.repeat(Math.max(user.length-2,1))}@${domain}`;
 }
 
-async function sendResetCodeEmail(toEmail, code) {
-  const ejsCfg = state.admin?.emailjs;
+async function sendResetCodeEmail(toEmail, code, ejsCfg) {
+  // ejsCfg vem do retorno do RPC request_student_password_reset (SECURITY DEFINER),
+  // não de state.admin.emailjs — nessa tela o aluno ainda NÃO está logado, então
+  // RLS bloquearia a leitura direta de professor_settings pelo client.
   // Usa a conta EmailJS SEPARADA (resetServiceId/resetPublicKey) — a conta
   // principal já está no limite de templates do plano grátis.
-  if(!ejsCfg?.resetServiceId || !ejsCfg?.resetCodeTemplateId || !ejsCfg?.resetPublicKey) {
+  if(!ejsCfg?.serviceId || !ejsCfg?.templateId || !ejsCfg?.publicKey) {
     throw new Error('EmailJS não configurado para código de redefinição (fale com o professor).');
   }
   if(!window.emailjs) throw new Error('EmailJS não carregado.');
   // Passa a Public Key direto no send() (em vez de emailjs.init global) pra não
   // conflitar com a conta principal, caso os dois envios aconteçam perto um do outro.
-  await emailjs.send(ejsCfg.resetServiceId, ejsCfg.resetCodeTemplateId, {
+  await emailjs.send(ejsCfg.serviceId, ejsCfg.templateId, {
     to_email: toEmail,
     reset_code: code
-  }, ejsCfg.resetPublicKey);
+  }, ejsCfg.publicKey);
 }
 
 async function requestStudentResetCode() {
@@ -4963,7 +4965,11 @@ async function requestStudentResetCode() {
     return;
   }
   try {
-    await sendResetCodeEmail(row.contact_email, row.reset_code);
+    await sendResetCodeEmail(row.contact_email, row.reset_code, {
+      serviceId: row.ejs_service_id,
+      templateId: row.ejs_template_id,
+      publicKey: row.ejs_public_key
+    });
   } catch(e) {
     btn.disabled = false; btn.textContent = 'Enviar código';
     showToast('❌ '+e.message);
