@@ -4749,7 +4749,12 @@ async function loadProfessorSettings(professorId){
           templateId:          data.emailjs_template_id || '',
           cancelTemplateId:    data.emailjs_cancel_template_id || '',
           resetCodeTemplateId: data.emailjs_reset_template_id || '',
-          publicKey:           data.emailjs_public_key || ''
+          publicKey:           data.emailjs_public_key || '',
+          // Conta EmailJS SEPARADA só pro código de redefinição de senha do aluno —
+          // a conta principal (serviceId/publicKey acima) já está no limite de 2
+          // templates do plano grátis, então esse fluxo precisa de uma 2ª conta.
+          resetServiceId:      data.emailjs_reset_service_id || '',
+          resetPublicKey:      data.emailjs_reset_public_key || ''
         }
       };
     }
@@ -4766,7 +4771,9 @@ async function saveConfig(){
     templateId:       (document.getElementById('cfg-ejs-template')?.value||'').trim(),
     cancelTemplateId: (document.getElementById('cfg-ejs-cancel-template')?.value||'').trim(),
     resetCodeTemplateId: (document.getElementById('cfg-ejs-reset-template')?.value||'').trim(),
-    publicKey:        (document.getElementById('cfg-ejs-pubkey')?.value||'').trim()
+    publicKey:        (document.getElementById('cfg-ejs-pubkey')?.value||'').trim(),
+    resetServiceId:   (document.getElementById('cfg-ejs-reset-service')?.value||'').trim(),
+    resetPublicKey:   (document.getElementById('cfg-ejs-reset-pubkey')?.value||'').trim()
   };
   const { error } = await sb.from('professor_settings').upsert({
     professor_id: currentUser.id,
@@ -4775,7 +4782,9 @@ async function saveConfig(){
     emailjs_template_id: emailjs.templateId,
     emailjs_cancel_template_id: emailjs.cancelTemplateId,
     emailjs_reset_template_id: emailjs.resetCodeTemplateId,
-    emailjs_public_key: emailjs.publicKey
+    emailjs_public_key: emailjs.publicKey,
+    emailjs_reset_service_id: emailjs.resetServiceId,
+    emailjs_reset_public_key: emailjs.resetPublicKey
   }, { onConflict: 'professor_id' });
   if(!error){ state.admin.email=email; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
   else showToast('❌ Erro ao salvar: '+error.message);
@@ -4919,15 +4928,18 @@ function maskEmail(email) {
 
 async function sendResetCodeEmail(toEmail, code) {
   const ejsCfg = state.admin?.emailjs;
-  if(!ejsCfg?.serviceId || !ejsCfg?.resetCodeTemplateId || !ejsCfg?.publicKey) {
+  // Usa a conta EmailJS SEPARADA (resetServiceId/resetPublicKey) — a conta
+  // principal já está no limite de templates do plano grátis.
+  if(!ejsCfg?.resetServiceId || !ejsCfg?.resetCodeTemplateId || !ejsCfg?.resetPublicKey) {
     throw new Error('EmailJS não configurado para código de redefinição (fale com o professor).');
   }
   if(!window.emailjs) throw new Error('EmailJS não carregado.');
-  emailjs.init(ejsCfg.publicKey);
-  await emailjs.send(ejsCfg.serviceId, ejsCfg.resetCodeTemplateId, {
+  // Passa a Public Key direto no send() (em vez de emailjs.init global) pra não
+  // conflitar com a conta principal, caso os dois envios aconteçam perto um do outro.
+  await emailjs.send(ejsCfg.resetServiceId, ejsCfg.resetCodeTemplateId, {
     to_email: toEmail,
     reset_code: code
-  });
+  }, ejsCfg.resetPublicKey);
 }
 
 async function requestStudentResetCode() {
@@ -6064,12 +6076,26 @@ function renderProfConfig() {
             <input id="cfg-ejs-cancel-template" value="${ejs.cancelTemplateId||''}" placeholder="template_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
           </div>
           <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Public Key</label>
+            <input id="cfg-ejs-pubkey" value="${ejs.publicKey||''}" placeholder="xxxxxxxxxxxxxxxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+        </div>
+      </div>
+      <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:4px;display:flex;align-items:center;gap:6px"><span class="icon-inline" style="width:15px;height:15px;color:var(--pine)">${UI_ICONS.key}</span> EmailJS — Redefinição de senha (conta separada)</div>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">O plano grátis do EmailJS trava em 2 templates por conta, e a conta acima já está no limite. Crie uma <strong>segunda conta grátis</strong> em <a href="https://www.emailjs.com" target="_blank" style="color:var(--pine)">emailjs.com</a> (outro e-mail seu) só pra este template do código de redefinição de senha do aluno, e cole os dados dela abaixo.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="form-row" style="margin:0">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Service ID (2ª conta)</label>
+            <input id="cfg-ejs-reset-service" value="${ejs.resetServiceId||''}" placeholder="service_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+          </div>
+          <div class="form-row" style="margin:0">
             <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Template ID — Código de redefinição de senha (aluno)</label>
             <input id="cfg-ejs-reset-template" value="${ejs.resetCodeTemplateId||''}" placeholder="template_xxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
           </div>
           <div class="form-row" style="margin:0">
-            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Public Key</label>
-            <input id="cfg-ejs-pubkey" value="${ejs.publicKey||''}" placeholder="xxxxxxxxxxxxxxxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+            <label style="font-size:.78rem;font-weight:600;color:var(--muted)">Public Key (2ª conta)</label>
+            <input id="cfg-ejs-reset-pubkey" value="${ejs.resetPublicKey||''}" placeholder="xxxxxxxxxxxxxxxxxxxx" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
           </div>
         </div>
       </div>
