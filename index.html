@@ -4493,6 +4493,14 @@ function initSupabase() {
         isPasswordRecoveryFlow = true;
         currentUser = session.user;
         showPage('redefinir-senha');
+        return;
+      }
+      // Login com Google: o redirect de volta do /callback recarrega a página inteira.
+      // O checkExistingSession() do init() às vezes corre antes do supabase-js terminar
+      // de processar o token que voltou na URL — esse evento é o sinal confiável de que
+      // a sessão ficou pronta, então garantimos o redirecionamento aqui também.
+      if(event === 'SIGNED_IN' && session?.user && !isPasswordRecoveryFlow && !currentUser) {
+        await loadUserAndRedirect(session.user);
       }
     });
   } catch(e) { console.error('Supabase init:', e); }
@@ -5660,7 +5668,10 @@ async function checkExistingSession() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if(session?.user) await loadUserAndRedirect(session.user);
-  } catch(_){}
+  } catch(e) {
+    console.error('Erro ao verificar sessão existente:', e);
+    showToast('❌ Erro ao carregar sua sessão: '+(e?.message||'tente entrar de novo.'));
+  }
 }
 
 /* ── NAV AVATAR & DROPDOWN ───────────────────────────────────── */
