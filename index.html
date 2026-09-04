@@ -4536,7 +4536,25 @@ const ANAMNESE_SECTIONS = [
       <div class="select-wrap"><select name="alimentacao"><option value="">Selecione…</option>
         <option>Muito ruim</option><option>Ruim</option><option>Regular</option><option>Boa</option><option>Excelente</option></select></div></div>
     <div class="form-row"><label>Usa suplementos?</label>
-      <textarea name="suplementos" rows="1" placeholder="Proteína, creatina, vitaminas… ou 'Não'" oninput="autoResizeAnamTextarea(this)"></textarea></div>`
+      <div class="select-wrap"><select name="usa_suplementos" onchange="toggleSuplementosDetail(this)">
+        <option value="">Selecione…</option><option>Não</option><option>Sim</option>
+      </select></div></div>
+    <div class="form-row" id="suplementos-detail-wrap" hidden>
+      <label>Quais suplementos usa? (marque todos que se aplicam)</label>
+      <div class="check-group">
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Whey protein"> Whey protein</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Creatina"> Creatina</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Multivitamínico"> Multivitamínico</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Ômega 3"> Ômega 3</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="BCAA/Aminoácidos"> BCAA/Aminoácidos</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Cafeína/Termogênico"> Cafeína/Termogênico</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Colágeno"> Colágeno</label>
+        <label class="check-opt"><input type="checkbox" name="suplementos_lista" value="Glutamina"> Glutamina</label>
+      </div>
+      <div class="form-row" style="margin-top:12px"><label>Outros</label>
+        <textarea name="suplementos_outros" rows="1" placeholder="Descreva outro suplemento que usa…" oninput="autoResizeAnamTextarea(this)"></textarea>
+      </div>
+    </div>`
   },
   { num:8, title:'Disponibilidade', fields:`
     <div class="form-row"><label>Dias disponíveis para treinar (marque todos)</label>
@@ -4686,6 +4704,10 @@ function renderAnamneseSection(){
   // Ajusta a altura dos campos de texto livre pro que já tiver sido restaurado do rascunho
   // (senão o campo nasce baixinho mesmo com um texto grande já salvo dentro).
   document.querySelectorAll('#anamnese-sections textarea').forEach(t=>autoResizeAnamTextarea(t));
+  // Sincroniza a lista de suplementos visível/escondida com o que já tiver sido
+  // respondido no rascunho (só existe na seção "Estilo de vida" — nas outras é no-op).
+  const supSel = document.querySelector('select[name="usa_suplementos"]');
+  if(supSel) toggleSuplementosDetail(supSel);
   // PAR-Q listener
   if(anamCurrentSection===3){
     document.querySelectorAll('input[name^="parq"]').forEach(r=>{
@@ -4716,12 +4738,21 @@ function checkParq(){
   document.getElementById('parq-alert').style.display=hasSim?'block':'none';
 }
 
+// Mostra a lista de suplementos (checkboxes + "Outros") só quando o aluno
+// responde "Sim" — some de novo se ele voltar e trocar pra "Não"/"Selecione…".
+function toggleSuplementosDetail(sel){
+  const wrap = document.getElementById('suplementos-detail-wrap');
+  if(wrap) wrap.hidden = (sel.value !== 'Sim');
+}
+
 function collectSectionData(){
   const sec=ANAMNESE_SECTIONS[anamCurrentSection];
   const fields=document.querySelectorAll('#anamnese-sections input, #anamnese-sections textarea, #anamnese-sections select');
+  // Zera os arrays de checkbox antes de repopular, evitando duplicação a cada chamada (ex.: autosave a cada tecla/clique)
+  fields.forEach(f=>{ if(f.name && f.type==='checkbox') anamData[f.name]=[]; });
   fields.forEach(f=>{
     if(!f.name) return; // ex.: o input[type=date] escondido do seletor de calendário, não guarda dado próprio
-    if(f.type==='checkbox'){ if(f.checked){ if(!anamData[f.name]) anamData[f.name]=[]; anamData[f.name].push(f.value); } }
+    if(f.type==='checkbox'){ if(f.checked){ anamData[f.name].push(f.value); } }
     else if(f.type==='radio'){ if(f.checked) anamData[f.name]=f.value; }
     else if(f.value) anamData[f.name]=f.value;
   });
@@ -5993,7 +6024,8 @@ const QUESTION_LABELS = {
   personal_tempo:'Por quanto tempo treinou com personal', pref:'Tipo de treino preferido',
   modalidade_esportiva:'Modalidade esportiva que pratica ou gostaria de praticar', modalidade_esportiva_tempo:'Há quanto tempo pratica essa atividade',
   sono:'Qualidade do sono', horas_sono:'Horas de sono por noite', estresse:'Nível de estresse', agua:'Hidratação diária',
-  alcool:'Consumo de álcool', fumo:'Fuma?', alimentacao:'Como avalia sua alimentação?', suplementos:'Usa suplementos?',
+  alcool:'Consumo de álcool', fumo:'Fuma?', alimentacao:'Como avalia sua alimentação?',
+  usa_suplementos:'Usa suplementos?', suplementos_lista:'Quais suplementos usa', suplementos_outros:'Outros suplementos',
   dias:'Dias disponíveis para treinar', horario_pref:'Horário preferido', modalidade_pref:'Modalidade desejada',
   afin_musica:'Bandas/artistas favoritos', afin_filmes:'Filmes favoritos', afin_series:'Séries favoritas',
   observacoes:'Observações', origem:'Como conheceu o Lucas?', origem_det:'Detalhe de como conheceu'
@@ -6005,7 +6037,7 @@ const QA_GROUPS = [
   { title:'PAR-Q', fields:['parq1','parq2','parq3','parq4','parq5','parq6','parq7'] },
   { title:'Histórico de saúde', fields:['dc','dc_outro','reab','reab_desc','cirurgia','cirurgia_desc','lesoes','medicamentos','alergias','restricoes','menopausa','liberacao'] },
   { title:'Histórico de atividade física', fields:['nivel_atv','exer_atual','exer_qual','exp_muscu','personal_ant','personal_tempo','modalidade_esportiva','modalidade_esportiva_tempo','pref'] },
-  { title:'Estilo de vida', fields:['sono','horas_sono','estresse','agua','alcool','fumo','alimentacao','suplementos'] },
+  { title:'Estilo de vida', fields:['sono','horas_sono','estresse','agua','alcool','fumo','alimentacao','usa_suplementos','suplementos_lista','suplementos_outros'] },
   { title:'Disponibilidade', fields:['dias','horario_pref','modalidade_pref'] },
   { title:'Afinidades pessoais', fields:['afin_musica','afin_filmes','afin_series'] },
   { title:'Observações', fields:['observacoes'] },
