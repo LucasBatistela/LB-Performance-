@@ -1350,15 +1350,15 @@ img { max-width: 100%; display: block; }
             Histórico de agendamentos
           </span>
           <div class="view-switch" id="aluno-hist-view-switch">
-            <button type="button" class="view-switch-btn on" onclick="setHistoricoViewMode('aluno','list')" title="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
-            <button type="button" class="view-switch-btn" onclick="setHistoricoViewMode('aluno','calendar')" title="Calendário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button>
+            <button type="button" class="view-switch-btn" onclick="setHistoricoViewMode('aluno','list')" title="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+            <button type="button" class="view-switch-btn on" onclick="setHistoricoViewMode('aluno','calendar')" title="Calendário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button>
           </div>
         </div>
-        <div id="dash-historico-list-mode">
+        <div id="dash-historico-list-mode" hidden>
           <div id="dash-historico-toggle-wrap"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento ainda.</p></div>
           <div id="dash-historico" hidden></div>
         </div>
-        <div id="dash-historico-calendar-mode" hidden>
+        <div id="dash-historico-calendar-mode">
           <div class="cal-widget">
             <div class="cal-toolbar">
               <div class="cal-view-tabs" id="aluno-cal-view-tabs">
@@ -1994,14 +1994,14 @@ img { max-width: 100%; display: block; }
               Todos os agendamentos
             </span>
             <div class="view-switch" id="prof-hist-view-switch">
-              <button type="button" class="view-switch-btn on" onclick="setHistoricoViewMode('prof','list')" title="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
-              <button type="button" class="view-switch-btn" onclick="setHistoricoViewMode('prof','calendar')" title="Calendário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button>
+              <button type="button" class="view-switch-btn" onclick="setHistoricoViewMode('prof','list')" title="Lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+              <button type="button" class="view-switch-btn on" onclick="setHistoricoViewMode('prof','calendar')" title="Calendário"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button>
             </div>
           </div>
-          <div id="prof-bookings-list-mode">
+          <div id="prof-bookings-list-mode" hidden>
             <div id="prof-all-bookings"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
           </div>
-          <div id="prof-bookings-calendar-mode" hidden>
+          <div id="prof-bookings-calendar-mode">
             <div class="cal-filter">
               <label for="prof-cal-student-filter" style="font-size:.78rem;color:var(--muted)">Filtrar por aluno:</label>
               <select id="prof-cal-student-filter" onchange="calSetStudentFilter(this.value)">
@@ -2639,8 +2639,9 @@ async function populateProfCalStudentFilter(){
 }
 
 function getWeekRange(anchor){
+  // Janela de 7 dias corridos começando no próprio dia do anchor (hoje, por padrão) —
+  // não mais alinhada domingo-sábado. Ex.: hoje 05/09 mostra 05..11/09.
   const start = new Date(anchor); start.setHours(0,0,0,0);
-  start.setDate(start.getDate() - start.getDay());
   const end = new Date(start); end.setDate(end.getDate()+7);
   return [start, end];
 }
@@ -3403,7 +3404,11 @@ function showPage(id, opts) {
     renderCalendar();
     // Página de Agendamentos agora também mostra o histórico (movido do painel
     // principal) — reaproveita loadAlunoDashboard pra garantir que ele está atualizado.
-    if(currentProfile?.role==='student') loadAlunoDashboard();
+    if(currentProfile?.role==='student') {
+      loadAlunoDashboard();
+      // Histórico abre por padrão no modo Calendário — carrega os dados de cara.
+      renderBookingsCalendar('aluno');
+    }
   }
   if(id==='planos') renderPlans();
   if(id==='home') renderHomeAccordion();
@@ -5701,7 +5706,12 @@ function showProfTab(tab) {
   });
   if(tab==='alunos') loadProfAlunos();
   if(tab==='treino'){ loadExerciseLibrary(); populateTreinoAlunoSelect(); }
-  if(tab==='agendamentos') loadProfAllBookings();
+  if(tab==='agendamentos') {
+    loadProfAllBookings();
+    // "Todos os agendamentos" abre por padrão no modo Calendário — carrega os dados de cara.
+    populateProfCalStudentFilter();
+    renderBookingsCalendar('prof');
+  }
   if(tab==='disponibilidade') renderProfDisponibilidade();
   if(tab==='anamnese') renderProfAnamnese();
   if(tab==='perfil') fillProfProfileCard();
