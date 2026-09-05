@@ -63,7 +63,7 @@
   --font-d:      'Syne', sans-serif;
   --font-b:      'Plus Jakarta Sans', sans-serif;
   --good:        #227a4f; --good-bg: #E4F3EB;
-  --warn:        #96760a; --warn-bg: #FFF2B8;
+  --warn:        #96760a; --warn-bg: #FFF2B8; --warn-vivid: #EAB308;
   --crit:        #a83a33; --crit-bg: #FBE7E5;
 }
 @media (prefers-color-scheme: dark) {
@@ -72,7 +72,7 @@
     --ink:         #DCE5F0; --ink-2: #8BA5C8; --pine: #5b8fc7; --pine-h: #6fa0d4;
     --citrus:      #879cbb; --border: #1E2E47; --muted: #5070A0;
     --good:        #4fbf88; --good-bg: #0f2a1e;
-    --warn:        #f3c331; --warn-bg: #3d2f06;
+    --warn:        #f3c331; --warn-bg: #3d2f06; --warn-vivid: #FBBF24;
     --crit:        #e07068; --crit-bg: #2c1512;
   }
 }
@@ -81,7 +81,7 @@
   --ink:         #DCE5F0; --ink-2: #8BA5C8; --pine: #5b8fc7; --pine-h: #6fa0d4;
   --citrus:      #879cbb; --border: #1E2E47; --muted: #5070A0;
   --good:        #4fbf88; --good-bg: #0f2a1e;
-  --warn:        #f3c331; --warn-bg: #3d2f06;
+  --warn:        #f3c331; --warn-bg: #3d2f06; --warn-vivid: #FBBF24;
   --crit:        #e07068; --crit-bg: #2c1512;
 }
 
@@ -678,7 +678,7 @@ img { max-width: 100%; display: block; }
 .icon-inline { display: inline-flex; vertical-align: middle; }
 .icon-inline svg { width: 100%; height: 100%; display: block; }
 .icon-inline.good { color: var(--good); }
-.icon-inline.warn { color: var(--warn); }
+.icon-inline.warn { color: var(--warn-vivid); }
 .icon-inline.crit { color: var(--crit); }
 
 /* ─── ADMIN ───────────────────────────────────────────────────── */
@@ -742,7 +742,7 @@ img { max-width: 100%; display: block; }
 .anam-mcard-track { height: 6px; border-radius: 99px; background: var(--surface-alt); margin: 0 16px 14px; overflow: hidden; position: relative; }
 .anam-mcard-track .fill { height: 100%; border-radius: 99px; }
 .anam-mcard-track .fill.good { background: var(--good); }
-.anam-mcard-track .fill.warn { background: var(--warn); }
+.anam-mcard-track .fill.warn { background: var(--warn-vivid); }
 .anam-mcard-track .fill.crit { background: var(--crit); }
 .anam-mcard-track .marker { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--ink-2); opacity: .55; }
 .anam-mcard-body { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
