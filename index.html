@@ -2551,13 +2551,76 @@ function refreshBookingCalendarsIfVisible(){
   if(document.getElementById('dash-historico-calendar-mode')?.hidden===false) renderBookingsCalendar('aluno');
   if(document.getElementById('prof-bookings-calendar-mode')?.hidden===false) renderBookingsCalendar('prof');
 }
+/* Avisa a OUTRA parte (sino + e-mail, mesmo template de cancelamento) sempre que um
+   agendamento é cancelado ou um horário fixo é desfixado — cobre os 4 caminhos possíveis
+   (aluno ou professor cancelando; avulso, uma semana de um fixo, ou desfixar de vez).
+   cancelledBy: 'student' | 'professor' — quem fez a ação.
+   kind: 'cancelled' (aula cancelada/aquela semana) | 'unfixed' (horário fixo encerrado). */
+async function notifyBookingCancelled(booking, cancelledBy, kind){
+  if(!booking || !sb) return;
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const d = new Date(booking.date+'T12:00:00');
+  const dateStr = `${d.getDate()} de ${meses[d.getMonth()]}`;
+  const ejsCfg = state.admin?.emailjs;
+  const acao = kind==='unfixed' ? 'desfixou' : 'cancelou';
+  const oQue = kind==='unfixed' ? 'o horário fixo' : 'o agendamento';
+
+  if(cancelledBy==='student'){
+    // Avisa o professor
+    sb.rpc('create_notification', {
+      p_recipient_id: booking.professor_id, p_type: kind==='unfixed' ? 'booking_unfixed' : 'booking_cancelled',
+      p_title: `${currentProfile?.full_name||'Aluno'} ${acao} ${kind==='unfixed'?'um horário fixo':'um agendamento'}`,
+      p_body: `${dateStr} às ${booking.time}`,
+      p_link: 'dashboard-prof'
+    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+    if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && window.emailjs){
+      try {
+        emailjs.init(ejsCfg.publicKey);
+        await emailjs.send(ejsCfg.serviceId, ejsCfg.cancelTemplateId, {
+          to_email:     state.admin.email,
+          to_name:      'Lucas',
+          student_name: currentProfile?.full_name||'Aluno',
+          date_full:    dateStr,
+          time:         booking.time,
+          message:      `${currentProfile?.full_name||'Um aluno'} ${acao} ${oQue} de ${dateStr} às ${booking.time}.`
+        });
+      } catch(e){ console.warn('Falha ao notificar professor por email:',e); }
+    }
+  } else {
+    // Avisa o aluno
+    sb.rpc('create_notification', {
+      p_recipient_id: booking.student_id, p_type: kind==='unfixed' ? 'booking_unfixed_by_prof' : 'booking_cancelled_by_prof',
+      p_title: kind==='unfixed' ? 'Seu professor desfixou um horário' : 'Seu professor cancelou um agendamento',
+      p_body: `${dateStr} às ${booking.time}`,
+      p_link: 'dashboard-aluno'
+    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+    if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && window.emailjs){
+      try {
+        const { data: sp } = await sb.from('profiles').select('full_name,email').eq('id', booking.student_id).single();
+        if(sp?.email){
+          emailjs.init(ejsCfg.publicKey);
+          await emailjs.send(ejsCfg.serviceId, ejsCfg.cancelTemplateId, {
+            to_email:     sp.email,
+            to_name:      sp.full_name||'Aluno',
+            student_name: sp.full_name||'Aluno',
+            date_full:    dateStr,
+            time:         booking.time,
+            message:      `Seu professor ${acao} ${oQue} de ${dateStr} às ${booking.time}.`
+          });
+        }
+      } catch(e){ console.warn('Falha ao notificar aluno por email:',e); }
+    }
+  }
+}
 /* Cancela só essa semana do horário fixo — as próximas continuam normalmente */
 async function cancelarOcorrenciaFixa(sourceId, date){
   if(!sb) return;
   if(!(await showAppConfirm('Cancelar só essa semana? As próximas semanas do horário fixo continuam reservadas normalmente.'))) return;
+  const { data: sourceBooking } = await sb.from('bookings').select('*').eq('id',sourceId).single();
   const { error } = await sb.from('fixed_booking_skips').insert({ booking_id: sourceId, skip_date: date });
   if(error){ showToast('❌ Erro ao cancelar: '+error.message); return; }
   showToast('✅ Essa semana foi cancelada.');
+  if(sourceBooking) notifyBookingCancelled({...sourceBooking, date}, currentProfile?.role==='professor'?'professor':'student', 'cancelled');
   if(currentProfile?.role==='professor'){ loadProfDashboard(); loadProfAllBookings(); }
   else { loadAlunoDashboard(); }
   refreshBookingCalendarsIfVisible();
@@ -2566,9 +2629,11 @@ async function cancelarOcorrenciaFixa(sourceId, date){
 async function desfixarAgendamento(bookingId){
   if(!sb) return;
   if(!(await showAppConfirm('Desfixar este horário? Ele deixa de ser reservado automaticamente toda semana — a partir de agora fica livre pra qualquer aluno.'))) return;
+  const { data: booking } = await sb.from('bookings').select('*').eq('id',bookingId).single();
   const { error } = await sb.from('bookings').update({is_fixed:false}).eq('id',bookingId);
   if(error){ showToast('❌ Erro ao desfixar: '+error.message); return; }
   showToast('✅ Horário desfixado.');
+  if(booking) notifyBookingCancelled(booking, currentProfile?.role==='professor'?'professor':'student', 'unfixed');
   if(currentProfile?.role==='professor'){ loadProfDashboard(); loadProfAllBookings(); }
   else { loadAlunoDashboard(); }
   refreshBookingCalendarsIfVisible();
@@ -5502,6 +5567,7 @@ async function logout() {
   if(notifChannel){ try{ sb.removeChannel(notifChannel); }catch(_){} notifChannel = null; }
   if(notifPollTimer){ clearInterval(notifPollTimer); notifPollTimer = null; }
   if(duvidasChannel){ try{ sb.removeChannel(duvidasChannel); }catch(_){} duvidasChannel = null; }
+  unsubscribeBookingsRealtime();
   duvidasCurrentStudentId = null; duvidasCurrentProfessorId = null; duvidasMessages = []; duvidasStudentView = 'thread';
   const duvidasListEl = document.getElementById('duvidas-list-content');
   const duvidasMsgEl = document.getElementById('duvidas-messages');
@@ -5605,6 +5671,7 @@ async function loadAlunoDashboard() {
 
   const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked, must_change_password').eq('id',currentUser.id).maybeSingle();
   currentStudentData = student;
+  if(student?.professor_id) subscribeBookingsRealtime(student.professor_id);
 
   // Fuso do professor (horário "de referência" dos agendamentos) vs. fuso salvo do aluno
   let profTz = 'America/Sao_Paulo';
@@ -5664,6 +5731,7 @@ async function loadProfDashboard() {
   document.getElementById('dash-prof-greeting').textContent = `Olá, ${name.split(' ')[0]}!`;
   // Atualiza avatar na nav
   updateNavAvatar();
+  subscribeBookingsRealtime(currentUser.id);
   const todayDate = new Date(); todayDate.setHours(0,0,0,0);
   const tomorrowDate = new Date(todayDate); tomorrowDate.setDate(tomorrowDate.getDate()+1);
 
@@ -5812,12 +5880,8 @@ async function profCancelBooking(id) {
   if(!(await showAppConfirm('Cancelar este agendamento?'))) return;
   const { data: booking } = await sb.from('bookings').select('*').eq('id',id).single();
   await sb.from('bookings').update({status:'cancelled'}).eq('id',id);
-  if(booking) sb.rpc('create_notification', {
-    p_recipient_id: booking.student_id, p_type: 'booking_cancelled_by_prof',
-    p_title: 'Seu professor cancelou um agendamento',
-    p_body: `${formatDate(booking.date)} às ${booking.time}`,
-    p_link: 'dashboard-aluno'
-  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+  // Notifica o aluno (sino + e-mail, quando ele tiver e-mail de contato cadastrado)
+  if(booking) notifyBookingCancelled(booking, 'professor', 'cancelled');
   loadProfAllBookings();
   refreshBookingCalendarsIfVisible();
 }
@@ -6434,6 +6498,49 @@ function updateNavAvatar() {
 let notifItems = [];
 let notifChannel = null;
 let notifPollTimer = null;
+
+/* ── Agenda em tempo real ────────────────────────────────────────
+   Assina mudanças em `bookings`/`fixed_booking_skips` pro professor em questão —
+   assim, quando um aluno agenda ou cancela, todo mundo vendo a agenda (outros alunos
+   escolhendo horário, e o próprio professor) recebe a atualização na hora, sem precisar
+   recarregar a página. Isso reduz a chance de dois alunos verem o mesmo horário como
+   livre ao mesmo tempo; quem garante que nunca dá pra CONFIRMAR o mesmo horário duas
+   vezes, mesmo num empate de milissegundos, é o índice único no banco
+   (bookings_no_double_booking). */
+let bookingsChannel = null;
+let bookingsChannelProfId = null;
+function subscribeBookingsRealtime(professorId){
+  if(!sb || !professorId) return;
+  if(bookingsChannel && bookingsChannelProfId === professorId) return; // já assinado pro mesmo professor
+  if(bookingsChannel){ try{ sb.removeChannel(bookingsChannel); }catch(_){} bookingsChannel = null; }
+  bookingsChannelProfId = professorId;
+  bookingsChannel = sb.channel('bookings-'+professorId)
+    .on('postgres_changes', { event:'*', schema:'public', table:'bookings', filter:`professor_id=eq.${professorId}` },
+      ()=>{ refreshBookingsRealtimeUI(); })
+    .on('postgres_changes', { event:'*', schema:'public', table:'fixed_booking_skips' },
+      ()=>{ refreshBookingsRealtimeUI(); })
+    .subscribe();
+}
+function unsubscribeBookingsRealtime(){
+  if(bookingsChannel){ try{ sb.removeChannel(bookingsChannel); }catch(_){} bookingsChannel = null; }
+  bookingsChannelProfId = null;
+}
+async function refreshBookingsRealtimeUI(){
+  // Tela de "Agendar nova aula" aberta: recalcula os dias/horários disponíveis na hora —
+  // é o ponto crítico pra evitar que dois alunos escolham o mesmo horário achando que está livre.
+  if(currentPage==='agendar'){
+    await refreshScheduleData();
+    if(typeof renderAgendarCalGrid==='function') renderAgendarCalGrid();
+    if(selDate && typeof renderSlots==='function') renderSlots();
+  }
+  // Histórico (lista/calendário), se estiver na tela — dos dois papéis.
+  refreshBookingCalendarsIfVisible();
+  if(currentPage==='dashboard-aluno') loadAlunoDashboard();
+  if(currentPage==='dashboard-prof'){
+    loadProfDashboard();
+    if(document.getElementById('prof-tab-agendamentos')?.hidden===false) loadProfAllBookings();
+  }
+}
 
 function initNotifBell(){
   const wrap = document.getElementById('nav-bell-wrap');
