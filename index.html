@@ -900,6 +900,13 @@ img { max-width: 100%; display: block; }
 /* ─── DASHBOARD ────────────────────────────────────────────── */
 .dash-wrap { max-width: var(--max-w); margin: 0 auto; padding: 32px 24px 80px; }
 
+/* A página de Chat nunca usa a faixa preta padrão de cabeçalho (page-header) — ela tem
+   seu próprio cabeçalho (barra da conversa, ou a lista de conversas). Isso vale pra
+   TODO estado da página (aluno ou professor, tela cheia, dividida ou lista simples no
+   celular) — antes só cobria tela-cheia/dividida via classe, e a lista simples (aluno
+   sem conversa aberta, ou professor escolhendo conversa no celular) deixava escapar. */
+#page-duvidas .page-header { display: none !important; }
+
 /* Chat em tela cheia — modo mobile (aluno sempre, professor ao abrir uma conversa) */
 #page-duvidas.chat-fullscreen .page-header { display: none; }
 #page-duvidas.chat-fullscreen .dash-wrap { max-width: none; padding: 0; }
