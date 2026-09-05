@@ -91,7 +91,7 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust
 body { font-family: var(--font-b); background: var(--ground); color: var(--ink);
   line-height: 1.65; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
-button { cursor: pointer; font-family: inherit; border: none; background: none; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; color: inherit; }
 ul { list-style: none; }
 input, textarea, select {
   font-family: inherit; font-size: inherit; color: var(--ink);
@@ -994,6 +994,10 @@ img { max-width: 100%; display: block; }
 .cal-month-cell.is-out { opacity: .35; }
 .cal-month-cell.is-today { border-color: var(--pine); background: rgba(52,106,172,.06); }
 .cal-month-cell.has-items .cal-month-daynum { font-weight: 800; color: var(--pine); }
+.cal-month-cell.is-disabled { opacity: .35; cursor: not-allowed; background: var(--surface-alt); }
+.cal-month-cell.is-disabled:hover { border-color: var(--border); }
+.cal-month-cell.is-selected { border-color: var(--pine); background: var(--pine); }
+.cal-month-cell.is-selected .cal-month-daynum { color: #fff; font-weight: 800; }
 .cal-month-daynum { font-size: .82rem; }
 .cal-month-dot { font-size: .62rem; font-weight: 700; color: #fff; background: var(--pine); border-radius: 999px; min-width: 15px; height: 15px; padding: 0 3px; display: flex; align-items: center; justify-content: center; }
 .cal-day-detail { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--border); }
@@ -1131,6 +1135,7 @@ img { max-width: 100%; display: block; }
     <a onclick="showPage('planos');closeMenu()">Planos</a>
   </nav>
   <nav class="menu-nav" id="menu-nav-auth" hidden>
+    <a onclick="goToInicio();closeMenu()">Início</a>
     <a onclick="goToMeuTreino();closeMenu()">Meu treino</a>
     <a onclick="goToMeuPlano();closeMenu()">Meu plano</a>
     <a onclick="goToAgendamentos();closeMenu()">Agendamentos</a>
@@ -1322,7 +1327,7 @@ img { max-width: 100%; display: block; }
       <p class="dash-section-label">Novo agendamento</p>
       <div class="agendar-info">
         <span class="agendar-info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
-        <p>Escolha o dia e horário. Agendamentos disponíveis com até <strong>5 dias</strong> de antecedência e mínimo <strong>3 horas</strong> antes.</p>
+        <p>Escolha o dia e horário. Agendamentos disponíveis com até <strong>30 dias</strong> de antecedência e mínimo <strong>3 horas</strong> antes.</p>
       </div>
       <div class="agendar-steps" id="agendar-steps">
         <div class="agendar-step active" id="astep-1"><span class="agendar-step-num">1</span>Dia</div>
@@ -1635,7 +1640,7 @@ img { max-width: 100%; display: block; }
           onclick="if(event.target.closest('[onclick]')!==this) return; abrirHistoricoTreinos()" title="Ver treinos agendados">
           <div class="dash-card-title">
             <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
-            Próximo treino
+            Agendamentos
           </div>
           <div id="dash-proximo-treino"><p style="color:var(--muted);font-size:.88rem">Nenhum agendamento.</p></div>
           <button class="btn-primary" onclick="showPage('agendar')" style="margin-top:14px;font-size:.85rem;padding:10px 20px">Agendar nova aula</button>
@@ -2513,14 +2518,6 @@ function dateToStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function strToDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
-function getNext5Days() {
-  const days=[]; const now=new Date();
-  for(let i=0;i<5;i++){
-    const d=new Date(now); d.setDate(d.getDate()+i);
-    d.setHours(0,0,0,0); days.push(d);
-  }
-  return days;
-}
 /* ── Horário fixo semanal — projeta as próximas ocorrências sem precisar criar uma linha por semana ──
    anchors: linhas de "bookings" com is_fixed=true (cada uma define um dia da semana + horário).
    skipsByBooking: {[bookingId]: Set(dateStr)} — semanas puladas (cancelamento pontual, sem desfixar).
@@ -3988,7 +3985,7 @@ async function refreshScheduleData(){
 
   const today=new Date();
   const todayStr=dateToStr(today);
-  const future=new Date(today); future.setDate(future.getDate()+9);
+  const future=new Date(today); future.setDate(future.getDate()+30);
   const futureStr=dateToStr(future);
 
   const { data: bookings } = await sb.from('bookings').select('id,date,time,is_fixed')
@@ -4019,28 +4016,31 @@ async function refreshScheduleData(){
   const sets=await Promise.all(years.map(fetchHolidaysForYear));
   profHolidaysSet=new Set(sets.flatMap(s=>[...s]));
 }
+let agendarCalAnchor=null; // 1º dia do mês exibido no calendário de agendamento
 async function renderCalendar(){
   const root=document.getElementById('calendar-root');
   if(!root) return;
   root.innerHTML=`<p style="color:var(--muted);font-size:.88rem">Carregando horários...</p>`;
   await refreshScheduleData();
-  const days=getNext5Days();
+  const now=new Date(); now.setHours(0,0,0,0);
+  agendarCalAnchor=new Date(now.getFullYear(), now.getMonth(), 1);
   root.innerHTML=`
     <p class="slots-label">Selecione o dia</p>
-    <div class="day-strip" id="day-strip">
-      ${days.map((d,i)=>{
-        const slots=getAvailableSlots(d);
-        const cls=slots.length===0?'day-btn no-slots':'day-btn';
-        return `<button class="${cls}" id="day-${i}" onclick="selectDay(${i})">
-          <span class="day-name">${DAYS_S[d.getDay()]}</span>
-          <span class="day-num">${d.getDate()}</span>
-          <span class="day-month">${MONTHS_S[d.getMonth()]}</span>
-        </button>`;
-      }).join('')}
+    <div class="cal-widget">
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <button type="button" class="cal-nav-btn" id="agendar-cal-prev" onclick="agendarCalNav(-1)">‹</button>
+          <span class="cal-nav-label" id="agendar-cal-label"></span>
+          <button type="button" class="cal-nav-btn" id="agendar-cal-next" onclick="agendarCalNav(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-month-weekdays">${DAYS_S.map(d=>`<span>${d}</span>`).join('')}</div>
+      <div class="cal-month-grid" id="agendar-cal-grid"></div>
     </div>
     <div id="slots-area"></div>
     <div id="booking-form-area"></div>`;
   selDate=null; selTime=null;
+  renderAgendarCalGrid();
   setAgendarStep(1);
 }
 function setAgendarStep(n){
@@ -4051,9 +4051,58 @@ function setAgendarStep(n){
     el.classList.toggle('done', i<n);
   });
 }
-async function selectDay(i){
-  const days=getNext5Days(); selDate=days[i]; selTime=null;
-  document.querySelectorAll('.day-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
+function agendarCalNav(dir){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const curMonth=new Date(now.getFullYear(), now.getMonth(), 1);
+  const maxDate=new Date(now); maxDate.setDate(maxDate.getDate()+30);
+  const maxMonth=new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+  const next=new Date(agendarCalAnchor.getFullYear(), agendarCalAnchor.getMonth()+dir, 1);
+  if(next<curMonth || next>maxMonth) return;
+  agendarCalAnchor=next;
+  renderAgendarCalGrid();
+}
+function renderAgendarCalGrid(){
+  const grid=document.getElementById('agendar-cal-grid');
+  const label=document.getElementById('agendar-cal-label');
+  if(!grid) return;
+  const now=new Date(); now.setHours(0,0,0,0);
+  const maxDate=new Date(now); maxDate.setDate(maxDate.getDate()+30);
+  const year=agendarCalAnchor.getFullYear(), month=agendarCalAnchor.getMonth();
+  if(label) label.textContent=`${MONTHS_FULL[month]} ${year}`;
+  const firstDow=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  let cells='';
+  for(let i=0;i<firstDow;i++){
+    cells+=`<div class="cal-month-cell is-out" style="visibility:hidden"></div>`;
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const d=new Date(year,month,day);
+    const ds=dateToStr(d);
+    const isPast = d<now;
+    const beyondLimit = d>maxDate;
+    const slots = (!isPast && !beyondLimit) ? getAvailableSlots(d) : [];
+    const disabled = isPast || beyondLimit || slots.length===0;
+    const isToday = d.getTime()===now.getTime();
+    const isSelected = selDate && dateToStr(selDate)===ds;
+    const cls=['cal-month-cell'];
+    if(disabled) cls.push('is-disabled');
+    if(isToday) cls.push('is-today');
+    if(isSelected) cls.push('is-selected');
+    cells+=`<button type="button" class="${cls.join(' ')}" ${disabled?'disabled':''} onclick="selectDayFromCal('${ds}')">
+      <span class="cal-month-daynum">${day}</span>
+    </button>`;
+  }
+  grid.innerHTML=cells;
+  const curMonth=new Date(now.getFullYear(), now.getMonth(), 1);
+  const maxMonth=new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+  const prevBtn=document.getElementById('agendar-cal-prev');
+  const nextBtn=document.getElementById('agendar-cal-next');
+  if(prevBtn) prevBtn.disabled = agendarCalAnchor.getTime()<=curMonth.getTime();
+  if(nextBtn) nextBtn.disabled = agendarCalAnchor.getTime()>=maxMonth.getTime();
+}
+async function selectDayFromCal(ds){
+  selDate=strToDate(ds); selTime=null;
+  renderAgendarCalGrid();
   await refreshScheduleData();
   renderSlots();
   setAgendarStep(2);
@@ -5658,6 +5707,12 @@ function showProfTab(tab) {
   if(tab==='perfil') fillProfProfileCard();
 }
 
+// "Início" (menu ☰) — leva direto pro painel de quem está logado (aluno ou professor),
+// em vez da home pública (que só aparece pra visitante).
+function goToInicio(){
+  if(!currentUser || !currentProfile) { showPage('login'); return; }
+  showPage(currentProfile.role==='professor' ? 'dashboard-prof' : 'dashboard-aluno');
+}
 function goToMeuTreino(){
   if(!currentUser || !currentProfile) { showPage('login'); return; }
   if(currentProfile.role==='professor'){
