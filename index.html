@@ -25,7 +25,7 @@
 <script id="site-state" type="application/json">
 {
   "version": 1,
-  "admin": { "pin": "1234", "email": "lucasbatistelapro@gmail.com", "formspree": "", "emailjs": {"serviceId":"service_gs73m6h","templateId":"template_3o58hiw","cancelTemplateId":"template_e0jbj5t","publicKey":"wZ78Y6wKEdOYU0_F4"} },
+  "admin": { "email": "lucasbatistelapro@gmail.com", "formspree": "", "emailjs": {"serviceId":"service_gs73m6h","templateId":"template_3o58hiw","cancelTemplateId":"template_e0jbj5t","publicKey":"wZ78Y6wKEdOYU0_F4"} },
   "availability": {
     "0": [],
     "1": ["07:00","08:00","09:00","17:00","18:00","19:00"],
@@ -5153,30 +5153,13 @@ async function sendProfPasswordReset() {
 /* ── ESQUECI SENHA — ALUNO (código por e-mail via EmailJS) ──────── */
 let resetFlow = { cpf: null };
 
-function maskEmail(email) {
-  const [user, domain] = (email||'').split('@');
-  if(!user || !domain) return email||'';
-  const visible = user.slice(0,2);
-  return `${visible}${'*'.repeat(Math.max(user.length-2,1))}@${domain}`;
-}
-
-async function sendResetCodeEmail(toEmail, code, ejsCfg) {
-  // ejsCfg vem do retorno do RPC request_student_password_reset (SECURITY DEFINER),
-  // não de state.admin.emailjs — nessa tela o aluno ainda NÃO está logado, então
-  // RLS bloquearia a leitura direta de professor_settings pelo client.
-  // Usa a conta EmailJS SEPARADA (resetServiceId/resetPublicKey) — a conta
-  // principal já está no limite de templates do plano grátis.
-  if(!ejsCfg?.serviceId || !ejsCfg?.templateId || !ejsCfg?.publicKey) {
-    throw new Error('EmailJS não configurado para código de redefinição (fale com o professor).');
-  }
-  if(!window.emailjs) throw new Error('EmailJS não carregado.');
-  // Passa a Public Key direto no send() (em vez de emailjs.init global) pra não
-  // conflitar com a conta principal, caso os dois envios aconteçam perto um do outro.
-  await emailjs.send(ejsCfg.serviceId, ejsCfg.templateId, {
-    to_email: toEmail,
-    reset_code: code
-  }, ejsCfg.publicKey);
-}
+const RESET_ERROS = {
+  cpf_invalido:        'CPF inválido — confira os 11 dígitos.',
+  rate_limited:        'Muitos pedidos seguidos. Espere alguns minutos e tente de novo.',
+  sem_email:           'Aluno sem e-mail de contato cadastrado. Fale com o professor.',
+  email_nao_configurado:'Envio de e-mail não configurado. Fale com o professor.',
+  falha_no_envio:      'Não foi possível enviar o e-mail agora. Tente de novo em instantes.'
+};
 
 async function requestStudentResetCode() {
   if(!sb) return;
@@ -5186,35 +5169,25 @@ async function requestStudentResetCode() {
   if(cpf.length !== 11) { showToast('❌ CPF inválido — 11 dígitos.'); return; }
 
   btn.disabled = true; btn.textContent = 'Enviando…';
-  const { data, error } = await sb.rpc('request_student_password_reset', { p_cpf: cpf });
-  if(error) {
-    btn.disabled = false; btn.textContent = 'Enviar código';
-    showToast('❌ '+error.message);
-    return;
-  }
-  const row = Array.isArray(data) ? data[0] : data;
-  if(!row?.reset_code || !row?.contact_email) {
-    btn.disabled = false; btn.textContent = 'Enviar código';
-    showToast('❌ Não foi possível gerar o código.');
-    return;
-  }
-  try {
-    await sendResetCodeEmail(row.contact_email, row.reset_code, {
-      serviceId: row.ejs_service_id,
-      templateId: row.ejs_template_id,
-      publicKey: row.ejs_public_key
-    });
-  } catch(e) {
-    btn.disabled = false; btn.textContent = 'Enviar código';
-    showToast('❌ '+e.message);
-    return;
-  }
+  // O código é gerado e enviado pela Edge Function, com a chave privada do
+  // EmailJS no servidor. Ele nunca passa pelo browser de quem pede o reset.
+  const { data, error } = await sb.functions.invoke('request-password-reset', { body: { cpf } });
   btn.disabled = false; btn.textContent = 'Enviar código';
+
+  if(error) {
+    let codigo = '';
+    try { codigo = (await error.context?.json())?.error || ''; } catch(e){}
+    showToast('❌ '+(RESET_ERROS[codigo] || 'Não foi possível enviar o código agora.'));
+    return;
+  }
+
   resetFlow.cpf = cpf;
   document.getElementById('reset-step-1').hidden = true;
   document.getElementById('reset-step-2').hidden = false;
-  document.getElementById('reset-email-hint').textContent = maskEmail(row.contact_email);
-  showToast('✅ Código enviado! Confira seu e-mail.');
+  // Sem CPF cadastrado a função responde igual, sem a dica de e-mail — assim a
+  // tela não vira um jeito de descobrir quais CPFs são alunos.
+  document.getElementById('reset-email-hint').textContent = data?.email_hint || 'seu e-mail cadastrado';
+  showToast('✅ Se o CPF estiver cadastrado, o código foi enviado.');
 }
 
 async function confirmStudentResetCode() {
@@ -5229,12 +5202,15 @@ async function confirmStudentResetCode() {
   if(pass !== confirm) { showToast('❌ As senhas não coincidem.'); return; }
 
   btn.disabled = true; btn.textContent = 'Redefinindo…';
-  const { error } = await sb.rpc('confirm_student_password_reset', {
+  const { data: status, error } = await sb.rpc('confirm_student_password_reset', {
     p_cpf: resetFlow.cpf, p_code: code, p_new_password: pass
   });
   btn.disabled = false; btn.textContent = 'Redefinir senha';
 
   if(error) { showToast('❌ '+error.message); return; }
+  if(status === 'weak')    { showToast('❌ A senha deve ter pelo menos 6 caracteres.'); return; }
+  if(status === 'locked')  { showToast('❌ Muitas tentativas erradas. Peça um código novo.'); return; }
+  if(status !== 'ok')      { showToast('❌ Código inválido ou expirado. Solicite um novo.'); return; }
 
   resetFlow.cpf = null;
   document.getElementById('reset-code').value = '';
