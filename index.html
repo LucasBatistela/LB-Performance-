@@ -2705,7 +2705,7 @@ async function populateProfCalStudentFilter(){
   const current = sel.value;
   if(!students?.length){ sel.innerHTML = '<option value="">Todos os alunos</option>'; return; }
   const names = await Promise.all(students.map(s=>sb.from('profiles').select('full_name').eq('id',s.id).single()));
-  const opts = students.map((s,i)=>`<option value="${s.id}">${names[i].data?.full_name||'Aluno'}</option>`).join('');
+  const opts = students.map((s,i)=>`<option value="${escHtml(s.id)}">${escHtml(names[i].data?.full_name||'Aluno')}</option>`).join('');
   sel.innerHTML = `<option value="">Todos os alunos</option>${opts}`;
   sel.value = current || '';
 }
@@ -2977,7 +2977,7 @@ async function loadExerciseLibrary(){
     el.innerHTML = mtExerciseLibrary.map(ex => `
       <div class="exlib-item">
         <div>
-          <div class="exlib-item-name">${ex.name}</div>
+          <div class="exlib-item-name">${escHtml(ex.name)}</div>
           <div class="exlib-item-meta">${ex.video_storage_path ? 'Vídeo enviado' : (ex.video_url ? 'Vídeo por link' : 'Sem vídeo cadastrado')}</div>
         </div>
         <div class="exlib-item-actions">
@@ -3074,7 +3074,7 @@ function renderTreinoAlunoOptions(){
     return true;
   });
   if(!filtered.length){ sel.innerHTML = '<option value="" disabled>Nenhum aluno encontrado</option>'; return; }
-  sel.innerHTML = filtered.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  sel.innerHTML = filtered.map(a=>`<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`).join('');
 }
 
 const MUSCLE_CATEGORIES = [
@@ -3168,14 +3168,14 @@ function renderTeDivisions(){
     el.innerHTML = '<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma divisão nessa categoria.</p></div>';
     return;
   }
-  const exOptions = mtExerciseLibrary.map(ex=>`<option value="${ex.id}">${ex.name}</option>`).join('');
+  const exOptions = mtExerciseLibrary.map(ex=>`<option value="${escHtml(ex.id)}">${escHtml(ex.name)}</option>`).join('');
   el.innerHTML = list.map(div=>{
     const exs = mtExercisesByDivision[div.id] || [];
     const catLabel = MUSCLE_CATEGORIES.find(c=>c.id===div.category)?.label;
     const rows = exs.map(te=>`
       <div class="treino-ex-row">
         <div>
-          <div style="font-weight:600">${te.exercises?.name||'Exercício'}</div>
+          <div style="font-weight:600">${escHtml(te.exercises?.name||'Exercício')}</div>
           <div class="treino-ex-meta">${te.sets}x ${te.reps} · descanso ${te.rest_seconds}s</div>
         </div>
         <button onclick="removeTrainingExercise('${te.id}')" title="Remover"
@@ -3186,7 +3186,7 @@ function renderTeDivisions(){
     return `<div class="treino-division-card">
       <div class="treino-division-head">
         <div>
-          <span class="treino-division-name">${div.name}</span>
+          <span class="treino-division-name">${escHtml(div.name)}</span>
           ${catLabel?`<span style="font-size:.74rem;color:var(--muted);font-weight:600;margin-left:8px">${catLabel}</span>`:''}
         </div>
         <div style="display:flex;gap:4px">
@@ -3315,7 +3315,7 @@ async function loadMeuTreino(){
 function renderMtDivisionTabs(){
   const el = document.getElementById('mt-division-tabs');
   el.innerHTML = mtStudentDivisions.map(d=>
-    `<button class="div-tab ${d.id===mtActiveDivisionId?'on':''}" onclick="mtSetDivision('${d.id}')">${d.name}</button>`).join('');
+    `<button class="div-tab ${d.id===mtActiveDivisionId?'on':''}" onclick="mtSetDivision('${jsAttr(d.id)}')">${escHtml(d.name)}</button>`).join('');
 }
 function mtSetDivision(id){ mtActiveDivisionId = id; renderMtDivisionTabs(); renderMtExercises(); }
 
@@ -3356,7 +3356,7 @@ function renderMtExercises(){
     }).join('');
     return `<div class="mt-ex-card">
       <div class="mt-ex-head">
-        <span class="mt-ex-name">${ex.name||'Exercício'}</span>
+        <span class="mt-ex-name">${escHtml(ex.name||'Exercício')}</span>
         <span class="mt-ex-sets">${te.sets}x ${te.reps}</span>
       </div>
       ${mtVideoHTML(ex)}
@@ -5710,7 +5710,7 @@ async function loadAlunoDashboard() {
   }
   if(student?.professor_id) {
     const { data: pp } = await sb.from('profiles').select('full_name, phone, phone_country').eq('id',student.professor_id).single();
-    if(pp) document.getElementById('dash-professor').innerHTML = `<strong>${pp.full_name||'Professor'}</strong>`;
+    if(pp) document.getElementById('dash-professor').innerHTML = `<strong>${escHtml(pp.full_name||'Professor')}</strong>`;
     if(pp?.phone) {
       const wa = document.getElementById('dash-wa-prof');
       const dial = pp.phone_country || '55';
@@ -5719,7 +5719,7 @@ async function loadAlunoDashboard() {
     }
   }
   if(student?.training_plan_url) {
-    document.getElementById('dash-plano').innerHTML = `<a href="${student.training_plan_url}" target="_blank" class="btn-primary" style="font-size:.88rem;padding:10px 20px">Ver meu treino →</a>`;
+    document.getElementById('dash-plano').innerHTML = `<a href="${escHtml(safeUrl(student.training_plan_url))}" target="_blank" rel="noopener noreferrer" class="btn-primary" style="font-size:.88rem;padding:10px 20px">Ver meu treino →</a>`;
   }
   fillProfileCard();
   loadAlunoDuvidasPreview();
@@ -5740,8 +5740,8 @@ async function loadProfDashboard() {
     const names = await Promise.all(hoje.map(b=>sb.from('profiles').select('full_name,phone').eq('id',b.student_id).single()));
     document.getElementById('prof-agenda-hoje').innerHTML = hoje.map((b,i)=>`
       <div class="dash-booking-item">
-        <div class="dash-booking-date">${b.time} — ${names[i].data?.full_name||'Aluno'}${b.is_fixed?' <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>
-        <div class="dash-booking-meta">${names[i].data?.phone||''}</div>
+        <div class="dash-booking-date">${b.time} — ${escHtml(names[i].data?.full_name||'Aluno')}${b.is_fixed?' <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>
+        <div class="dash-booking-meta">${escHtml(names[i].data?.phone||'')}</div>
       </div>`).join('');
   }
 
@@ -5751,7 +5751,7 @@ async function loadProfDashboard() {
     document.getElementById('prof-alunos-lista').innerHTML = alunos.map((a,i)=>`
       <div class="prof-student-row">
         <div>
-          <div class="prof-student-name">${ap[i].data?.full_name||'Aluno'}</div>
+          <div class="prof-student-name">${escHtml(ap[i].data?.full_name||'Aluno')}</div>
           <div class="prof-student-plan">${a.training_plan_url?'<span class="icon-inline good" style="width:12px;height:12px">'+UI_ICONS.check+'</span> Treino vinculado':'Sem treino vinculado'}</div>
         </div>
       </div>`).join('');
@@ -5764,7 +5764,7 @@ async function loadProfDashboard() {
     document.getElementById('prof-proximos').innerHTML = proximos.map((b,i)=>`
       <div class="dash-booking-item">
         <div class="dash-booking-date">${formatDate(b.date)} às ${b.time}${b.is_fixed?' <span title="Reservado toda semana automaticamente">🔁 Fixo</span>':''}</div>
-        <div class="dash-booking-meta">${pn[i].data?.full_name||'Aluno'}</div>
+        <div class="dash-booking-meta">${escHtml(pn[i].data?.full_name||'Aluno')}</div>
       </div>`).join('');
   }
 
@@ -5869,9 +5869,9 @@ async function loadProfAllBookings() {
            ${b.is_fixed ? `<button style="font-size:.75rem;color:var(--muted);margin-left:8px" onclick="desfixarAgendamento('${b.id}')">Desfixar</button>` : ''}`;
       return `<tr>
         <td>${ds}${fixoTag}</td><td>${b.time}</td>
-        <td>${names[i].data?.full_name||'Aluno'}</td>
+        <td>${escHtml(names[i].data?.full_name||'Aluno')}</td>
         <td><span class="booking-tag ${b.type==='presencial'?'tag-presencial':'tag-online'}">${b.type||''}</span></td>
-        <td style="font-size:.82rem">${names[i].data?.phone||''}</td>
+        <td style="font-size:.82rem">${escHtml(names[i].data?.phone||'')}</td>
         <td>${actions}</td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
@@ -6036,7 +6036,7 @@ async function renderProfAnamnese() {
 
   const rows = students.map((s,i) => {
     const name = profiles[i]?.data?.full_name || 'Aluno';
-    const nameEsc = name.replace(/'/g,"\\'");
+    const nameEsc = jsAttr(name);
     const fichas = byStudent[s.id] || [];
     const orphanCount = orphanCountByCpf[s.cpf] || 0;
     const unlocked = s.anamnese_unlocked !== false;
@@ -6073,7 +6073,7 @@ async function renderProfAnamnese() {
     return `<div class="dash-card" id="anam-student-${s.id}" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div>
-          <div style="font-weight:700;font-size:.92rem">${name}</div>
+          <div style="font-weight:700;font-size:.92rem">${escHtml(name)}</div>
           <div style="font-size:.78rem;color:var(--muted)">${statusLine}</div>
         </div>
         ${sendBtn}
@@ -6193,7 +6193,7 @@ function anamLevelBar(scaleIdx, total, level){
   const pct = Math.round(((scaleIdx+1)/total)*100);
   return { pct, level };
 }
-function esc(v){ return (v===undefined||v===null||v==='') ? '' : String(v); }
+function esc(v){ return (v===undefined||v===null||v==='') ? '' : escHtml(v); }
 
 function buildAnamMetricCards(data){
   const d = data||{};
@@ -6253,7 +6253,7 @@ function buildAnamMetricCards(data){
     } else {
       const lines = dcList.map(cond=>{
         const st = DISEASE_STATS[cond];
-        if(!st) return `<strong>${cond}</strong> — sem dado de comparação disponível.`;
+        if(!st) return `<strong>${escHtml(cond)}</strong> — sem dado de comparação disponível.`;
         return `<strong>${cond}</strong>: ${st.pct} dos adultos brasileiros${st.note?` (${st.note})`:''}. <span style="font-size:.72rem;color:var(--muted)">${st.source}${st.weak?' — estimativa, sem estudo com metodologia pública':''}</span>`;
       }).join('<br><br>');
       cards.push({
@@ -6681,9 +6681,9 @@ function renderNotifDrop(){
   }
   el.innerHTML = notifItems.map(n=>`
     <div class="nav-notif-item ${(n.live||!n.read_at)?'unread':''}">
-      <div onclick="handleNotifClick('${n.id}', ${n.live?'true':'false'}, '${n.link||''}', '${n.type||''}', '${n.related_id||''}')" style="cursor:pointer">
-        <div class="nav-notif-title">${n.title}</div>
-        ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
+      <div onclick="handleNotifClick('${jsAttr(n.id)}', ${n.live?'true':'false'}, '${jsAttr(n.link||'')}', '${jsAttr(n.type||'')}', '${jsAttr(n.related_id||'')}')" style="cursor:pointer">
+        <div class="nav-notif-title">${escHtml(n.title)}</div>
+        ${n.body?`<div class="nav-notif-body">${escHtml(n.body)}</div>`:''}
         <div class="nav-notif-time"><span>${notifTimeAgo(n.created_at)}</span><span class="nav-notif-clock">${notifClockTime(n.created_at)}</span></div>
       </div>
       ${n.live?'':`<button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotif('${n.id}', event)"><span class="icon-inline">${UI_ICONS.x}</span></button>`}
@@ -6793,9 +6793,9 @@ async function renderNotifHistoryPage(period){
     const ds = d.toLocaleDateString('pt-BR');
     const hs = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     return `<div class="nav-notif-item ${n.read_at?'':'unread'}" style="border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px">
-      <div onclick="handleNotifClick('${n.id}', false, '${n.link||''}', '${n.type||''}', '${n.related_id||''}')" style="cursor:pointer">
-        <div class="nav-notif-title">${n.title}</div>
-        ${n.body?`<div class="nav-notif-body">${n.body}</div>`:''}
+      <div onclick="handleNotifClick('${jsAttr(n.id)}', false, '${jsAttr(n.link||'')}', '${jsAttr(n.type||'')}', '${jsAttr(n.related_id||'')}')" style="cursor:pointer">
+        <div class="nav-notif-title">${escHtml(n.title)}</div>
+        ${n.body?`<div class="nav-notif-body">${escHtml(n.body)}</div>`:''}
         <div class="nav-notif-time"><span>${ds}</span><span class="nav-notif-clock">${hs}</span></div>
       </div>
       <button class="nav-notif-x" aria-label="Remover notificação" title="Remover" onclick="deleteNotifFromHistory('${n.id}', event)"><span class="icon-inline">${UI_ICONS.x}</span></button>
@@ -6822,7 +6822,21 @@ let duvidasPendingFile = null;
 let duvidasStudentView = 'thread';
 
 function escHtml(s){
-  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Para interpolar texto do usuário dentro de um literal JS entre aspas simples
+// que por sua vez está dentro de um atributo HTML: onclick="fn('AQUI')".
+// Escapa primeiro pro JS e depois pro HTML — o browser decodifica as entidades
+// antes do parser de JS ver a string, então a ordem tem que ser essa.
+function jsAttr(s){
+  return escHtml(String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
+
+// Bloqueia javascript:/data: em URLs que o professor cadastra e o aluno clica.
+function safeUrl(u){
+  const s = String(u ?? '').trim();
+  return /^(https?:|mailto:|\/|#)/i.test(s) ? s : '';
 }
 
 function autoResizeDuvidasInput(el){
@@ -7044,7 +7058,7 @@ async function renderDuvidasConversationsList(){
       <div style="width:48px;height:48px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${duvidasInitials(r.name)}</div>
       <div style="flex:1;overflow:hidden">
         <div style="display:flex;justify-content:space-between;gap:8px">
-          <span style="font-weight:600;font-size:.92rem${r.unread?';color:var(--ink)':''}">${r.name}</span>
+          <span style="font-weight:600;font-size:.92rem${r.unread?';color:var(--ink)':''}">${escHtml(r.name)}</span>
           ${time?`<span style="font-size:.75rem;color:var(--muted);flex-shrink:0">${time}</span>`:''}
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px">
@@ -7469,7 +7483,7 @@ async function loadProfDuvidasPreview(){
   const profiles = await Promise.all(ids.map(id=>sb.from('profiles').select('full_name').eq('id',id).single()));
   el.innerHTML = ids.map((id,i)=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="duvidasCurrentStudentId='${id}';showPage('duvidas')">
-      <span style="font-size:.88rem">${profiles[i]?.data?.full_name||'Aluno'}</span>
+      <span style="font-size:.88rem">${escHtml(profiles[i]?.data?.full_name||'Aluno')}</span>
       <span class="nav-bell-badge" style="position:static">${byStudent[id]}</span>
     </div>`).join('');
 }
@@ -7903,8 +7917,8 @@ async function loadProfAlunos() {
     return `<div style="display:flex;align-items:center;justify-content:space-between;
         padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm)">
       <div>
-        <div style="font-weight:600;font-size:.92rem">${p?.full_name||'—'}</div>
-        <div style="font-size:.78rem;color:var(--muted)">${p?.phone||'Sem telefone'}</div>
+        <div style="font-weight:600;font-size:.92rem">${escHtml(p?.full_name||'—')}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${escHtml(p?.phone||'Sem telefone')}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;
@@ -7912,13 +7926,13 @@ async function loadProfAlunos() {
           title="Anamnese">${anamDone?'Anamnese: Feito':'Anamnese: Pendente'}</span>
         <span style="font-size:.75rem;color:var(--pine);font-weight:700;
           background:rgba(52,106,172,.12);padding:4px 10px;border-radius:20px">Ativo</span>
-        <button onclick="openStudentTreino('${s.id}', '${(p?.full_name||'Aluno').replace(/'/g,"\\'")}')"
+        <button onclick="openStudentTreino('${jsAttr(s.id)}', '${jsAttr(p?.full_name||'Aluno')}')"
           title="Gerenciar treino"
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
             color:var(--pine);font-size:.9rem;line-height:1;transition:background .15s"
           onmouseover="this.style.background='rgba(52,106,172,.1)'"
           onmouseout="this.style.background='none'"><span class="icon-inline" style="width:14px;height:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg></span></button>
-        <button onclick="openAdminPwdReset('${s.id}', '${(p?.full_name||'Aluno').replace(/'/g,"\\'")}')"
+        <button onclick="openAdminPwdReset('${jsAttr(s.id)}', '${jsAttr(p?.full_name||'Aluno')}')"
           title="Redefinir senha"
           style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;
             color:var(--pine);font-size:.9rem;line-height:1;transition:background .15s"
@@ -7940,8 +7954,8 @@ async function loadProfAlunos() {
         padding:14px 16px;background:var(--surface-alt);border-radius:var(--radius-sm);
         border:1.5px dashed var(--border)">
       <div>
-        <div style="font-weight:600;font-size:.92rem">${pr.full_name}</div>
-        <div style="font-size:.78rem;color:var(--muted)">${pr.phone||'Sem telefone'} · CPF ${cpfFmt}</div>
+        <div style="font-weight:600;font-size:.92rem">${escHtml(pr.full_name)}</div>
+        <div style="font-size:.78rem;color:var(--muted)">${escHtml(pr.phone||'Sem telefone')} · CPF ${escHtml(cpfFmt)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:.75rem;color:var(--muted);font-weight:700;
