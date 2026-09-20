@@ -1327,11 +1327,9 @@ img { max-width: 100%; display: block; }
   </nav>
   <nav class="menu-nav" id="menu-nav-auth" hidden>
     <a onclick="goToInicio();closeMenu()">Início</a>
-    <a id="menu-checkin" onclick="showPage('checkin');closeMenu()">Check-in do treino</a>
-    <a data-modulo="montagemTreino" onclick="goToMeuTreino();closeMenu()">Meu treino</a>
+    <a id="menu-checkin" onclick="showPage('checkin');closeMenu()">Check-in</a>
     <a onclick="goToMeuPlano();closeMenu()">Meu plano</a>
     <a onclick="goToAgendamentos();closeMenu()">Agendamentos</a>
-    <a data-modulo="chat" onclick="showPage('duvidas');closeMenu()">Chat</a>
   </nav>
   <div class="menu-footer">
     <button id="menu-auth-btn" onclick="showPage('login');closeMenu()">Login</button>
@@ -1826,7 +1824,6 @@ img { max-width: 100%; display: block; }
            pro final do painel (posição original, no fim do HTML). -->
       <div id="dash-anamnese-slot-top"></div>
 
-      <p class="dash-section-label">Meu treino</p>
       <div class="dash-grid">
         <div class="dash-card dash-card-clickable"
           onclick="if(event.target.closest('[onclick]')!==this) return; abrirHistoricoTreinos()" title="Ver treinos agendados">
@@ -1844,6 +1841,14 @@ img { max-width: 100%; display: block; }
             Plano de treino
           </div>
           <div id="dash-plano"><p style="color:var(--muted);font-size:.88rem">Toque para ver seus exercícios, séries e registrar sua carga.</p></div>
+        </div>
+        <div class="dash-card dash-card-clickable"
+          onclick="if(event.target.closest('[onclick]')!==this) return; showPage('checkin')" title="Fazer check-in do treino">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></span>
+            Check-in
+          </div>
+          <div id="dash-checkin"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
         </div>
         <div class="dash-card">
           <div class="dash-card-title">
@@ -4890,6 +4895,25 @@ function renderSessaoBanner(){
   if(el) el.innerHTML = sessaoBannerHTML();
 }
 
+// O card do painel resolve o treino sem passar por tela nenhuma: se não há
+// sessão aberta ele começa, se há ele encerra.
+async function renderDashCheckin(){
+  const el = document.getElementById('dash-checkin');
+  if(!el) return;
+  await carregarSessaoAtiva();
+
+  if(!sessaoAtiva){
+    el.innerHTML = `<p style="color:var(--muted);font-size:.88rem">Quatro perguntas rápidas antes de treinar.</p>
+      <button class="btn-primary" onclick="showPage('pre-treino')" style="margin-top:14px;font-size:.85rem;padding:10px 20px">Iniciar treino</button>`;
+    return;
+  }
+  const inicio = new Date(sessaoAtiva.started_at);
+  const hh = String(inicio.getHours()).padStart(2,'0'), mm = String(inicio.getMinutes()).padStart(2,'0');
+  el.innerHTML = `<p style="font-size:.88rem;font-weight:600">Treino em andamento
+      <span style="display:block;font-weight:400;color:var(--muted);font-size:.82rem">Começou às ${hh}:${mm}</span></p>
+    <button class="btn-primary" onclick="showPage('pos-treino')" style="margin-top:14px;font-size:.85rem;padding:10px 20px">Encerrar treino</button>`;
+}
+
 async function renderCheckin(){
   const el = document.getElementById('checkin-conteudo');
   if(!el || !currentUser) return;
@@ -7387,6 +7411,7 @@ async function loadAlunoDashboard() {
   const phrase = await getMotivationalPhrase();
   document.getElementById('dash-phrase-text').textContent = `"${phrase}"`;
   refreshDashAnamCard();
+  renderDashCheckin();
 
   const { data: student } = await sb.from('students').select('professor_id, training_plan_url, anamnese_unlocked, must_change_password').eq('id',currentUser.id).maybeSingle();
   currentStudentData = student;
