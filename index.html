@@ -1272,6 +1272,30 @@ details.turma-bloco > summary.turma-head { cursor: pointer; margin-bottom: 0; li
 details.turma-bloco > summary.turma-head::-webkit-details-marker { display: none; }
 details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
 
+/* ─── AULAS DE HORÁRIO FIXO (aluno) ───────────────────────────── */
+.local-bloco { border: 1.5px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 18px; }
+.local-cabecalho { display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: var(--local-cor); color: #fff; }
+.local-logo { width: 38px; height: 38px; border-radius: 8px; object-fit: contain;
+  background: #fff; padding: 3px; flex-shrink: 0; }
+.local-nome { font-family: var(--font-d); font-weight: 800; font-size: 1.02rem; }
+.local-sub { font-size: .76rem; opacity: .9; }
+.aula-lista { padding: 6px 0; }
+.aula-item { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.aula-item:last-child { border-bottom: none; }
+.aula-item.vai { background: var(--good-bg); }
+.aula-item.nao-vai { opacity: .55; }
+.aula-quando { display: flex; flex-direction: column; font-size: .86rem; }
+.aula-quando span { font-size: .76rem; color: var(--muted); }
+.aula-acoes { display: flex; gap: 6px; }
+/* Alvo de 44px: no celular, botão menor que isso erra o toque. */
+.aula-btn { min-height: 40px; padding: 8px 14px; border-radius: 999px; font-size: .8rem;
+  font-weight: 700; border: 1.5px solid var(--border); background: var(--surface); color: var(--ink-2); }
+.aula-btn.on { background: var(--good); border-color: var(--good); color: #fff; }
+.aula-btn.nao.on { background: var(--muted); border-color: var(--muted); }
+
 /* ─── TELA HOJE ───────────────────────────────────────────────── */
 .hoje-resumo { font-size: .92rem; padding: 4px 0 2px; }
 .hoje-sub { font-size: .78rem; color: var(--muted); font-weight: 700; margin: 14px 0 8px; }
@@ -1552,6 +1576,11 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
         <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
         Agendamentos
       </div>
+      <!-- Aulas de horário fixo: o aluno não escolhe horário, só diz se vai.
+           Só aparece para quem está em grupo de modalidade "confirmação". -->
+      <div id="aulas-fixas-wrap" hidden></div>
+
+      <div id="agendamento-wrap">
       <p class="dash-section-label">Novo agendamento</p>
       <div class="agendar-info">
         <span class="agendar-info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
@@ -1566,6 +1595,7 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
       </div>
       <div class="agendar-card">
         <div id="calendar-root"><div style="color:var(--muted);padding:20px 0">Carregando agenda…</div></div>
+      </div>
       </div>
 
       <!-- Histórico de agendamentos — movido do painel principal pra cá,
@@ -5139,6 +5169,102 @@ async function renderCheckin(){
     </div>`;
 }
 
+/* ── AULAS DE HORÁRIO FIXO (aluno) ─────────────────────────────
+   Grupo de modalidade "confirmação" não tem agendamento: o horário já existe
+   e o aluno só diz se vai. A tela mostra as próximas ocorrências da grade sob
+   a identidade do local onde a aula acontece — o professor presta serviço em
+   estúdio de terceiro, e essa marca é parte do combinado. */
+const DIAS_PARA_CONFIRMAR = 7;
+
+async function renderAulasFixas(){
+  const wrap = document.getElementById('aulas-fixas-wrap');
+  const agendamento = document.getElementById('agendamento-wrap');
+  if(!wrap || !sb || !currentUser) return;
+
+  const { data: vinculos } = await sb.from('student_group_members')
+    .select('group_id, student_groups(id, nome, modalidade, cor, local_nome, logo_url)')
+    .eq('student_id', currentUser.id);
+
+  const grupos = (vinculos||[]).map(v=>v.student_groups).filter(Boolean);
+  const deConfirmacao = grupos.filter(g=>g.modalidade === 'confirmacao');
+  const temAgendamento = grupos.length === 0 || grupos.some(g=>g.modalidade === 'agendamento');
+
+  // Aluno que só faz turma fixa não agenda nada — esconder a seção evita a
+  // pergunta "por que não aparece horário livre pra mim?".
+  if(agendamento) agendamento.hidden = !temAgendamento;
+
+  if(!deConfirmacao.length){ wrap.hidden = true; wrap.innerHTML = ''; return; }
+  wrap.hidden = false;
+
+  const { data: slots } = await sb.from('class_slots').select('*')
+    .in('group_id', deConfirmacao.map(g=>g.id)).eq('ativo', true);
+  if(!slots?.length){ wrap.hidden = true; wrap.innerHTML = ''; return; }
+
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const limite = new Date(hoje); limite.setDate(limite.getDate() + DIAS_PARA_CONFIRMAR);
+  const { data: confs } = await sb.from('class_confirmations').select('class_slot_id, data, vai')
+    .eq('student_id', currentUser.id).gte('data', dateToStr(hoje));
+  const jaDisse = {};
+  (confs||[]).forEach(c=>{ jaDisse[`${c.class_slot_id}|${c.data}`] = c.vai; });
+
+  const agora = new Date();
+  const ocorrencias = [];
+  for(let i=0; i<DIAS_PARA_CONFIRMAR; i++){
+    const d = new Date(hoje); d.setDate(d.getDate()+i);
+    slots.filter(s=>s.weekday === d.getDay()).forEach(s=>{
+      const [h,m] = s.hora.split(':').map(Number);
+      const quando = new Date(d); quando.setHours(h, m, 0, 0);
+      if(quando <= agora) return; // aula que já passou não se confirma
+      ocorrencias.push({ slot:s, data:dateToStr(d), quando,
+        grupo: deConfirmacao.find(g=>g.id === s.group_id) });
+    });
+  }
+  ocorrencias.sort((a,b)=> a.quando - b.quando);
+
+  const porGrupo = {};
+  ocorrencias.forEach(o=>{ (porGrupo[o.grupo.id] ||= { grupo:o.grupo, itens:[] }).itens.push(o); });
+
+  wrap.innerHTML = Object.values(porGrupo).map(({grupo, itens})=>{
+    const cor = grupo.cor || 'var(--pine)';
+    return `<div class="local-bloco" style="--local-cor:${escHtml(cor)}">
+      <div class="local-cabecalho">
+        ${grupo.logo_url ? `<img class="local-logo" src="${escHtml(safeUrl(grupo.logo_url))}" alt="">` : ''}
+        <div>
+          <div class="local-nome">${escHtml(grupo.local_nome || grupo.nome)}</div>
+          <div class="local-sub">Suas aulas · toque para dizer se vai</div>
+        </div>
+      </div>
+      <div class="aula-lista">${itens.map(o=>{
+        const resp = jaDisse[`${o.slot.id}|${o.data}`];
+        const dia = o.quando;
+        const ehHoje = dateToStr(dia) === dateToStr(new Date());
+        return `<div class="aula-item${resp===true?' vai':resp===false?' nao-vai':''}">
+          <div class="aula-quando">
+            <strong>${ehHoje ? 'Hoje' : DAYS_FULL[dia.getDay()]}</strong>
+            <span>${dia.getDate()}/${String(dia.getMonth()+1).padStart(2,'0')} · ${escHtml(o.slot.hora)}</span>
+          </div>
+          <div class="aula-acoes">
+            <button type="button" class="aula-btn${resp===true?' on':''}"
+              onclick="confirmarAula('${jsAttr(o.slot.id)}','${o.data}',true)">Vou</button>
+            <button type="button" class="aula-btn nao${resp===false?' on':''}"
+              onclick="confirmarAula('${jsAttr(o.slot.id)}','${o.data}',false)">Não vou</button>
+          </div>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+async function confirmarAula(slotId, data, vai){
+  if(!sb || !currentUser) return;
+  const { error } = await sb.from('class_confirmations')
+    .upsert({ class_slot_id: slotId, student_id: currentUser.id, data, vai },
+            { onConflict: 'class_slot_id,student_id,data' });
+  if(error){ showToast('❌ '+error.message); return; }
+  showToast(vai ? '✅ Presença confirmada!' : 'Avisado que você não vai.');
+  renderAulasFixas();
+}
+
 /* ── GRUPOS E TURMAS ───────────────────────────────────────────
    Grupo é o rótulo do aluno (personal, funcional, o que o professor criar).
    Turma é um horário fixo da grade. Não há agendamento nem vaga: o horário
@@ -5455,6 +5581,7 @@ function showPage(id, opts) {
     // Página de Agendamentos agora também mostra o histórico (movido do painel
     // principal) — reaproveita loadAlunoDashboard pra garantir que ele está atualizado.
     if(currentProfile?.role==='student') {
+      renderAulasFixas();
       loadAlunoDashboard();
       // Histórico abre por padrão no modo Calendário — carrega os dados de cara.
       renderBookingsCalendar('aluno');
