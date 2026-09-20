@@ -1095,19 +1095,28 @@ img { max-width: 100%; display: block; }
 .q-hint { font-size: .78rem; color: var(--muted); margin-bottom: 12px; }
 /* A escala rola no eixo X em vez de quebrar linha: 11 botões numa tela de 360px
    não cabem, e quebrar embaralha a noção de régua contínua. */
-.q-scale { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-.q-scale button { flex: 1 0 38px; min-width: 38px; height: 44px; border-radius: var(--radius-sm);
+.q-scale { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 4px; }
+/* A cor carrega o significado junto com o número: quem responde correndo lê a
+   faixa antes de ler o dígito. Fica apagada até a escolha pra não sugerir nada. */
+.q-scale button { flex: 1 0 34px; min-width: 34px; height: 46px; border-radius: var(--radius-sm);
   border: 1.5px solid var(--border); background: var(--surface); color: var(--ink-2);
-  font-weight: 700; font-size: .92rem; transition: background .12s, border-color .12s, color .12s; }
-.q-scale button:hover { border-color: var(--pine); }
-.q-scale button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+  font-weight: 700; font-size: .9rem; position: relative;
+  transition: transform .12s, box-shadow .12s, opacity .12s; opacity: .55; }
+.q-scale button[data-cor] { background: var(--cor); border-color: transparent; color: #fff; }
+.q-scale button:hover { opacity: .85; }
+.q-scale button.on { opacity: 1; transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,.18); }
 .q-anchors { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
   font-size: .72rem; color: var(--muted); }
-.q-anchor-sel { margin-top: 10px; font-size: .82rem; font-weight: 600; color: var(--pine); min-height: 1.2em; }
-.q-smileys { display: flex; gap: 8px; }
-.q-smileys button { flex: 1; height: 56px; border-radius: var(--radius-sm); border: 1.5px solid var(--border);
-  background: var(--surface); font-size: 1.5rem; line-height: 1; transition: background .12s, border-color .12s; }
-.q-smileys button.on { border-color: var(--pine); background: rgba(52,106,172,.12); }
+.q-anchor-sel { margin-top: 10px; font-size: .84rem; font-weight: 700; min-height: 1.3em; }
+
+/* Escala de 5 pontos com rosto — o formato que o aluno entende sem ler nada */
+.q-faces { display: flex; gap: 6px; }
+.q-faces button { flex: 1; aspect-ratio: 1 / 1.05; max-height: 76px; border-radius: var(--radius-sm);
+  border: 2px solid transparent; display: flex; align-items: center; justify-content: center;
+  opacity: .5; transition: opacity .12s, transform .12s, box-shadow .12s; padding: 0; }
+.q-faces button:hover { opacity: .8; }
+.q-faces button.on { opacity: 1; transform: translateY(-3px); box-shadow: 0 5px 14px rgba(0,0,0,.2); }
+.q-faces svg { width: 62%; height: auto; display: block; color: #fff; }
 .q-err { color: var(--crit); font-size: .8rem; margin-top: 8px; }
 
 /* ─── MAPA CORPORAL DE DOR ────────────────────────────────────── */
@@ -1115,12 +1124,20 @@ img { max-width: 100%; display: block; }
 .body-map-switch button { flex: 1; padding: 9px; border-radius: 999px; border: 1.5px solid var(--border);
   background: var(--surface); font-weight: 700; font-size: .82rem; color: var(--ink-2); }
 .body-map-switch button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
-.body-map { display: block; margin: 0 auto; max-width: 260px; width: 100%; height: auto; }
-.body-map .zona { fill: var(--surface-alt); stroke: var(--border); stroke-width: 1.5;
-  cursor: pointer; transition: fill .12s; }
-.body-map .zona:hover { fill: var(--citrus); }
-.body-map .zona.on { fill: var(--crit); stroke: var(--crit); }
-.body-map .deco { fill: var(--surface-alt); stroke: var(--border); stroke-width: 1.5; pointer-events: none; }
+.body-map { display: block; margin: 0 auto; max-width: 290px; width: 100%; height: auto; }
+/* Traço fino e claro entre os músculos: é o que dá leitura de desenho
+   anatômico em vez de bloco. O preenchimento quase transparente deixa a linha
+   mandar na imagem. */
+.body-map .zona { fill: var(--pine); fill-opacity: .13; stroke: var(--pine); stroke-opacity: .55;
+  stroke-width: 1.1; stroke-linejoin: round; cursor: pointer;
+  transition: fill-opacity .12s, fill .12s; }
+.body-map .zona:hover { fill-opacity: .34; }
+.body-map .zona:focus-visible { outline: none; stroke: var(--ink); stroke-width: 2; }
+.body-map .zona.on { fill: var(--crit); fill-opacity: .8; stroke: var(--crit); stroke-opacity: 1; }
+.body-map .deco { fill: var(--pine); fill-opacity: .13; stroke: var(--pine); stroke-opacity: .55;
+  stroke-width: 1.1; pointer-events: none; }
+.body-map-lado { fill: var(--muted); font-size: 13px; font-weight: 700;
+  font-family: var(--font-b); pointer-events: none; }
 .body-map-sel { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
 .body-map-chip { font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 999px;
   background: var(--crit-bg); color: var(--crit); }
@@ -3964,13 +3981,11 @@ function bodyHeatSVG(lado, contagem, max){
     // piso de 0.15 pra uma queixa isolada não sumir no fundo
     const op = n && max ? (0.15 + 0.85 * (n / max)) : 0;
     const est = n ? ` style="fill:var(--crit);fill-opacity:${op.toFixed(2)};stroke:var(--crit)"` : '';
-    const t = `<title>${escHtml(z.nome)}: ${n} ${n===1?'vez':'vezes'}</title>`;
-    if(z.f==='ellipse') return `<ellipse class="zona" cx="${z.cx}" cy="${z.cy}" rx="${z.rx}" ry="${z.ry}"${est}>${t}</ellipse>`;
-    return `<rect class="zona" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="${z.r}"${est}>${t}</rect>`;
+    return `<path class="zona" d="${z.d}"${est}><title>${escHtml(z.nome)}: ${n} ${n===1?'vez':'vezes'}</title></path>`;
   }).join('');
   const deco = CORPO_DECO[lado].map(z=>bodyShapeSVG(z,'deco')).join('');
-  return `<svg class="body-map" viewBox="0 0 200 360" role="img" aria-label="Mapa de calor de dor — ${lado}">
-    <circle class="deco" cx="100" cy="30" r="21"/>${deco}${zonas}</svg>`;
+  return `<svg class="body-map" viewBox="0 0 ${CORPO_W} ${CORPO_H}" role="img" aria-label="Mapa de calor de dor — ${lado}">
+    ${bodyMapCabeca()}${deco}${zonas}${bodyMapLegendaLados(lado)}</svg>`;
 }
 
 // PSE e PSR na mesma escala 0–10 de propósito: escalar cada uma pelo próprio
@@ -4144,60 +4159,94 @@ function trocarAlunoEvolucao(id, nome){
    chegar; session-RPE de Foster para esforço, respondido ao encerrar. A carga
    interna (PSE × minutos) é coluna gerada no banco, não se calcula aqui. */
 
-// Lado direito/esquerdo é sempre o do ALUNO, não o de quem olha a tela: de
-// frente a imagem é espelhada, de costas não. Por isso os ids invertem de lado
-// entre as duas vistas.
+/* ── Mapa corporal anatômico ───────────────────────────────────
+   As formas são geradas por spline a partir de poucos pontos: dá curva
+   orgânica sem escrever bezier à mão, e o espelhamento sai de graça, o que
+   garante que os dois lados do corpo fiquem simétricos de verdade.
+   Cada região é um músculo nomeado — o aluno toca onde dói e o professor lê
+   "vasto lateral direito", não "coxa". */
+const CORPO_W = 260, CORPO_H = 520;
+
+// Catmull-Rom fechada convertida em bezier cúbica.
+function pathSuave(pts){
+  const n = pts.length;
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for(let i=0;i<n;i++){
+    const p0 = pts[(i-1+n)%n], p1 = pts[i], p2 = pts[(i+1)%n], p3 = pts[(i+2)%n];
+    d += ` C${(p1[0]+(p2[0]-p0[0])/6).toFixed(1)},${(p1[1]+(p2[1]-p0[1])/6).toFixed(1)}`
+       + ` ${(p2[0]-(p3[0]-p1[0])/6).toFixed(1)},${(p2[1]-(p3[1]-p1[1])/6).toFixed(1)}`
+       + ` ${p2[0]},${p2[1]}`;
+  }
+  return d + 'Z';
+}
+const espelha = pts => pts.map(([x,y])=>[CORPO_W - x, y]);
+
+// Os pontos são sempre do lado ESQUERDO DA TELA. De frente esse lado é o
+// direito do aluno; de costas, o esquerdo. Por isso o sufixo depende da vista.
+function par(base, nome, pts, vista){
+  const [ladoTela, ladoEspelho] = vista === 'frente' ? ['d','e'] : ['e','d'];
+  const rot = s => s === 'd' ? 'direito' : 'esquerdo';
+  const conc = nome.endsWith('a') || nome.includes('Lombar');
+  const fem = s => s === 'd' ? 'direita' : 'esquerda';
+  return [
+    { id:`${base}_${ladoTela}`,   nome:`${nome} ${conc?fem(ladoTela):rot(ladoTela)}`,     d:pathSuave(pts) },
+    { id:`${base}_${ladoEspelho}`,nome:`${nome} ${conc?fem(ladoEspelho):rot(ladoEspelho)}`,d:pathSuave(espelha(pts)) },
+  ];
+}
+const solo = (id, nome, pts) => ({ id, nome, d: pathSuave(pts) });
+
 const CORPO_REGIOES = {
   frente: [
-    {id:'pescoco',      nome:'Pescoço',                  f:'rect',    x:90,  y:49,  w:20, h:13, r:5},
-    {id:'ombro_d',      nome:'Ombro direito',            f:'ellipse', cx:62, cy:78, rx:16, ry:12},
-    {id:'ombro_e',      nome:'Ombro esquerdo',           f:'ellipse', cx:138,cy:78, rx:16, ry:12},
-    {id:'peitoral',     nome:'Peitoral',                 f:'rect',    x:74,  y:66,  w:52, h:40, r:8},
-    {id:'braco_d',      nome:'Braço direito',            f:'rect',    x:46,  y:92,  w:21, h:46, r:9},
-    {id:'braco_e',      nome:'Braço esquerdo',           f:'rect',    x:133, y:92,  w:21, h:46, r:9},
-    {id:'antebraco_d',  nome:'Antebraço direito',        f:'rect',    x:43,  y:142, w:19, h:44, r:8},
-    {id:'antebraco_e',  nome:'Antebraço esquerdo',       f:'rect',    x:138, y:142, w:19, h:44, r:8},
-    {id:'abdomen',      nome:'Abdômen',                  f:'rect',    x:76,  y:108, w:48, h:46, r:8},
-    {id:'virilha_d',    nome:'Quadril/virilha direita',  f:'rect',    x:74,  y:156, w:24, h:26, r:6},
-    {id:'virilha_e',    nome:'Quadril/virilha esquerda', f:'rect',    x:102, y:156, w:24, h:26, r:6},
-    {id:'coxa_ant_d',   nome:'Coxa direita (frente)',    f:'rect',    x:72,  y:184, w:26, h:62, r:10},
-    {id:'coxa_ant_e',   nome:'Coxa esquerda (frente)',   f:'rect',    x:102, y:184, w:26, h:62, r:10},
-    {id:'joelho_d',     nome:'Joelho direito',           f:'rect',    x:74,  y:248, w:22, h:20, r:7},
-    {id:'joelho_e',     nome:'Joelho esquerdo',          f:'rect',    x:104, y:248, w:22, h:20, r:7},
-    {id:'canela_d',     nome:'Canela direita',           f:'rect',    x:76,  y:270, w:20, h:60, r:8},
-    {id:'canela_e',     nome:'Canela esquerda',          f:'rect',    x:104, y:270, w:20, h:60, r:8},
-    {id:'pe_d',         nome:'Pé direito',               f:'rect',    x:72,  y:332, w:24, h:17, r:6},
-    {id:'pe_e',         nome:'Pé esquerdo',              f:'rect',    x:104, y:332, w:24, h:17, r:6},
+    solo('pescoco_ant','Pescoço (esternocleidomastóideo)', [[118,70],[142,70],[146,92],[130,96],[114,92]]),
+    ...par('trapezio_sup','Trapézio superior',   [[112,90],[96,96],[78,108],[92,116],[108,102]], 'frente'),
+    ...par('deltoide_ant','Deltoide anterior',   [[78,106],[64,116],[58,134],[60,152],[72,158],[84,142],[88,120]], 'frente'),
+    ...par('peitoral','Peitoral maior',          [[126,98],[104,102],[92,116],[88,136],[94,154],[112,162],[126,158]], 'frente'),
+    ...par('biceps','Bíceps braquial',           [[70,158],[60,168],[57,190],[60,210],[72,216],[80,196],[82,168]], 'frente'),
+    ...par('antebraco_ant','Antebraço (flexores)',[[62,214],[54,236],[50,264],[52,288],[64,292],[72,262],[76,228]], 'frente'),
+    solo('reto_abdominal','Reto abdominal',      [[114,162],[146,162],[150,196],[148,230],[130,242],[112,230],[110,196]]),
+    ...par('obliquo','Oblíquo',                  [[94,158],[88,178],[90,208],[98,232],[110,236],[110,196],[112,164]], 'frente'),
+    ...par('iliopsoas','Flexor do quadril (iliopsoas)', [[110,238],[98,252],[94,272],[104,282],[120,278],[124,258],[122,242]], 'frente'),
+    ...par('vasto_lateral','Vasto lateral',      [[94,272],[84,296],[80,330],[84,362],[96,372],[102,336],[104,298]], 'frente'),
+    ...par('reto_femoral','Reto femoral',        [[104,282],[100,308],[100,340],[106,356],[122,356],[124,330],[124,300]], 'frente'),
+    ...par('vasto_medial','Vasto medial',        [[106,356],[102,372],[106,386],[120,388],[126,372],[124,356]], 'frente'),
+    ...par('adutores','Adutor',                  [[126,278],[130,284],[130,346],[122,348],[120,312],[122,284]], 'frente'),
+    ...par('joelho','Joelho (tendão patelar)',   [[88,372],[86,390],[92,404],[110,408],[122,400],[124,384],[110,376],[96,374]], 'frente'),
+    ...par('tibial_ant','Tibial anterior',       [[96,406],[90,436],[88,468],[92,490],[106,492],[110,458],[112,424]], 'frente'),
+    ...par('pe','Tornozelo e pé',                [[92,492],[86,506],[88,516],[116,516],[118,502],[110,492]], 'frente'),
   ],
   costas: [
-    {id:'cervical',       nome:'Cervical',                   f:'rect', x:90,  y:49,  w:20, h:13, r:5},
-    {id:'trapezio_e',     nome:'Trapézio esquerdo',          f:'rect', x:66,  y:64,  w:32, h:20, r:8},
-    {id:'trapezio_d',     nome:'Trapézio direito',           f:'rect', x:102, y:64,  w:32, h:20, r:8},
-    {id:'escapula_e',     nome:'Escápula esquerda',          f:'rect', x:70,  y:88,  w:28, h:34, r:7},
-    {id:'escapula_d',     nome:'Escápula direita',           f:'rect', x:102, y:88,  w:28, h:34, r:7},
-    {id:'lombar',         nome:'Lombar',                     f:'rect', x:76,  y:126, w:48, h:36, r:8},
-    {id:'gluteo_e',       nome:'Glúteo esquerdo',            f:'rect', x:72,  y:164, w:26, h:30, r:10},
-    {id:'gluteo_d',       nome:'Glúteo direito',             f:'rect', x:102, y:164, w:26, h:30, r:10},
-    {id:'post_coxa_e',    nome:'Posterior da coxa esquerda', f:'rect', x:72,  y:196, w:26, h:60, r:10},
-    {id:'post_coxa_d',    nome:'Posterior da coxa direita',  f:'rect', x:102, y:196, w:26, h:60, r:10},
-    {id:'panturrilha_e',  nome:'Panturrilha esquerda',       f:'rect', x:74,  y:258, w:22, h:56, r:9},
-    {id:'panturrilha_d',  nome:'Panturrilha direita',        f:'rect', x:104, y:258, w:22, h:56, r:9},
-    {id:'aquiles_e',      nome:'Tendão de Aquiles esquerdo', f:'rect', x:78,  y:316, w:14, h:20, r:5},
-    {id:'aquiles_d',      nome:'Tendão de Aquiles direito',  f:'rect', x:108, y:316, w:14, h:20, r:5},
+    solo('cervical_post','Cervical (extensores do pescoço)', [[118,70],[142,70],[146,92],[130,96],[114,92]]),
+    ...par('trapezio_sup','Trapézio superior',   [[112,88],[94,96],[78,108],[96,124],[118,112],[126,96]], 'costas'),
+    ...par('deltoide_post','Deltoide posterior', [[78,106],[64,116],[58,134],[60,152],[72,158],[84,142],[88,120]], 'costas'),
+    ...par('trapezio_med','Trapézio médio e romboides', [[96,126],[118,114],[128,122],[128,150],[108,158],[94,148]], 'costas'),
+    ...par('grande_dorsal','Grande dorsal',      [[92,152],[110,160],[128,156],[128,200],[112,214],[96,194],[88,170]], 'costas'),
+    ...par('triceps','Tríceps braquial',         [[70,158],[60,168],[57,190],[60,210],[72,216],[80,196],[82,168]], 'costas'),
+    ...par('antebraco_post','Antebraço (extensores)', [[62,214],[54,236],[50,264],[52,288],[64,292],[72,262],[76,228]], 'costas'),
+    ...par('eretores','Lombar (eretores da espinha)', [[106,210],[124,208],[124,250],[112,254],[104,232]], 'costas'),
+    solo('fascia_toracolombar','Fáscia toracolombar', [[126,208],[134,208],[136,246],[130,258],[124,246]]),
+    ...par('gluteo_med','Glúteo médio',          [[88,244],[104,248],[102,266],[86,266],[82,254]], 'costas'),
+    ...par('gluteo_max','Glúteo máximo',         [[96,254],[120,252],[128,264],[128,292],[112,302],[94,290],[90,270]], 'costas'),
+    ...par('isquiotibiais','Isquiotibiais',      [[92,302],[112,306],[124,302],[124,350],[112,372],[94,366],[88,332]], 'costas'),
+    ...par('poplite','Posterior do joelho',      [[92,370],[122,374],[122,390],[94,390]], 'costas'),
+    ...par('gastrocnemio','Gastrocnêmio',        [[92,392],[122,392],[122,432],[110,448],[94,436],[88,414]], 'costas'),
+    ...par('soleo','Sóleo',                      [[94,442],[118,444],[116,476],[100,478],[94,462]], 'costas'),
+    ...par('aquiles','Tendão de Aquiles',        [[102,480],[116,480],[116,500],[104,500]], 'costas'),
   ]
 };
 const CORPO_NOMES = Object.fromEntries(
   [...CORPO_REGIOES.frente, ...CORPO_REGIOES.costas].map(z=>[z.id, z.nome])
 );
-// Braços de costas são só desenho: a lista do professor não distingue tríceps
-// de bíceps, e deixá-los clicáveis criaria região duplicada com a vista frontal.
+// Cabeça e mãos não entram na lista de queixas — desenho só, para o corpo fechar.
 const CORPO_DECO = {
-  frente: [],
+  frente: [
+    { d: pathSuave([[52,294],[47,312],[52,326],[65,323],[67,302]]) },
+    { d: pathSuave(espelha([[52,294],[47,312],[52,326],[65,323],[67,302]])) },
+  ],
   costas: [
-    {f:'rect', x:46,  y:88, w:20, h:92, r:9},
-    {f:'rect', x:134, y:88, w:20, h:92, r:9},
-    {f:'rect', x:72,  y:338, w:24, h:14, r:5},
-    {f:'rect', x:104, y:338, w:24, h:14, r:5},
+    { d: pathSuave([[52,294],[47,312],[52,326],[65,323],[67,302]]) },
+    { d: pathSuave(espelha([[52,294],[47,312],[52,326],[65,323],[67,302]])) },
+    { d: pathSuave([[98,500],[120,500],[122,514],[94,514]]) },
+    { d: pathSuave(espelha([[98,500],[120,500],[122,514],[94,514]])) },
   ]
 };
 
@@ -4207,10 +4256,43 @@ const ANCORAS = {
         'Bem recuperado','Muito bem recuperado','Totalmente recuperado, cheio de energia'],
   pse: ['Repouso','Muito leve','Leve','Moderado','Pouco intenso','Intenso',
         'Intenso a muito intenso','Muito intenso','Muito intenso','Quase máximo','Máximo'],
-  estresse: ['Nenhum','Quase nenhum','Baixo','Baixo','Leve','Moderado',
-             'Moderado a alto','Alto','Alto','Muito alto','Extremo'],
+  estresse: ['Nenhum','Baixo','Leve','Moderado','Alto','Extremo'],
   dor: ['Nenhuma','Bem leve','Leve','Moderada','Forte','Muito forte'],
+  horas_sono: ['Nenhuma hora','1 hora','2 horas','3 horas','4 horas','5 horas','6 horas',
+               '7 horas','8 horas','9 horas','10 horas','11 horas ou mais'],
+  satisfacao: [null,'Não gostei','Gostei pouco','Foi ok','Gostei','Gostei muito'],
 };
+
+// Em qual direção a escala piora. PSR e horas de sono: quanto maior, melhor.
+const ESCALA_PIOR_PRA_CIMA = { pse:true, estresse:true, dor:true, psr:false, horas_sono:false, satisfacao:false };
+// Vermelho → verde. Cores fixas em vez de token porque precisam do mesmo
+// significado nos dois temas: vermelho é ruim de dia e de noite.
+const RAMPA = ['#d0453f','#dd8a2e','#8b93a6','#3f86cc','#2f9e63'];
+
+function corEscala(campo, valor, min, max){
+  if(campo === 'horas_sono'){ // dormir 11h não é "melhor" que 8h — a faixa boa é no meio
+    return valor < 5 ? RAMPA[0] : valor < 6 ? RAMPA[1] : valor < 7 ? RAMPA[2] : valor < 8 ? RAMPA[3] : RAMPA[4];
+  }
+  const frac = (valor - min) / (max - min);
+  const qualidade = ESCALA_PIOR_PRA_CIMA[campo] ? 1 - frac : frac;
+  return RAMPA[Math.round(qualidade * 4)];
+}
+
+// Rosto desenhado, não emoji: caractere Unicode é redesenhado por cada sistema
+// operacional, então o mesmo código vira um bonequinho diferente em cada celular.
+function faceSVG(qualidade){
+  const n = Math.round(qualidade * 4); // 0 = pior, 4 = melhor
+  const boca = ['M8,20 Q14,13 20,20','M8,19 Q14,15 20,19','M8,17.5 L20,17.5',
+                'M8,16 Q14,21 20,16','M8,15 Q14,22.5 20,15'][n];
+  const sobrancelha = ['M6.5,8.5 L11.5,10.5 M21.5,8.5 L16.5,10.5',
+                       'M6.5,9.5 L11.5,10.5 M21.5,9.5 L16.5,10.5','','',''][n];
+  return `<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true">
+    <circle cx="10" cy="12.5" r="1.1" fill="currentColor" stroke="none"/>
+    <circle cx="18" cy="12.5" r="1.1" fill="currentColor" stroke="none"/>
+    ${sobrancelha?`<path d="${sobrancelha}"/>`:''}
+    <path d="${boca}"/>
+  </svg>`;
+}
 
 let qRespostas   = {};
 let dorRegioes   = new Set();
@@ -4218,13 +4300,21 @@ let bodyMapLado  = 'frente';
 let sessaoAtiva  = null;
 let alunoPesaTreino = false;
 
+// Até 6 opções cabe um rosto em cada tecla, que é o que o aluno lê sem pensar.
+// Acima disso o rosto fica pequeno demais e o número comunica melhor — é o caso
+// de PSR e PSE, que continuam 0–10 porque é a escala em que foram validadas.
 function qEscala(campo, min, max){
+  const anc = ANCORAS[campo];
+  const usaRosto = (max - min) <= 5;
   let bts = '';
   for(let i=min;i<=max;i++){
-    bts += `<button type="button" id="q-${campo}-${i}" onclick="qSetValor('${campo}',${i})">${i}</button>`;
+    const cor = corEscala(campo, i, min, max);
+    const q = ESCALA_PIOR_PRA_CIMA[campo] ? 1 - (i-min)/(max-min) : (i-min)/(max-min);
+    bts += `<button type="button" id="q-${campo}-${i}" data-cor="1" style="--cor:${cor}"
+      onclick="qSetValor('${campo}',${i})" aria-label="${escHtml(anc? anc[i] : String(i))}"
+      title="${escHtml(anc? anc[i] : String(i))}">${usaRosto ? faceSVG(q) : i}</button>`;
   }
-  const anc = ANCORAS[campo];
-  return `<div class="q-scale">${bts}</div>
+  return `<div class="${usaRosto?'q-faces':'q-scale'}">${bts}</div>
     <div class="q-anchors"><span>${anc?escHtml(anc[min]):min}</span><span>${anc?escHtml(anc[max]):max}</span></div>
     <div class="q-anchor-sel" id="q-${campo}-sel"></div>`;
 }
@@ -4236,7 +4326,10 @@ function qSetValor(campo, valor){
     if(b.tagName==='BUTTON') b.classList.toggle('on', b.id === `q-${campo}-${valor}`);
   });
   const sel = document.getElementById(`q-${campo}-sel`);
-  if(sel) sel.textContent = anc ? anc[valor] : '';
+  if(sel){
+    sel.textContent = anc ? anc[valor] : '';
+    sel.style.color = document.getElementById(`q-${campo}-${valor}`)?.style.getPropertyValue('--cor') || '';
+  }
   if(campo === 'dor') atualizaVisibilidadeMapaDor();
 }
 
@@ -4250,9 +4343,23 @@ function qCard(titulo, dica, conteudo){
 
 /* ── Mapa corporal ───────────────────────────────────────────── */
 function bodyShapeSVG(z, classe){
-  const extra = classe==='zona' ? ` class="zona${dorRegioes.has(z.id)?' on':''}" onclick="toggleDorRegiao('${jsAttr(z.id)}')"><title>${escHtml(z.nome)}</title>` : ` class="deco">`;
-  if(z.f==='ellipse') return `<ellipse cx="${z.cx}" cy="${z.cy}" rx="${z.rx}" ry="${z.ry}"${extra}</ellipse>`;
-  return `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="${z.r}"${extra}</rect>`;
+  if(classe !== 'zona') return `<path class="deco" d="${z.d}"/>`;
+  return `<path class="zona${dorRegioes.has(z.id)?' on':''}" d="${z.d}"
+    onclick="toggleDorRegiao('${jsAttr(z.id)}')" role="button" tabindex="0"
+    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDorRegiao('${jsAttr(z.id)}')}"
+    ><title>${escHtml(z.nome)}</title></path>`;
+}
+
+function bodyMapCabeca(){
+  return `<ellipse class="deco" cx="130" cy="40" rx="26" ry="33"/>`;
+}
+
+// "Esq." e "Dir." são do ALUNO. Sem esse rótulo, de frente a pessoa marca o
+// lado trocado, porque a imagem está espelhada em relação ao corpo dela.
+function bodyMapLegendaLados(vista){
+  const esqNaEsquerda = vista === 'costas';
+  return `<text class="body-map-lado" x="14" y="118">${esqNaEsquerda?'Esq.':'Dir.'}</text>
+          <text class="body-map-lado" x="246" y="118" text-anchor="end">${esqNaEsquerda?'Dir.':'Esq.'}</text>`;
 }
 
 function renderBodyMap(){
@@ -4267,14 +4374,13 @@ function renderBodyMap(){
       <button type="button" class="${bodyMapLado==='frente'?'on':''}" onclick="setBodyMapLado('frente')">Frente</button>
       <button type="button" class="${bodyMapLado==='costas'?'on':''}" onclick="setBodyMapLado('costas')">Costas</button>
     </div>
-    <svg class="body-map" viewBox="0 0 200 360" role="group" aria-label="Mapa do corpo: toque onde dói">
-      <circle class="deco" cx="100" cy="30" r="21"/>
-      ${deco}${zonas}
+    <svg class="body-map" viewBox="0 0 ${CORPO_W} ${CORPO_H}" role="group" aria-label="Mapa do corpo: toque no músculo onde dói">
+      ${bodyMapCabeca()}${deco}${zonas}${bodyMapLegendaLados(bodyMapLado)}
     </svg>
     <div class="body-map-sel">${
       selecionadas.length
         ? selecionadas.map(id=>`<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)}</span>`).join('')
-        : '<span class="body-map-vazio">Toque no corpo para marcar onde dói. Pode marcar mais de um lugar, na frente e nas costas.</span>'
+        : '<span class="body-map-vazio">Toque no músculo onde dói. Pode marcar mais de um, na frente e nas costas.</span>'
     }</div>`;
 }
 
@@ -4306,7 +4412,7 @@ async function renderPreTreino(){
     qCard('Como está sua recuperação para treinar hoje?',
           'Pense no corpo todo, comparando com um dia em que você se sente 100%.',
           qEscala('psr', 0, 10)) +
-    qCard('Como está seu nível de estresse hoje?', null, qEscala('estresse', 0, 10)) +
+    qCard('Como está seu nível de estresse hoje?', null, qEscala('estresse', 0, 5)) +
     qCard('Está sentindo alguma dor?', null, qEscala('dor', 0, 5)) +
     `<div class="q-card" id="card-mapa-dor" hidden>
       <div class="q-label">Onde dói?</div>
@@ -4398,11 +4504,7 @@ async function renderPosTreino(){
     qCard('Quanto tempo durou?',
           'Já vem preenchido pelo relógio. Ajuste se não bater.',
           `<input type="number" inputmode="numeric" id="q-duracao" value="${minutos}" min="1" max="600"> <span class="q-hint" style="margin:6px 0 0">minutos</span>`) +
-    qCard('O que você achou do treino?', null,
-      `<div class="q-smileys">${
-        [[1,'😞'],[2,'😕'],[3,'😐'],[4,'🙂'],[5,'😄']].map(([v,e])=>
-          `<button type="button" id="q-satisfacao-${v}" onclick="qSetValor('satisfacao',${v})" aria-label="Nota ${v} de 5">${e}</button>`
-        ).join('')}</div>`) +
+    qCard('O que você achou do treino?', null, qEscala('satisfacao', 1, 5)) +
     (alunoPesaTreino ? qCard('Peso depois do treino', 'Opcional.',
       `<input type="number" step="0.1" inputmode="decimal" id="q-peso-pos" placeholder="kg">`) : '') +
     qCard('Quer registrar mais alguma coisa?', 'Opcional.',
