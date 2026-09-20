@@ -6110,11 +6110,15 @@ async function reactivarFichasAntigas(cpf, studentId, studentName) {
   if(!sb) return;
   const ok = await showAppConfirm(`Vincular as fichas antigas de anamnese ao cadastro atual de ${studentName}?`);
   if(!ok) return;
-  const { error } = await sb.from('anamnese_responses')
-    .update({ student_id: studentId })
-    .eq('professor_id', currentUser.id).eq('student_cpf', cpf).is('student_id', null);
+  // Vai por RPC: o RLS de anamnese_responses só permite UPDATE do próprio aluno,
+  // e estas fichas estão órfãs (student_id nulo), então o professor não alcança
+  // nenhuma linha daqui. O retorno é a contagem, pra não anunciar sucesso à toa.
+  const { data: vinculadas, error } = await sb.rpc('link_orphan_anamnese', {
+    p_cpf: cpf, p_student_id: studentId
+  });
   if(error){ showToast('❌ Erro ao reativar fichas: '+error.message); return; }
-  showToast('✅ Fichas antigas vinculadas!');
+  if(!vinculadas){ showToast('Nenhuma ficha antiga encontrada para esse CPF.'); return; }
+  showToast(`✅ ${vinculadas} ficha${vinculadas>1?'s':''} vinculada${vinculadas>1?'s':''}!`);
   renderProfAnamnese();
 }
 
