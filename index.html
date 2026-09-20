@@ -1199,6 +1199,45 @@ img { max-width: 100%; display: block; }
 .msg-card.bom     { background: var(--good-bg); border-color: transparent; color: var(--good); }
 .msg-card.ok      { background: var(--surface-alt); }
 .msg-card.atencao { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
+
+/* ─── GRUPOS E TURMAS ─────────────────────────────────────────── */
+.grupo-row { border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.grupo-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; cursor: pointer; }
+.grupo-nome { font-weight: 700; font-size: .92rem; }
+.grupo-sub { font-size: .76rem; color: var(--muted); }
+.grupo-chev { color: var(--muted); transition: transform .15s; display: inline-block; }
+.grupo-chev.on { transform: rotate(180deg); }
+.grupo-corpo { padding: 0 14px 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.grupo-membros { display: flex; flex-wrap: wrap; gap: 6px; }
+.membro-chip { font-size: .78rem; font-weight: 600; padding: 7px 12px; border-radius: 999px;
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--ink-2); }
+.membro-chip.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.grade-dia { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.grade-dia-nome { flex: 0 0 74px; font-size: .8rem; font-weight: 700; color: var(--ink-2); }
+.grade-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.grade-slot { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 700;
+  padding: 5px 6px 5px 11px; border-radius: 999px; background: rgba(52,106,172,.12); color: var(--pine); }
+.grade-slot button { color: var(--pine); opacity: .6; font-size: 1rem; line-height: 1; padding: 0 4px; }
+.grade-slot button:hover { opacity: 1; }
+.grade-vazio { color: var(--muted); font-size: .8rem; }
+.grade-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
+.grade-add > * { flex: 0 1 auto; }
+.grade-add input[type="time"], .grade-add .select-wrap { max-width: 150px; }
+.turma-bloco { border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px; margin-bottom: 10px; }
+.turma-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap; margin-bottom: 12px; }
+.turma-hora { font-family: var(--font-d); font-weight: 800; font-size: 1.1rem; }
+.turma-resumo { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.turma-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+.presenca-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600;
+  padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--ink-2); }
+.presenca-chip.on { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.presenca-marca { width: .8em; font-weight: 800; }
+.presenca-psr { font-size: .7rem; opacity: .75; font-weight: 700; }
+.turma-nota { font-size: .74rem; color: var(--muted); line-height: 1.6; margin-top: 12px; }
 .mt-rest-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pine); }
 .mt-load-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .mt-load-input { width: 90px; font-size: .88rem; padding: 8px 10px; }
@@ -2045,6 +2084,7 @@ img { max-width: 100%; display: block; }
         <button class="admin-tab active" id="ptab-visao" onclick="showProfTab('visao')">Visão Geral</button>
         <button class="admin-tab" id="ptab-alunos" onclick="showProfTab('alunos')">Alunos</button>
         <button class="admin-tab" id="ptab-treino" data-modulo="montagemTreino" onclick="showProfTab('treino')">Treino</button>
+        <button class="admin-tab" id="ptab-turmas" onclick="showProfTab('turmas')">Turmas</button>
         <button class="admin-tab" id="ptab-agendamentos" onclick="showProfTab('agendamentos')">Agendamentos</button>
         <button class="admin-tab" id="ptab-disponibilidade" onclick="showProfTab('disponibilidade')">Disponibilidade</button>
         <button class="admin-tab" id="ptab-anamnese" onclick="showProfTab('anamnese')">Anamnese</button>
@@ -2134,6 +2174,12 @@ img { max-width: 100%; display: block; }
                   <option value="M">Masculino</option>
                 </select>
               </div>
+              <div style="flex:1;min-width:160px">
+                <label>Grupo (opcional)</label>
+                <div class="select-wrap"><select id="new-aluno-grupo">
+                  <option value="">Sem grupo</option>
+                </select></div>
+              </div>
             </div>
             <button class="btn-primary" onclick="cadastrarAluno()"
               id="cadastrar-aluno-btn" style="justify-content:center">
@@ -2149,9 +2195,47 @@ img { max-width: 100%; display: block; }
             <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 21c0-3.4 2.9-5.5 6-5.5s6 2.1 6 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M15 15.3c2.6.4 4.5 2.2 4.5 5.7"/></svg></span>
             Meus Alunos
           </div>
+          <div class="div-tabs" id="prof-alunos-filtro"></div>
           <div id="prof-alunos-list">
             <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Turmas: grupos de alunos, grade de horários, presença e painel do grupo -->
+      <div id="prof-tab-turmas" hidden>
+        <div class="dash-card" style="margin-bottom:20px">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.1 2.7-5 6-5s6 1.9 6 5"/><path d="M16 14.5c2.4.4 4 2 4 5"/></svg></span>
+            Grupos
+          </div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">
+            Um aluno pode estar em mais de um grupo. Use os grupos para filtrar sua lista e para ler as métricas por turma.
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <input type="text" id="novo-grupo-nome" placeholder="Nome do grupo (ex: Funcional)" style="flex:1;min-width:180px">
+            <button class="btn-primary" style="font-size:.85rem;padding:10px 18px" onclick="criarGrupo()">Criar grupo</button>
+          </div>
+          <div id="lista-grupos"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+        </div>
+
+        <div class="dash-card" style="margin-bottom:20px">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+            Grade de horários
+          </div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">
+            Os horários fixos das turmas. Não há agendamento nem vaga — o horário existe e o aluno aparece.
+          </p>
+          <div id="grade-turmas"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-card-title">
+            <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></span>
+            Aula de hoje
+          </div>
+          <div id="turma-hoje"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
         </div>
       </div>
 
@@ -4312,6 +4396,8 @@ let dorRegioes   = new Set();
 let bodyMapLado  = 'frente';
 let sessaoAtiva  = null;
 let alunoPesaTreino = false;
+let checkinSlots = [];
+let checkinSlotId = null;
 
 // Até 6 opções cabe um rosto em cada tecla, que é o que o aluno lê sem pensar.
 // Acima disso o rosto fica pequeno demais e o número comunica melhor — é o caso
@@ -4413,6 +4499,44 @@ function atualizaVisibilidadeMapaDor(){
 }
 
 /* ── Pré-treino ──────────────────────────────────────────────── */
+// Quem treina em turma não agenda nada, então o sistema descobre de qual aula
+// é o check-in pelo relógio — e deixa o aluno corrigir, porque quem chega 20
+// minutos adiantado cairia na aula errada.
+async function carregarTurmasDeHoje(){
+  const agora = new Date();
+  const { data } = await sb.from('class_slots').select('*')
+    .eq('weekday', agora.getDay()).eq('ativo', true).order('hora');
+  checkinSlots = data || [];
+  checkinSlotId = null;
+  if(!checkinSlots.length) return;
+
+  const agoraMin = agora.getHours()*60 + agora.getMinutes();
+  let menor = Infinity;
+  checkinSlots.forEach(s=>{
+    const [h,m] = s.hora.split(':').map(Number);
+    const dist = Math.abs(h*60 + m - agoraMin);
+    if(dist < menor){ menor = dist; checkinSlotId = s.id; }
+  });
+}
+
+function qCardTurma(){
+  if(!checkinSlots.length) return '';
+  return `<div class="q-card">
+    <div class="q-label">Qual aula?</div>
+    <div class="q-hint">Já veio marcada pelo horário. Toque em outra se não for essa.</div>
+    <div class="turma-lista">${checkinSlots.map(s=>`
+      <button type="button" class="presenca-chip ${s.id===checkinSlotId?'on':''}" id="slot-${escHtml(s.id)}"
+        onclick="escolherTurmaCheckin('${jsAttr(s.id)}')">${escHtml(s.hora)}</button>`).join('')}</div>
+  </div>`;
+}
+
+function escolherTurmaCheckin(id){
+  checkinSlotId = id;
+  checkinSlots.forEach(s=>{
+    document.getElementById(`slot-${s.id}`)?.classList.toggle('on', s.id === id);
+  });
+}
+
 async function renderPreTreino(){
   const el = document.getElementById('pre-form');
   if(!el || !currentUser || !sb) return;
@@ -4420,8 +4544,9 @@ async function renderPreTreino(){
 
   const { data: aluno } = await sb.from('students').select('track_weight').eq('id', currentUser.id).maybeSingle();
   alunoPesaTreino = !!aluno?.track_weight;
+  await carregarTurmasDeHoje();
 
-  el.innerHTML =
+  el.innerHTML = qCardTurma() +
     qCard('Como está sua recuperação para treinar hoje?',
           'Pense no corpo todo, comparando com um dia em que você se sente 100%.',
           qEscala('psr', 0, 10)) +
@@ -4467,6 +4592,7 @@ async function submitPreTreino(){
     student_id: currentUser.id,
     professor_id: aluno.professor_id,
     booking_id: bk?.id || null,
+    class_slot_id: checkinSlotId,
     psr: qRespostas.psr, estresse: qRespostas.estresse,
     dor: qRespostas.dor, horas_sono: qRespostas.horas_sono,
     peso_pre: isFinite(pesoPre) ? pesoPre : null,
@@ -4599,6 +4725,265 @@ async function renderCheckin(){
       </p>
       <button class="btn-ghost" style="margin-top:14px;font-size:.82rem;padding:9px 16px" onclick="openEvolucao()">Ver minha evolução →</button>
     </div>`;
+}
+
+/* ── GRUPOS E TURMAS ───────────────────────────────────────────
+   Grupo é o rótulo do aluno (personal, funcional, o que o professor criar).
+   Turma é um horário fixo da grade. Não há agendamento nem vaga: o horário
+   existe e o aluno aparece — a presença vem do check-in dele. */
+const DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+let gruposCache = [];
+let profGrupoFiltro = null;
+let grupoAberto = null;
+
+async function carregarGrupos(){
+  if(!sb || !currentUser) return [];
+  const { data } = await sb.from('student_groups').select('*')
+    .eq('professor_id', currentUser.id).order('ordem').order('nome');
+  gruposCache = data || [];
+  return gruposCache;
+}
+
+function renderFiltroGrupos(){
+  const el = document.getElementById('prof-alunos-filtro');
+  if(!el) return;
+  if(!gruposCache.length){ el.innerHTML = ''; return; }
+  el.innerHTML = `<button class="div-tab ${!profGrupoFiltro?'on':''}" onclick="setGrupoFiltro(null)">Todos</button>` +
+    gruposCache.map(g=>`<button class="div-tab ${profGrupoFiltro===g.id?'on':''}"
+      onclick="setGrupoFiltro('${jsAttr(g.id)}')">${escHtml(g.nome)}</button>`).join('');
+}
+
+function setGrupoFiltro(id){ profGrupoFiltro = id; loadProfAlunos(); }
+
+async function popularSelectGrupos(){
+  const sel = document.getElementById('new-aluno-grupo');
+  if(!sel) return;
+  sel.innerHTML = `<option value="">Sem grupo</option>` +
+    gruposCache.map(g=>`<option value="${escHtml(g.id)}">${escHtml(g.nome)}</option>`).join('');
+}
+
+async function criarGrupo(){
+  const inp = document.getElementById('novo-grupo-nome');
+  const nome = (inp?.value||'').trim();
+  if(!nome){ showToast('❌ Dê um nome ao grupo.'); return; }
+  const { error } = await sb.from('student_groups')
+    .insert({ professor_id: currentUser.id, nome, ordem: gruposCache.length });
+  if(error){
+    showToast(error.code === '23505' ? '❌ Já existe um grupo com esse nome.' : '❌ '+error.message);
+    return;
+  }
+  inp.value = '';
+  await carregarGrupos(); renderListaGrupos(); popularSelectGrupos(); renderGradeTurmas();
+  showToast('✅ Grupo criado.');
+}
+
+async function excluirGrupo(id, nome){
+  if(!await showAppConfirm(`Excluir o grupo "${nome}"? Os alunos continuam cadastrados — só perdem esse rótulo. Os horários da grade ligados a ele também saem.`)) return;
+  const { error } = await sb.from('student_groups').delete().eq('id', id);
+  if(error){ showToast('❌ '+error.message); return; }
+  if(profGrupoFiltro === id) profGrupoFiltro = null;
+  if(grupoAberto === id) grupoAberto = null;
+  await carregarGrupos(); renderListaGrupos(); popularSelectGrupos(); renderGradeTurmas();
+  showToast('✅ Grupo excluído.');
+}
+
+async function renderListaGrupos(){
+  const el = document.getElementById('lista-grupos');
+  if(!el) return;
+  if(!gruposCache.length){
+    el.innerHTML = `<p style="color:var(--muted);font-size:.88rem">Nenhum grupo ainda. Crie o primeiro acima — por exemplo "Personal" e "Funcional".</p>`;
+    return;
+  }
+
+  const { data: membros } = await sb.from('student_group_members').select('group_id, student_id');
+  const porGrupo = {};
+  (membros||[]).forEach(m=>{ (porGrupo[m.group_id] ||= []).push(m.student_id); });
+
+  el.innerHTML = gruposCache.map(g=>{
+    const n = (porGrupo[g.id]||[]).length;
+    return `<div class="grupo-row">
+      <div class="grupo-head" onclick="abrirGrupo('${jsAttr(g.id)}')">
+        <div>
+          <div class="grupo-nome">${escHtml(g.nome)}</div>
+          <div class="grupo-sub">${n} ${n===1?'aluno':'alunos'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn-ghost" style="font-size:.76rem;padding:6px 12px"
+            onclick="event.stopPropagation();excluirGrupo('${jsAttr(g.id)}','${jsAttr(g.nome)}')">Excluir</button>
+          <span class="grupo-chev ${grupoAberto===g.id?'on':''}">▾</span>
+        </div>
+      </div>
+      ${grupoAberto===g.id ? `<div class="grupo-corpo" id="grupo-membros-${escHtml(g.id)}">
+        <p style="color:var(--muted);font-size:.85rem">Carregando alunos…</p></div>` : ''}
+    </div>`;
+  }).join('');
+
+  if(grupoAberto) renderMembrosGrupo(grupoAberto);
+}
+
+function abrirGrupo(id){
+  grupoAberto = grupoAberto === id ? null : id;
+  renderListaGrupos();
+}
+
+async function renderMembrosGrupo(groupId){
+  const el = document.getElementById(`grupo-membros-${groupId}`);
+  if(!el) return;
+  const { data: alunos } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
+  if(!alunos?.length){ el.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Você ainda não tem alunos ativos.</p>'; return; }
+
+  const perfis = await Promise.all(alunos.map(a=>sb.from('profiles').select('full_name').eq('id',a.id).maybeSingle()));
+  const { data: membros } = await sb.from('student_group_members').select('student_id').eq('group_id', groupId);
+  const dentro = new Set((membros||[]).map(m=>m.student_id));
+
+  const linhas = alunos.map((a,i)=>({ id:a.id, nome: perfis[i]?.data?.full_name || 'Aluno', dentro: dentro.has(a.id) }))
+    .sort((x,y)=> x.nome.localeCompare(y.nome));
+
+  el.innerHTML = `<p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Toque para incluir ou tirar do grupo.</p>
+    <div class="grupo-membros">${linhas.map(l=>`
+      <button type="button" class="membro-chip ${l.dentro?'on':''}"
+        onclick="alternarMembro('${jsAttr(groupId)}','${jsAttr(l.id)}',${l.dentro})">${escHtml(l.nome)}</button>`).join('')}</div>`;
+}
+
+async function alternarMembro(groupId, studentId, estaDentro){
+  const q = estaDentro
+    ? sb.from('student_group_members').delete().eq('group_id', groupId).eq('student_id', studentId)
+    : sb.from('student_group_members').insert({ group_id: groupId, student_id: studentId });
+  const { error } = await q;
+  if(error){ showToast('❌ '+error.message); return; }
+  await renderListaGrupos();
+}
+
+/* ── Grade de horários ───────────────────────────────────────── */
+async function renderGradeTurmas(){
+  const el = document.getElementById('grade-turmas');
+  if(!el || !sb) return;
+  const { data: slots } = await sb.from('class_slots').select('*')
+    .eq('professor_id', currentUser.id).order('weekday').order('hora');
+
+  const porDia = {};
+  (slots||[]).forEach(s=>{ (porDia[s.weekday] ||= []).push(s); });
+  const nomeGrupo = id => gruposCache.find(g=>g.id===id)?.nome || 'sem grupo';
+
+  const dias = [1,2,3,4,5,6,0].map(d=>{
+    const lista = porDia[d] || [];
+    return `<div class="grade-dia">
+      <div class="grade-dia-nome">${DIAS_SEMANA[d]}</div>
+      <div class="grade-slots">
+        ${lista.map(s=>`<span class="grade-slot" title="${escHtml(nomeGrupo(s.group_id))} · ${s.duracao_min} min">
+          ${escHtml(s.hora)}
+          <button onclick="excluirTurma('${jsAttr(s.id)}')" aria-label="Remover horário">×</button>
+        </span>`).join('') || '<span class="grade-vazio">—</span>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = dias + `
+    <div class="grade-add">
+      <div class="select-wrap"><select id="turma-dia">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}">${DIAS_SEMANA[d]}</option>`).join('')}</select></div>
+      <input type="time" id="turma-hora" value="06:00">
+      <div class="select-wrap"><select id="turma-grupo">${gruposCache.map(g=>`<option value="${escHtml(g.id)}">${escHtml(g.nome)}</option>`).join('') || '<option value="">Crie um grupo antes</option>'}</select></div>
+      <input type="number" id="turma-duracao" value="60" min="10" max="300" style="max-width:90px" title="Duração em minutos">
+      <button class="btn-primary" style="font-size:.82rem;padding:9px 16px" onclick="criarTurma()">Adicionar</button>
+    </div>`;
+}
+
+async function criarTurma(){
+  const weekday = parseInt(document.getElementById('turma-dia')?.value, 10);
+  const hora = document.getElementById('turma-hora')?.value;
+  const group_id = document.getElementById('turma-grupo')?.value || null;
+  const duracao_min = parseInt(document.getElementById('turma-duracao')?.value, 10) || 60;
+  if(!hora){ showToast('❌ Informe o horário.'); return; }
+  if(!group_id){ showToast('❌ Crie um grupo antes de montar a grade.'); return; }
+
+  const { error } = await sb.from('class_slots')
+    .insert({ professor_id: currentUser.id, group_id, weekday, hora, duracao_min });
+  if(error){
+    showToast(error.code === '23505' ? '❌ Já existe um horário nesse dia e hora.' : '❌ '+error.message);
+    return;
+  }
+  renderGradeTurmas(); renderTurmaHoje();
+  showToast('✅ Horário adicionado.');
+}
+
+async function excluirTurma(id){
+  if(!await showAppConfirm('Remover esse horário da grade? As presenças já registradas continuam no histórico.')) return;
+  const { error } = await sb.from('class_slots').delete().eq('id', id);
+  if(error){ showToast('❌ '+error.message); return; }
+  renderGradeTurmas(); renderTurmaHoje();
+}
+
+/* ── Aula de hoje: presença e termômetro da turma ────────────── */
+async function renderTurmaHoje(){
+  const el = document.getElementById('turma-hoje');
+  if(!el || !sb || !currentUser) return;
+
+  const hoje = new Date();
+  const hojeStr = dateToStr(hoje);
+  const { data: slots } = await sb.from('class_slots').select('*')
+    .eq('professor_id', currentUser.id).eq('weekday', hoje.getDay()).eq('ativo', true).order('hora');
+
+  if(!slots?.length){
+    el.innerHTML = `<p style="color:var(--muted);font-size:.88rem">Nenhuma turma marcada para ${DIAS_SEMANA[hoje.getDay()].toLowerCase()} na sua grade.</p>`;
+    return;
+  }
+
+  const { data: sessoes } = await sb.from('training_sessions')
+    .select('*, session_pain_points(region)')
+    .eq('professor_id', currentUser.id).gte('started_at', hojeStr + 'T00:00:00');
+
+  const blocos = [];
+  for(const slot of slots){
+    const { data: membros } = await sb.from('student_group_members').select('student_id').eq('group_id', slot.group_id);
+    const ids = (membros||[]).map(m=>m.student_id);
+    if(!ids.length){ blocos.push(`<div class="turma-bloco"><div class="turma-hora">${escHtml(slot.hora)}</div>
+      <p style="color:var(--muted);font-size:.85rem">Nenhum aluno nesse grupo ainda.</p></div>`); continue; }
+
+    const perfis = await Promise.all(ids.map(id=>sb.from('profiles').select('full_name').eq('id',id).maybeSingle()));
+    const daTurma = (sessoes||[]).filter(s=> ids.includes(s.student_id) && s.class_slot_id === slot.id);
+    const porAluno = Object.fromEntries(daTurma.map(s=>[s.student_id, s]));
+
+    const presentes = daTurma.length;
+    const psrs = daTurma.filter(s=>s.psr!=null).map(s=>s.psr);
+    const media = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '—';
+
+    const linhas = ids.map((id,i)=>{
+      const nome = perfis[i]?.data?.full_name || 'Aluno';
+      const s = porAluno[id];
+      const veio = !!s;
+      const porProfessor = s?.origem === 'professor';
+      return { id, nome, s, veio, porProfessor };
+    }).sort((a,b)=> a.nome.localeCompare(b.nome));
+
+    blocos.push(`<div class="turma-bloco">
+      <div class="turma-head">
+        <div class="turma-hora">${escHtml(slot.hora)}</div>
+        <div class="turma-resumo">${presentes} de ${ids.length} presentes${psrs.length?` · PSR médio ${media(psrs)}`:''}</div>
+      </div>
+      <div class="turma-lista">${linhas.map(l=>`
+        <button type="button" class="presenca-chip ${l.veio?'on':''}"
+          onclick="alternarPresenca('${jsAttr(l.id)}','${jsAttr(slot.id)}','${hojeStr}','${jsAttr(l.s?.id||'')}',${l.porProfessor})"
+          title="${l.veio ? (l.porProfessor ? 'Marcado por você — toque para desfazer' : 'Fez check-in') : 'Toque para marcar presença'}">
+          <span class="presenca-marca">${l.veio ? '✓' : ''}</span>${escHtml(l.nome)}${
+            l.s && l.s.psr!=null ? `<span class="presenca-psr">PSR ${l.s.psr}</span>` : ''}
+        </button>`).join('')}</div>
+      <p class="turma-nota">Quem fez check-in já aparece marcado. Toque em quem treinou e esqueceu de responder — isso registra a presença, sem inventar respostas de questionário.</p>
+    </div>`);
+  }
+
+  el.innerHTML = blocos.join('');
+}
+
+async function alternarPresenca(studentId, slotId, data, sessionId, porProfessor){
+  if(sessionId && !porProfessor){
+    showToast('Esse aluno fez o check-in — a presença dele vem da resposta e não se apaga aqui.');
+    return;
+  }
+  const { error } = sessionId
+    ? await sb.rpc('desmarcar_presenca', { p_session_id: sessionId })
+    : await sb.rpc('marcar_presenca', { p_student_id: studentId, p_class_slot_id: slotId, p_data: data });
+  if(error){ showToast('❌ '+error.message); return; }
+  renderTurmaHoje();
 }
 
 /* ── Page routing ─────────────────────────────────────────────── */
@@ -6927,13 +7312,14 @@ async function loadProfDashboard() {
 
 /* ── Professor tabs ───────────────────────────────────────────── */
 function showProfTab(tab) {
-  ['visao','alunos','treino','agendamentos','disponibilidade','anamnese','perfil'].forEach(t=>{
+  ['visao','alunos','turmas','treino','agendamentos','disponibilidade','anamnese','perfil'].forEach(t=>{
     const el = document.getElementById('prof-tab-'+t);
     const btn = document.getElementById('ptab-'+t);
     if(el) el.hidden = t!==tab;
     if(btn) btn.classList.toggle('active', t===tab);
   });
-  if(tab==='alunos') loadProfAlunos();
+  if(tab==='alunos') carregarGrupos().then(()=>{ popularSelectGrupos(); loadProfAlunos(); });
+  if(tab==='turmas') carregarGrupos().then(()=>{ renderListaGrupos(); renderGradeTurmas(); renderTurmaHoje(); });
   if(tab==='treino'){ loadExerciseLibrary(); populateTreinoAlunoSelect(); }
   if(tab==='agendamentos') {
     loadProfAllBookings();
@@ -8984,6 +9370,7 @@ async function cadastrarAluno() {
   const phone  = (document.getElementById('new-aluno-phone')?.value||'').trim();
   const phoneCountry = phoneFieldState['new-aluno-phone']?.d || '55';
   const gender = (document.getElementById('new-aluno-gender')?.value||'').trim();
+  const grupo  = (document.getElementById('new-aluno-grupo')?.value||'').trim();
   const btn    = document.getElementById('cadastrar-aluno-btn');
   const result = document.getElementById('cadastrar-aluno-result');
 
@@ -9003,6 +9390,8 @@ async function cadastrarAluno() {
     phone: phone || null,
     phone_country: phoneCountry,
     gender: gender || null,
+    // O grupo viaja no pré-cadastro e vira vínculo quando a conta é criada
+    group_id: grupo || null,
     professor_id: currentUser.id
   });
 
@@ -9048,9 +9437,18 @@ async function loadProfAlunos() {
   if(!el||!sb) return;
   el.innerHTML='<p style="color:var(--muted);font-size:.88rem">Carregando…</p>';
 
+  renderFiltroGrupos();
+
   // Alunos ativos (já fizeram o primeiro login)
-  const { data: students } = await sb.from('students')
+  let { data: students } = await sb.from('students')
     .select('id').eq('professor_id', currentUser.id);
+
+  if(profGrupoFiltro){
+    const { data: membros } = await sb.from('student_group_members')
+      .select('student_id').eq('group_id', profGrupoFiltro);
+    const doGrupo = new Set((membros||[]).map(m=>m.student_id));
+    students = (students||[]).filter(s=>doGrupo.has(s.id));
+  }
 
   // Alunos pendentes (cadastrados mas nunca logaram)
   const { data: pending } = await sb.from('pending_registrations')
