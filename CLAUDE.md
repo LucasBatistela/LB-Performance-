@@ -112,6 +112,32 @@ per student.
    the professor gets monotonia, strain, z-score badges and raw per-session answers; the student gets
    frequency, load progression and plain-Portuguese sentences. Keep that split when adding to either.
 
+## Módulos desligados
+
+`MODULOS` (in the main script) is a product switch, not a removal: training-plan building, chat and load
+progression are hidden from navigation while their code and data stay put. `aplicarModulos()` hides every
+`[data-modulo]` entry point at boot and `showPage()` blocks the routes. Turning one back on is flipping the
+constant. **`progressaoCarga` depends on `montagemTreino`** — without a built exercise there is no load to log,
+so they travel together.
+
+## Grupos e turmas
+
+The professor runs 1:1 personal training *and* a functional studio in the same account. `student_groups` are
+his own labels (not a fixed enum — he intends to add more), a student can be in several, and the group can be
+picked at pre-registration (it rides on `pending_registrations.group_id` and materializes in
+`recover_student_profile` / `link_google_student_signup`) or assigned later on the Turmas tab.
+
+`class_slots` models the studio as it actually works: **no booking and no capacity** — the slot exists and
+students show up. The student's check-in figures out which class it belongs to from the clock, with an option
+to correct it. Attendance comes from that check-in; `marcar_presenca` lets the professor add whoever trained
+and forgot to answer, tagged `origem = 'professor'` so it registers presence without inventing PSR/PSE answers.
+The reverse is deliberately blocked — a student's check-in is their data and is not deleted from a roll call.
+
+**Watch for RLS recursion here.** `student_groups` and `student_group_members` reference each other, and naive
+policies deadlock with `infinite recursion detected in policy`. `e_membro_do_grupo()` is `SECURITY DEFINER` for
+exactly that reason: it reads membership without triggering RLS. Any new policy spanning these two tables
+should go through it rather than re-querying the other table directly.
+
 ## Rendering user text
 
 Anything a student can type reaches the professor's screen: their own `full_name`, their anamnese answers, and
