@@ -957,6 +957,10 @@ img { max-width: 100%; display: block; }
   font-weight: 800; font-size: 1.3rem; color: var(--ink); letter-spacing: -.01em; margin-bottom: 22px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .compact-page-title .icon-inline { width: 24px; height: 24px; color: var(--pine); flex-shrink: 0; }
+/* Sem min-width:0 o item flex não encolhe abaixo do próprio texto, e o
+   text-overflow acima nunca chega a valer — nomes longos de aluno vazavam
+   pra fora da tela em vez de virar reticências. */
+.compact-page-title > span:not(.icon-inline) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 640px) { .compact-page-title { font-size: 1.1rem; margin-bottom: 18px; } }
 
 .dash-section-label { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
@@ -1060,6 +1064,29 @@ img { max-width: 100%; display: block; }
 .mt-rest-bar-wrap { height: 10px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin-top: 6px; }
 .mt-rest-bar { display: block; height: 100%; background: var(--pine); border-radius: 999px; width: 0%; transition: width 1s linear; }
 .mt-rest-row { display: flex; align-items: center; justify-content: space-between; font-size: .82rem; }
+
+/* ─── EVOLUÇÃO (progressão de carga) ──────────────────────────── */
+.evo-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.evo-stat { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.evo-stat .n { font-family: var(--font-d); font-size: 1.35rem; font-weight: 800; line-height: 1.1; }
+.evo-stat .l { font-size: .72rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.evo-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+.evo-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.evo-card-name { font-weight: 700; font-size: .95rem; }
+.evo-delta { font-size: .8rem; font-weight: 700; white-space: nowrap; }
+.evo-delta.up   { color: var(--good); }
+.evo-delta.flat { color: var(--muted); }
+.evo-delta.down { color: var(--crit); }
+.evo-card-meta { font-size: .75rem; color: var(--muted); margin-bottom: 10px; }
+/* Altura fixa: com height:auto o viewBox esticava junto com a largura e o
+   gráfico virava um paredão. A escala não-uniforme é compensada com
+   vector-effect no traço, senão a linha engrossaria junto. */
+.evo-chart { width: 100%; height: 104px; display: block; }
+/* Uma sessão só não desenha linha — vira um ponto, e o gráfico não faz sentido ainda. */
+.evo-single { font-size: .8rem; color: var(--muted); padding: 10px 0; }
+@media (max-width: 480px) {
+  .evo-summary { grid-template-columns: 1fr 1fr; }
+}
 .mt-rest-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pine); }
 .mt-load-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .mt-load-input { width: 90px; font-size: .88rem; padding: 8px 10px; }
@@ -1802,8 +1829,24 @@ img { max-width: 100%; display: block; }
         <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M9 11h6M9 15h6"/></svg></span>
         Meu treino
       </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn-ghost" style="font-size:.82rem;padding:8px 16px" onclick="openEvolucao()">Ver minha evolução →</button>
+      </div>
       <div class="div-tabs" id="mt-division-tabs"></div>
       <div id="mt-content">
+        <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVOLUÇÃO — a mesma tela serve o aluno (a própria) e o professor (a de um aluno) -->
+  <div class="page" id="page-evolucao">
+    <div class="dash-wrap">
+      <div class="compact-page-title">
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><path d="M15 8h4v4"/></svg></span>
+        <span id="evo-title">Evolução</span>
+      </div>
+      <div id="evo-content">
         <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
       </div>
     </div>
@@ -1818,7 +1861,8 @@ img { max-width: 100%; display: block; }
       </div>
       <div class="div-tabs" id="te-group-filter"></div>
       <div class="div-tabs" id="te-category-filter" hidden></div>
-      <div style="display:flex;justify-content:flex-end;margin:4px 0 16px">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin:4px 0 16px">
+        <button class="btn-ghost" style="font-size:.85rem;padding:10px 18px" onclick="openEvolucaoDoAlunoEditado()">Ver evolução</button>
         <button class="btn-primary" style="font-size:.85rem;padding:10px 18px" onclick="openDivisionModal()">+ Nova divisão</button>
       </div>
       <div id="te-divisions-list"></div>
@@ -3450,13 +3494,155 @@ function mtStartRest(teId, seconds){
   }, 1000);
 }
 
+/* ── EVOLUÇÃO: progressão de carga ─────────────────────────────
+   Os load_logs já vinham sendo gravados sessão a sessão, mas a tela de treino
+   só lia os de hoje — todo o histórico ficava parado no banco. Aqui ele vira
+   gráfico. A mesma tela serve os dois papéis: sem evoStudentId é o aluno vendo
+   a própria evolução, com id é o professor vendo a de um aluno. O RLS já separa
+   quem enxerga o quê, então não há checagem de permissão para fazer aqui. */
+let evoStudentId = null;
+let evoStudentName = '';
+
+function openEvolucao(studentId, studentName){
+  evoStudentId   = studentId || null;
+  evoStudentName = studentName || '';
+  showPage('evolucao');
+}
+
+function openEvolucaoDoAlunoEditado(){
+  const nome = document.getElementById('te-student-name')?.textContent || 'Aluno';
+  openEvolucao(mtSelectedStudentId, nome);
+}
+
+// Agrupa por NOME do exercício, não por training_exercise_id: o mesmo exercício
+// pode aparecer em divisões diferentes, ou ter sido recriado quando o professor
+// remontou o treino. Por nome, a progressão do aluno continua sendo uma linha só.
+function evoAgrupaPorExercicio(logs){
+  const porExercicio = new Map();
+  (logs||[]).forEach(l=>{
+    const nome = l.training_exercises?.exercises?.name;
+    // Number(null) e Number('') dão 0, então vazio viraria "0 kg" no gráfico em
+    // vez de ser descartado. Zero de verdade vale (exercício com peso do corpo).
+    const carga = (l.load == null || l.load === '') ? NaN : Number(l.load);
+    if(!nome || !isFinite(carga)) return;
+    if(!porExercicio.has(nome)) porExercicio.set(nome, new Map());
+    const porData = porExercicio.get(nome);
+    // A carga da sessão é a maior série: é ela que mostra até onde o aluno chegou.
+    const atual = porData.get(l.session_date);
+    if(atual == null || carga > atual) porData.set(l.session_date, carga);
+  });
+
+  return [...porExercicio.entries()].map(([nome, porData])=>{
+    const pontos = [...porData.entries()]
+      .map(([d,v])=>({ d, v }))
+      .sort((a,b)=> a.d.localeCompare(b.d));
+    return { nome, pontos };
+  });
+}
+
+function evoChartSVG(pontos){
+  const W = 320, H = 90, P = 10;
+  const vals = pontos.map(p=>p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) || 1;              // linha reta quando a carga não mudou
+  const stepX = (W - P*2) / (pontos.length - 1);
+  const xy = pontos.map((p,i)=>[
+    P + i*stepX,
+    H - P - ((p.v - min)/span) * (H - P*2)
+  ]);
+  const linha = xy.map(([x,y],i)=> `${i?'L':'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const area  = `${linha} L${xy[xy.length-1][0].toFixed(1)} ${H-P} L${xy[0][0].toFixed(1)} ${H-P} Z`;
+  const ultimo = xy[xy.length-1];
+
+  return `<svg class="evo-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+    aria-label="Carga de ${escHtml(String(pontos[0].v))} kg a ${escHtml(String(pontos[pontos.length-1].v))} kg ao longo de ${pontos.length} sessões">
+    <path d="${area}" fill="var(--pine)" opacity=".10"/>
+    <path d="${linha}" fill="none" stroke="var(--pine)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M${ultimo[0].toFixed(1)} ${(ultimo[1]-4).toFixed(1)} L${ultimo[0].toFixed(1)} ${(ultimo[1]+4).toFixed(1)}" stroke="var(--pine)" stroke-width="5" vector-effect="non-scaling-stroke" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function evoFormataData(iso){
+  const [a,m,d] = iso.split('-');
+  return `${d}/${m}/${a.slice(2)}`;
+}
+
+function evoCardHTML({nome, pontos}){
+  const primeiro = pontos[0], ultimo = pontos[pontos.length-1];
+  const diff = ultimo.v - primeiro.v;
+  const pct  = primeiro.v ? Math.round((diff/primeiro.v)*100) : 0;
+  const nivel = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+  const rotulo = diff > 0 ? `+${(+diff.toFixed(1))} kg (+${pct}%)`
+               : diff < 0 ? `${(+diff.toFixed(1))} kg (${pct}%)`
+               : 'sem mudança';
+
+  const corpo = pontos.length > 1
+    ? evoChartSVG(pontos)
+    : `<div class="evo-single">Só uma sessão registrada até agora — o gráfico aparece a partir da segunda.</div>`;
+
+  return `<div class="evo-card">
+    <div class="evo-card-head">
+      <span class="evo-card-name">${escHtml(nome)}</span>
+      <span class="evo-delta ${nivel}">${escHtml(rotulo)}</span>
+    </div>
+    <div class="evo-card-meta">${escHtml(String(primeiro.v))} kg em ${evoFormataData(primeiro.d)} → ${escHtml(String(ultimo.v))} kg em ${evoFormataData(ultimo.d)} · ${pontos.length} ${pontos.length>1?'sessões':'sessão'}</div>
+    ${corpo}
+  </div>`;
+}
+
+async function renderEvolucao(){
+  const el = document.getElementById('evo-content');
+  const titulo = document.getElementById('evo-title');
+  if(!el || !sb || !currentUser) return;
+
+  const sid = evoStudentId || currentUser.id;
+  if(titulo) titulo.textContent = evoStudentId ? `Evolução de ${evoStudentName || 'aluno'}` : 'Minha evolução';
+  el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
+
+  const { data: logs, error } = await sb.from('load_logs')
+    .select('load, session_date, training_exercises(exercises(name))')
+    .eq('student_id', sid)
+    .order('session_date');
+
+  if(error){
+    el.innerHTML = `<div class="dash-card"><p style="font-size:.88rem">Não foi possível carregar a evolução: ${escHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  const exercicios = evoAgrupaPorExercicio(logs);
+  if(!exercicios.length){
+    el.innerHTML = `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">
+      ${evoStudentId
+        ? 'Esse aluno ainda não registrou nenhuma carga. Os dados aparecem aqui conforme ele anota os pesos na tela de treino.'
+        : 'Você ainda não registrou nenhuma carga. Anote os pesos na tela "Meu treino" e sua evolução começa a aparecer aqui.'}
+    </p></div>`;
+    return;
+  }
+
+  // Mais recentes primeiro: o que o aluno treinou ontem interessa mais que o
+  // exercício que saiu do treino há três meses.
+  exercicios.sort((a,b)=> b.pontos[b.pontos.length-1].d.localeCompare(a.pontos[a.pontos.length-1].d));
+
+  const datas = [...new Set((logs||[]).map(l=>l.session_date))].sort();
+  const comGanho = exercicios.filter(e=> e.pontos[e.pontos.length-1].v > e.pontos[0].v).length;
+
+  el.innerHTML = `
+    <div class="evo-summary">
+      <div class="evo-stat"><div class="n">${datas.length}</div><div class="l">${datas.length===1?'sessão registrada':'sessões registradas'}</div></div>
+      <div class="evo-stat"><div class="n">${exercicios.length}</div><div class="l">${exercicios.length===1?'exercício acompanhado':'exercícios acompanhados'}</div></div>
+      <div class="evo-stat"><div class="n">${comGanho}</div><div class="l">${comGanho===1?'com ganho de carga':'com ganho de carga'}</div></div>
+    </div>
+    ${datas.length ? `<p style="font-size:.78rem;color:var(--muted);margin:-8px 0 18px">Desde ${evoFormataData(datas[0])}</p>` : ''}
+    ${exercicios.map(evoCardHTML).join('')}`;
+}
+
 /* ── Page routing ─────────────────────────────────────────────── */
 let currentPage = 'home';
 let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student', 'meu-plano': 'student', 'treino-editor': 'professor' };
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student', 'meu-plano': 'student', 'treino-editor': 'professor', 'evolucao': null };
   if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -3490,6 +3676,7 @@ function showPage(id, opts) {
   if(id==='duvidas') renderDuvidasPage();
   if(id==='perfil-aluno') fillProfileCard();
   if(id==='meu-treino') loadMeuTreino();
+  if(id==='evolucao') renderEvolucao();
   const backBtn = document.getElementById('nav-back-btn');
   if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
