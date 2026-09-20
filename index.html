@@ -4919,9 +4919,10 @@ async function anamSubmit(){
         // Tranca a próxima anamnese — só destrava quando o professor pedir de novo
         sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
         if(professorId) {
-          // Essa ficha resolve o lembrete de "ainda não preencheu", se existir
-          sb.from('notifications').delete()
-            .eq('recipient_id', professorId).eq('type','anamnese_missing').eq('related_id', currentUser?.id)
+          // Essa ficha resolve o lembrete de "ainda não preencheu", se existir.
+          // Vai por RPC porque a notificação é do professor, e o RLS (com razão)
+          // não deixa um usuário apagar linha do feed de outro.
+          sb.rpc('clear_my_notification_to_professor', { p_type: 'anamnese_missing' })
             .then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
           sb.rpc('create_notification', {
             p_recipient_id: professorId, p_type: 'anamnese_submitted',
