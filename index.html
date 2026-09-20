@@ -1168,6 +1168,20 @@ img { max-width: 100%; display: block; }
   .evo-prontidao { grid-template-columns: 1fr 1fr; }
   .evo-tabela th:nth-child(2), .evo-tabela td:nth-child(2) { display: none; }
 }
+
+/* ─── PAINEL DO ALUNO ─────────────────────────────────────────── */
+.freq-graf { display: flex; align-items: flex-end; gap: 6px; }
+.freq-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.freq-n { font-size: .72rem; font-weight: 700; color: var(--pine); height: 1em; }
+.freq-barra { width: 100%; height: 76px; background: var(--surface-alt);
+  border-radius: var(--radius-sm); display: flex; align-items: flex-end; overflow: hidden; }
+.freq-barra span { display: block; width: 100%; background: var(--pine); border-radius: var(--radius-sm); }
+.freq-lbl { font-size: .64rem; color: var(--muted); }
+.msg-card { border-radius: var(--radius); padding: 14px 16px; font-size: .88rem; line-height: 1.65;
+  border: 1.5px solid var(--border); }
+.msg-card.bom     { background: var(--good-bg); border-color: transparent; color: var(--good); }
+.msg-card.ok      { background: var(--surface-alt); }
+.msg-card.atencao { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
 .mt-rest-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pine); }
 .mt-load-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .mt-load-input { width: 90px; font-size: .88rem; padding: 8px 10px; }
@@ -3776,7 +3790,110 @@ async function renderEvolucao(){
   el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
 
   if(ehProfessor) await renderEvolucaoProfessor();
-  else el.innerHTML = await evoCargasHTML(currentUser.id, false);
+  else await renderEvolucaoAluno();
+}
+
+/* ── Painel do aluno ───────────────────────────────────────────
+   Mesmo dado do painel do professor, outra leitura. Aqui não entra monotonia,
+   strain nem desvio-padrão: o aluno precisa saber se está indo bem e o que
+   fazer com isso, não interpretar um índice. */
+function evoFraseRecuperacao(media){
+  if(media == null) return null;
+  if(media >= 7) return { tom:'bom',  txt:'Você tem chegado bem recuperado para treinar. É assim que o corpo rende e evolui.' };
+  if(media >= 5) return { tom:'ok',   txt:'Você tem chegado razoavelmente recuperado. Dá para melhorar dormindo melhor e respeitando os dias de descanso.' };
+  return { tom:'atencao', txt:'Você tem chegado cansado para treinar com frequência. Vale conversar com seu professor sobre sono, descanso e rotina.' };
+}
+
+function evoFraseEsforco(media){
+  if(media == null) return null;
+  if(media >= 7) return { tom:'atencao', txt:'Seus treinos têm sido puxados. Isso é bom quando vem junto com boa recuperação — fique atento a como você chega no treino seguinte.' };
+  if(media >= 4) return { tom:'bom',     txt:'Seus treinos têm exigido um esforço moderado, que é a faixa onde dá para sustentar progresso por bastante tempo.' };
+  return { tom:'ok',      txt:'Seus treinos têm sido leves. Se o objetivo é evoluir, vale conversar com seu professor sobre aumentar um pouco.' };
+}
+
+function evoBarrasFrequencia(concluidas, semanas){
+  const contagem = new Map();
+  concluidas.forEach(s=>{
+    const k = dateToStr(evoInicioSemana(new Date(s.started_at)));
+    contagem.set(k, (contagem.get(k) || 0) + 1);
+  });
+
+  const barras = [];
+  const base = evoInicioSemana(new Date());
+  for(let i = semanas - 1; i >= 0; i--){
+    const d = new Date(base); d.setDate(d.getDate() - i*7);
+    const k = dateToStr(d);
+    barras.push({ k, n: contagem.get(k) || 0, rotulo: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}` });
+  }
+  const max = Math.max(1, ...barras.map(b=>b.n));
+
+  return `<div class="freq-graf">${barras.map(b=>`
+    <div class="freq-col" title="Semana de ${b.rotulo}: ${b.n} ${b.n===1?'treino':'treinos'}">
+      <div class="freq-n">${b.n || ''}</div>
+      <div class="freq-barra"><span style="height:${b.n ? Math.max(6, (b.n/max)*100) : 0}%"></span></div>
+      <div class="freq-lbl">${b.rotulo}</div>
+    </div>`).join('')}</div>`;
+}
+
+async function renderEvolucaoAluno(){
+  const el = document.getElementById('evo-content');
+  if(!el || !sb || !currentUser) return;
+
+  const { data: sessoes, error } = await sb.from('training_sessions')
+    .select('started_at, ended_at, psr, pse, duration_min')
+    .eq('student_id', currentUser.id)
+    .order('started_at', { ascending: true });
+
+  if(error){
+    el.innerHTML = `<div class="dash-card"><p style="font-size:.88rem">Não foi possível carregar: ${escHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  const concluidas = (sessoes||[]).filter(s=>s.ended_at);
+  const cargas = await evoCargasHTML(currentUser.id, false);
+
+  if(!concluidas.length){
+    el.innerHTML = `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">
+      Você ainda não registrou nenhum treino. Use o botão <strong>Iniciar treino</strong> na tela do seu treino — em poucas semanas esta página mostra como você vem evoluindo.
+    </p></div>
+    <h3 class="evo-sec">Progressão de carga</h3>${cargas}`;
+    return;
+  }
+
+  const agora = new Date();
+  const mesAtual = concluidas.filter(s=>{
+    const d = new Date(s.started_at);
+    return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear();
+  }).length;
+  const minutos = concluidas.reduce((a,s)=> a + (s.duration_min || 0), 0);
+  const horas = Math.round(minutos/60);
+
+  const ultimas = concluidas.slice(-5);
+  const mediaOuNulo = (arr, campo) => {
+    const v = arr.filter(s=>s[campo]!=null).map(s=>s[campo]);
+    return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+  };
+  const fRec = evoFraseRecuperacao(mediaOuNulo(ultimas,'psr'));
+  const fEsf = evoFraseEsforco(mediaOuNulo(ultimas,'pse'));
+
+  el.innerHTML = `
+    <div class="evo-summary">
+      <div class="evo-stat"><div class="n">${concluidas.length}</div><div class="l">${concluidas.length===1?'treino registrado':'treinos registrados'}</div></div>
+      <div class="evo-stat"><div class="n">${mesAtual}</div><div class="l">treinos neste mês</div></div>
+      <div class="evo-stat"><div class="n">${horas}h</div><div class="l">de treino no total</div></div>
+    </div>
+
+    <h3 class="evo-sec">Sua frequência</h3>
+    <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:12px">Quantos treinos você fez em cada uma das últimas 8 semanas.</p>
+    ${evoBarrasFrequencia(concluidas, 8)}
+
+    ${fRec ? `<h3 class="evo-sec">Como você tem chegado</h3>
+      <div class="msg-card ${fRec.tom}">${escHtml(fRec.txt)}</div>` : ''}
+
+    ${fEsf ? `<h3 class="evo-sec">O quanto os treinos têm exigido</h3>
+      <div class="msg-card ${fEsf.tom}">${escHtml(fEsf.txt)}</div>` : ''}
+
+    <h3 class="evo-sec">Progressão de carga</h3>${cargas}`;
 }
 
 /* ── Painel do professor ───────────────────────────────────────
