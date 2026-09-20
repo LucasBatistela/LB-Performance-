@@ -1132,6 +1132,42 @@ img { max-width: 100%; display: block; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .sessao-ativa-txt { font-size: .85rem; font-weight: 600; }
 .sessao-ativa-sub { font-size: .75rem; color: var(--muted); font-weight: 400; }
+
+/* ─── PAINEL DO PROFESSOR (PSE/PSR) ───────────────────────────── */
+.evo-sec { font-family: var(--font-d); font-size: 1.02rem; font-weight: 800;
+  margin: 26px 0 12px; color: var(--ink); }
+.evo-sec:first-of-type { margin-top: 8px; }
+.evo-prontidao { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.evo-badge { display: inline-block; margin-top: 6px; font-size: .66rem; font-weight: 700;
+  padding: 3px 7px; border-radius: 999px; line-height: 1.3; }
+.evo-badge.neutro { background: var(--surface-alt); color: var(--muted); }
+.evo-badge.alerta { background: var(--crit-bg); color: var(--crit); }
+.evo-badge.bom    { background: var(--good-bg); color: var(--good); }
+.evo-tabela { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: 4px; }
+.evo-tabela th { text-align: left; font-size: .72rem; color: var(--muted); font-weight: 700;
+  padding: 8px 6px; border-bottom: 1.5px solid var(--border); }
+.evo-tabela td { padding: 9px 6px; border-bottom: 1px solid var(--border); }
+.evo-nota { font-size: .74rem; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+.evo-legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-top: 8px; }
+.evo-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+.evo-heat { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.evo-heat-lbl { text-align: center; font-size: .76rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+.evo-heat .body-map .zona { cursor: default; }
+.evo-heat .body-map .zona:hover { fill: var(--surface-alt); }
+.evo-det { border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.evo-det summary { cursor: pointer; padding: 11px 14px; display: flex; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; font-size: .85rem; font-weight: 600; }
+.evo-det-resumo { color: var(--muted); font-weight: 600; font-size: .78rem; }
+.evo-det-corpo { padding: 0 14px 14px; }
+.evo-det-item { display: flex; justify-content: space-between; gap: 12px; font-size: .82rem;
+  padding: 6px 0; border-top: 1px solid var(--border); }
+.evo-det-item span { color: var(--muted); }
+.evo-det-obs { font-size: .82rem; color: var(--ink-2); padding: 8px 0 0; line-height: 1.6; }
+.evo-det-obs span { color: var(--muted); font-weight: 700; }
+@media (max-width: 560px) {
+  .evo-prontidao { grid-template-columns: 1fr 1fr; }
+  .evo-tabela th:nth-child(2), .evo-tabela td:nth-child(2) { display: none; }
+}
 .mt-rest-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pine); }
 .mt-load-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .mt-load-input { width: 90px; font-size: .88rem; padding: 8px 10px; }
@@ -3695,33 +3731,22 @@ function evoCardHTML({nome, pontos}){
   </div>`;
 }
 
-async function renderEvolucao(){
-  const el = document.getElementById('evo-content');
-  const titulo = document.getElementById('evo-title');
-  if(!el || !sb || !currentUser) return;
-
-  const sid = evoStudentId || currentUser.id;
-  if(titulo) titulo.textContent = evoStudentId ? `Evolução de ${evoStudentName || 'aluno'}` : 'Minha evolução';
-  el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
-
+// Progressão de carga por exercício — a parte que serve os dois papéis igual.
+async function evoCargasHTML(sid, ehProfessor){
   const { data: logs, error } = await sb.from('load_logs')
     .select('load, session_date, training_exercises(exercises(name))')
     .eq('student_id', sid)
     .order('session_date');
 
-  if(error){
-    el.innerHTML = `<div class="dash-card"><p style="font-size:.88rem">Não foi possível carregar a evolução: ${escHtml(error.message)}</p></div>`;
-    return;
-  }
+  if(error) return `<div class="dash-card"><p style="font-size:.88rem">Não foi possível carregar as cargas: ${escHtml(error.message)}</p></div>`;
 
   const exercicios = evoAgrupaPorExercicio(logs);
   if(!exercicios.length){
-    el.innerHTML = `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">
-      ${evoStudentId
+    return `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">
+      ${ehProfessor
         ? 'Esse aluno ainda não registrou nenhuma carga. Os dados aparecem aqui conforme ele anota os pesos na tela de treino.'
         : 'Você ainda não registrou nenhuma carga. Anote os pesos na tela "Meu treino" e sua evolução começa a aparecer aqui.'}
     </p></div>`;
-    return;
   }
 
   // Mais recentes primeiro: o que o aluno treinou ontem interessa mais que o
@@ -3731,14 +3756,270 @@ async function renderEvolucao(){
   const datas = [...new Set((logs||[]).map(l=>l.session_date))].sort();
   const comGanho = exercicios.filter(e=> e.pontos[e.pontos.length-1].v > e.pontos[0].v).length;
 
-  el.innerHTML = `
+  return `
     <div class="evo-summary">
-      <div class="evo-stat"><div class="n">${datas.length}</div><div class="l">${datas.length===1?'sessão registrada':'sessões registradas'}</div></div>
+      <div class="evo-stat"><div class="n">${datas.length}</div><div class="l">${datas.length===1?'dia com carga anotada':'dias com carga anotada'}</div></div>
       <div class="evo-stat"><div class="n">${exercicios.length}</div><div class="l">${exercicios.length===1?'exercício acompanhado':'exercícios acompanhados'}</div></div>
-      <div class="evo-stat"><div class="n">${comGanho}</div><div class="l">${comGanho===1?'com ganho de carga':'com ganho de carga'}</div></div>
+      <div class="evo-stat"><div class="n">${comGanho}</div><div class="l">com ganho de carga</div></div>
     </div>
     ${datas.length ? `<p style="font-size:.78rem;color:var(--muted);margin:-8px 0 18px">Desde ${evoFormataData(datas[0])}</p>` : ''}
     ${exercicios.map(evoCardHTML).join('')}`;
+}
+
+async function renderEvolucao(){
+  const el = document.getElementById('evo-content');
+  const titulo = document.getElementById('evo-title');
+  if(!el || !sb || !currentUser) return;
+
+  const ehProfessor = currentProfile?.role === 'professor';
+  if(titulo) titulo.textContent = ehProfessor ? `Evolução de ${evoStudentName || 'aluno'}` : 'Minha evolução';
+  el.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
+
+  if(ehProfessor) await renderEvolucaoProfessor();
+  else el.innerHTML = await evoCargasHTML(currentUser.id, false);
+}
+
+/* ── Painel do professor ───────────────────────────────────────
+   Nada aqui compara um aluno com outro. Os autores da validação do PSR são
+   explícitos: notas iguais em pessoas diferentes não significam recuperação
+   equivalente. Todo desvio é contra a linha de base do próprio aluno. */
+const EVO_MIN_BASE = 10;   // sessões antes de qualquer alerta valer
+const EVO_LIMIAR_DP = 1.5; // conservador: só aponta o que foge bem do padrão
+
+function evoMediaDp(vals){
+  const n = vals.length;
+  if(!n) return { n:0, media:null, dp:null };
+  const media = vals.reduce((a,b)=>a+b,0)/n;
+  if(n < 2) return { n, media, dp:0 };
+  const dp = Math.sqrt(vals.reduce((a,b)=>a+(b-media)**2,0)/(n-1));
+  return { n, media, dp };
+}
+
+function evoInicioSemana(d){
+  const x = new Date(d); x.setHours(0,0,0,0);
+  x.setDate(x.getDate() - ((x.getDay()+6) % 7)); // segunda = início
+  return x;
+}
+
+function evoSemanas(concluidas, qtd){
+  const porSemana = new Map();
+  concluidas.forEach(s=>{
+    const chave = dateToStr(evoInicioSemana(new Date(s.started_at)));
+    if(!porSemana.has(chave)) porSemana.set(chave, { inicio: chave, porDia:{}, carga:0, sessoes:0 });
+    const w = porSemana.get(chave);
+    const dia = dateToStr(new Date(s.started_at));
+    const c = Number(s.carga || 0);
+    w.porDia[dia] = (w.porDia[dia] || 0) + c;
+    w.carga += c;
+    w.sessoes++;
+  });
+
+  return [...porSemana.values()]
+    .sort((a,b)=> a.inicio.localeCompare(b.inicio))
+    .slice(-qtd)
+    .map(w=>{
+      // Foster: média diária dividida pelo desvio-padrão, sobre os SETE dias.
+      // Dia sem treino entra como zero — é justamente isso que faz a monotonia
+      // subir quando o aluno treina sempre a mesma coisa, todo dia.
+      const dias = [];
+      const ini = new Date(w.inicio + 'T00:00:00');
+      for(let i=0;i<7;i++){ const d = new Date(ini); d.setDate(d.getDate()+i); dias.push(w.porDia[dateToStr(d)] || 0); }
+      const st = evoMediaDp(dias);
+      const monotonia = st.dp ? st.media / st.dp : null;
+      return { ...w, dias, monotonia, strain: monotonia != null ? w.carga * monotonia : null };
+    });
+}
+
+function evoBadgeDesvio(valor, base, ondeMenorEhPior){
+  if(valor == null) return '';
+  if(base.n < EVO_MIN_BASE) return `<span class="evo-badge neutro">sem linha de base ainda</span>`;
+  if(!base.dp) return '';
+  const z = (valor - base.media) / base.dp;
+  const fora = Math.abs(z) >= EVO_LIMIAR_DP;
+  if(!fora) return `<span class="evo-badge neutro">dentro do padrão dele</span>`;
+  const pior = ondeMenorEhPior ? z < 0 : z > 0;
+  return `<span class="evo-badge ${pior?'alerta':'bom'}">${z>0?'acima':'abaixo'} do padrão dele</span>`;
+}
+
+function bodyHeatSVG(lado, contagem, max){
+  const zonas = CORPO_REGIOES[lado].map(z=>{
+    const n = contagem[z.id] || 0;
+    // piso de 0.15 pra uma queixa isolada não sumir no fundo
+    const op = n && max ? (0.15 + 0.85 * (n / max)) : 0;
+    const est = n ? ` style="fill:var(--crit);fill-opacity:${op.toFixed(2)};stroke:var(--crit)"` : '';
+    const t = `<title>${escHtml(z.nome)}: ${n} ${n===1?'vez':'vezes'}</title>`;
+    if(z.f==='ellipse') return `<ellipse class="zona" cx="${z.cx}" cy="${z.cy}" rx="${z.rx}" ry="${z.ry}"${est}>${t}</ellipse>`;
+    return `<rect class="zona" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="${z.r}"${est}>${t}</rect>`;
+  }).join('');
+  const deco = CORPO_DECO[lado].map(z=>bodyShapeSVG(z,'deco')).join('');
+  return `<svg class="body-map" viewBox="0 0 200 360" role="img" aria-label="Mapa de calor de dor — ${lado}">
+    <circle class="deco" cx="100" cy="30" r="21"/>${deco}${zonas}</svg>`;
+}
+
+// PSE e PSR na mesma escala 0–10 de propósito: escalar cada uma pelo próprio
+// mínimo e máximo faria duas curvas visualmente iguais significarem coisas
+// diferentes, e é exatamente a comparação entre elas que interessa.
+function evoChartDuplo(sessoes){
+  const pontos = sessoes.filter(s=> s.pse != null || s.psr != null);
+  if(pontos.length < 2) return `<div class="evo-single">São necessárias pelo menos duas sessões concluídas para desenhar a tendência.</div>`;
+
+  const W = 320, H = 110, P = 10;
+  const stepX = (W - P*2) / (pontos.length - 1);
+  const y = v => H - P - (v/10) * (H - P*2);
+  const linha = campo => {
+    const segs = [];
+    pontos.forEach((s,i)=>{
+      if(s[campo] == null) return;
+      segs.push(`${segs.length?'L':'M'}${(P+i*stepX).toFixed(1)} ${y(s[campo]).toFixed(1)}`);
+    });
+    return segs.join(' ');
+  };
+
+  return `<svg class="evo-chart" style="height:130px" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+      aria-label="Esforço percebido e recuperação ao longo das sessões">
+    <line x1="${P}" y1="${y(5)}" x2="${W-P}" y2="${y(5)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+    <path d="${linha('psr')}" fill="none" stroke="var(--good)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${linha('pse')}" fill="none" stroke="var(--pine)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="evo-legenda">
+    <span><i style="background:var(--good)"></i> PSR — como chegou</span>
+    <span><i style="background:var(--pine)"></i> PSE — quanto custou</span>
+  </div>`;
+}
+
+function evoDetalheSessao(s){
+  const d = new Date(s.started_at);
+  const dores = (s.session_pain_points || []).map(p=>CORPO_NOMES[p.region] || p.region);
+  const campo = (rot, val, suf) => val == null ? '' :
+    `<div class="evo-det-item"><span>${escHtml(rot)}</span><strong>${escHtml(String(val))}${suf||''}</strong></div>`;
+
+  return `<details class="evo-det">
+    <summary>
+      <span>${evoFormataData(dateToStr(d))} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</span>
+      <span class="evo-det-resumo">${s.pse!=null?`PSE ${s.pse}`:'em aberto'}${s.psr!=null?` · PSR ${s.psr}`:''}${s.carga?` · carga ${Math.round(s.carga)}`:''}</span>
+    </summary>
+    <div class="evo-det-corpo">
+      ${campo('Recuperação (PSR)', s.psr)}
+      ${campo('Estresse', s.estresse)}
+      ${campo('Dor', s.dor)}
+      ${campo('Horas de sono', s.horas_sono, 'h')}
+      ${campo('Esforço (PSE)', s.pse)}
+      ${campo('Duração', s.duration_min, ' min')}
+      ${campo('Carga interna', s.carga!=null?Math.round(s.carga):null, ' u.a.')}
+      ${campo('Satisfação', s.satisfacao, '/5')}
+      ${campo('Peso antes', s.peso_pre, ' kg')}
+      ${campo('Peso depois', s.peso_pos, ' kg')}
+      ${dores.length?`<div class="evo-det-item"><span>Dor em</span><strong>${escHtml(dores.join(', '))}</strong></div>`:''}
+      ${s.obs_pre?`<div class="evo-det-obs"><span>Antes:</span> ${escHtml(s.obs_pre)}</div>`:''}
+      ${s.obs_pos?`<div class="evo-det-obs"><span>Depois:</span> ${escHtml(s.obs_pos)}</div>`:''}
+    </div>
+  </details>`;
+}
+
+async function renderEvolucaoProfessor(){
+  const el = document.getElementById('evo-content');
+  if(!el || !sb || !currentUser) return;
+
+  // Seletor para trocar de aluno sem sair da tela
+  const { data: alunos } = await sb.from('students').select('id').eq('professor_id', currentUser.id);
+  const perfis = await Promise.all((alunos||[]).map(a=>sb.from('profiles').select('full_name').eq('id',a.id).maybeSingle()));
+  const seletor = `<div class="q-card" style="padding:12px 14px;margin-bottom:16px">
+    <label style="font-size:.78rem;color:var(--muted);font-weight:600">Aluno</label>
+    <div class="select-wrap"><select onchange="trocarAlunoEvolucao(this.value, this.selectedOptions[0].textContent)">
+      <option value="">Escolha um aluno…</option>
+      ${(alunos||[]).map((a,i)=>`<option value="${escHtml(a.id)}"${a.id===evoStudentId?' selected':''}>${escHtml(perfis[i]?.data?.full_name||'Aluno')}</option>`).join('')}
+    </select></div></div>`;
+
+  if(!evoStudentId){
+    el.innerHTML = seletor + `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Escolha um aluno para ver a evolução dele.</p></div>`;
+    return;
+  }
+
+  const { data: sessoes, error } = await sb.from('training_sessions')
+    .select('*, session_pain_points(region)')
+    .eq('student_id', evoStudentId).eq('professor_id', currentUser.id)
+    .order('started_at', { ascending: true });
+
+  if(error){
+    el.innerHTML = seletor + `<div class="dash-card"><p style="font-size:.88rem">Erro ao carregar sessões: ${escHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  const concluidas = (sessoes||[]).filter(s=>s.ended_at);
+  const hojeStr = dateToStr(new Date());
+  const deHoje = (sessoes||[]).find(s=> dateToStr(new Date(s.started_at)) === hojeStr);
+  const anteriores = concluidas.filter(s=> s !== deHoje);
+
+  const basePsr = evoMediaDp(anteriores.filter(s=>s.psr!=null).map(s=>s.psr));
+  const baseSono = evoMediaDp(anteriores.filter(s=>s.horas_sono!=null).map(s=>s.horas_sono));
+  const baseDor = evoMediaDp(anteriores.filter(s=>s.dor!=null).map(s=>s.dor));
+  const baseEst = evoMediaDp(anteriores.filter(s=>s.estresse!=null).map(s=>s.estresse));
+
+  // 1) Prontidão de hoje
+  const prontidao = !deHoje
+    ? `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma sessão registrada hoje por este aluno.</p></div>`
+    : `<div class="evo-prontidao">
+        ${[['Recuperação (PSR)', deHoje.psr, basePsr, true],
+           ['Estresse',          deHoje.estresse, baseEst, false],
+           ['Dor',               deHoje.dor, baseDor, false],
+           ['Sono',              deHoje.horas_sono, baseSono, true]].map(([rot,val,base,menorPior])=>`
+          <div class="evo-stat">
+            <div class="n">${val ?? '—'}</div>
+            <div class="l">${escHtml(rot)}</div>
+            ${evoBadgeDesvio(val, base, menorPior)}
+          </div>`).join('')}
+      </div>
+      ${(deHoje.session_pain_points||[]).length
+        ? `<p style="font-size:.8rem;color:var(--crit);margin:-6px 0 16px">Dor hoje em: ${escHtml((deHoje.session_pain_points||[]).map(p=>CORPO_NOMES[p.region]||p.region).join(', '))}</p>`
+        : ''}
+      ${deHoje.obs_pre ? `<p style="font-size:.82rem;color:var(--ink-2);margin:-6px 0 16px"><strong>Ele escreveu:</strong> ${escHtml(deHoje.obs_pre)}</p>` : ''}`;
+
+  // 2) Carga da semana, monotonia e strain
+  const semanas = evoSemanas(concluidas, 6);
+  const ultima = semanas[semanas.length-1];
+  const cargaBloco = !semanas.length
+    ? `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Ainda não há sessão concluída para calcular carga.</p></div>`
+    : `<div class="evo-summary">
+        <div class="evo-stat"><div class="n">${Math.round(ultima.carga)}</div><div class="l">carga da semana (u.a.)</div></div>
+        <div class="evo-stat"><div class="n">${ultima.monotonia!=null?ultima.monotonia.toFixed(2):'—'}</div><div class="l">monotonia</div></div>
+        <div class="evo-stat"><div class="n">${ultima.strain!=null?Math.round(ultima.strain):'—'}</div><div class="l">strain</div></div>
+      </div>
+      <table class="evo-tabela"><thead><tr><th>Semana</th><th>Sessões</th><th>Carga</th><th>Monotonia</th><th>Strain</th></tr></thead>
+      <tbody>${semanas.slice().reverse().map(w=>`<tr>
+        <td>${evoFormataData(w.inicio)}</td><td>${w.sessoes}</td><td>${Math.round(w.carga)}</td>
+        <td>${w.monotonia!=null?w.monotonia.toFixed(2):'—'}</td><td>${w.strain!=null?Math.round(w.strain):'—'}</td>
+      </tr>`).join('')}</tbody></table>
+      <p class="evo-nota">Carga = PSE × minutos. Monotonia e strain seguem Foster (1998), que associou lesões e doenças à ultrapassagem de limiares individuais — não há corte universal, o que importa é o padrão deste aluno ao longo das semanas.</p>`;
+
+  // 3) Mapa de calor de dor
+  const contagem = {};
+  (sessoes||[]).forEach(s=>(s.session_pain_points||[]).forEach(p=>{ contagem[p.region] = (contagem[p.region]||0)+1; }));
+  const maxDor = Math.max(0, ...Object.values(contagem));
+  const ranking = Object.entries(contagem).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const dorBloco = !maxDor
+    ? `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma queixa de dor registrada.</p></div>`
+    : `<div class="evo-heat">
+        <div>${bodyHeatSVG('frente', contagem, maxDor)}<div class="evo-heat-lbl">Frente</div></div>
+        <div>${bodyHeatSVG('costas', contagem, maxDor)}<div class="evo-heat-lbl">Costas</div></div>
+      </div>
+      <div class="body-map-sel" style="justify-content:center">${ranking.map(([id,n])=>
+        `<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)} · ${n}</span>`).join('')}</div>`;
+
+  el.innerHTML = seletor +
+    `<h3 class="evo-sec">Prontidão de hoje</h3>${prontidao}
+     <h3 class="evo-sec">Carga da semana</h3>${cargaBloco}
+     <h3 class="evo-sec">Onde costuma doer</h3>${dorBloco}
+     <h3 class="evo-sec">Esforço e recuperação</h3>${evoChartDuplo(concluidas)}
+     <h3 class="evo-sec">Progressão de carga</h3>${await evoCargasHTML(evoStudentId, true)}
+     <h3 class="evo-sec">Sessão a sessão</h3>
+     ${concluidas.length ? concluidas.slice().reverse().map(evoDetalheSessao).join('')
+       : `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma sessão concluída ainda.</p></div>`}`;
+}
+
+function trocarAlunoEvolucao(id, nome){
+  evoStudentId = id || null;
+  evoStudentName = nome || '';
+  renderEvolucao();
 }
 
 /* ── PRÉ E PÓS-TREINO: PSR, PSE e bem-estar ────────────────────
