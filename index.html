@@ -1206,6 +1206,30 @@ img { max-width: 100%; display: block; }
 .msg-card.ok      { background: var(--surface-alt); }
 .msg-card.atencao { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
 
+/* ─── AGENDA DO DIA EM TRILHA DE HORAS ────────────────────────── */
+.trilha { position: relative; margin: 8px 0 4px; padding-left: 52px; }
+.trilha-linha { position: absolute; left: 52px; right: 0; border-top: 1px solid var(--border); }
+.trilha-linha:not(.cheia) { opacity: .45; border-top-style: dashed; }
+.trilha-hora { position: absolute; left: -52px; top: -8px; width: 46px; text-align: right;
+  font-size: .72rem; font-weight: 700; color: var(--muted); }
+/* Marca da hora atual: no celular é o que diz "você está aqui" sem precisar ler. */
+.trilha-agora { position: absolute; left: 44px; right: 0; border-top: 2px solid var(--crit); z-index: 3; }
+.trilha-agora span { position: absolute; left: 0; top: -4px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--crit); }
+.trilha-blocos { position: relative; height: 100%; }
+.trilha-bloco { position: absolute; left: 4px; right: 2px; overflow: hidden;
+  border-radius: var(--radius-sm); padding: 6px 10px; z-index: 2;
+  border-left: 4px solid var(--pine); background: rgba(52,106,172,.14); }
+.trilha-bloco.turma { border-left-color: var(--good); background: var(--good-bg); cursor: pointer; }
+.trilha-bloco.turma:hover { filter: brightness(.97); }
+.trilha-bloco-hora { font-size: .7rem; font-weight: 700; color: var(--muted); line-height: 1.3; }
+.trilha-bloco-nome { font-size: .86rem; font-weight: 700; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trilha-bloco-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px;
+  font-size: .68rem; color: var(--muted); font-weight: 600; }
+.trilha-bloco-tags .tag-presenca { color: var(--good); }
+.trilha-bloco-tags .tag-alerta { color: var(--crit); font-weight: 700; }
+
 /* ─── GRUPOS E TURMAS ─────────────────────────────────────────── */
 .grupo-row { border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
 .grupo-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -2316,9 +2340,8 @@ img { max-width: 100%; display: block; }
             <div class="cal-widget">
               <div class="cal-toolbar">
                 <div class="cal-view-tabs" id="prof-cal-view-tabs">
-                  <button type="button" class="cal-view-btn on" data-view="week" onclick="calSetView('prof','week')">Semana</button>
+                  <button type="button" class="cal-view-btn on" data-view="dia" onclick="calSetView('prof','dia')">Dia</button>
                   <button type="button" class="cal-view-btn" data-view="month" onclick="calSetView('prof','month')">Mês</button>
-                  <button type="button" class="cal-view-btn" data-view="summary" onclick="calSetView('prof','summary')">Resumo</button>
                 </div>
                 <div class="cal-nav">
                   <button type="button" class="cal-nav-btn" onclick="calNav('prof',-1)" aria-label="Anterior">‹</button>
@@ -2963,7 +2986,7 @@ async function getStudentUpcomingBookings(studentId, weeksAhead){
    Alterna entre a lista de sempre e uma visão de calendário (Semana / Mês / Resumo anual). ── */
 const calState = {
   aluno: { view:'week', anchor:new Date() },
-  prof:  { view:'week', anchor:new Date(), studentId:'' }
+  prof:  { view:'dia', anchor:new Date(), studentId:'' }
 };
 
 function setHistoricoViewMode(ctx, mode){
@@ -2988,7 +3011,8 @@ function calSetView(ctx, view){
 function calNav(ctx, dir){
   const st = calState[ctx];
   const d = new Date(st.anchor);
-  if(st.view==='week') d.setDate(d.getDate() + dir*7);
+  if(st.view==='dia') d.setDate(d.getDate() + dir);
+  else if(st.view==='week') d.setDate(d.getDate() + dir*7);
   else if(st.view==='month') d.setMonth(d.getMonth() + dir);
   else d.setFullYear(d.getFullYear() + dir);
   st.anchor = d;
@@ -3057,10 +3081,196 @@ async function renderBookingsCalendar(ctx){
   const bodyEl = document.getElementById(ctx+'-cal-body');
   if(!bodyEl) return;
   bodyEl.innerHTML = '<p style="color:var(--muted);font-size:.88rem;padding:12px 0">Carregando...</p>';
-  if(st.view==='week') await renderCalWeek(ctx);
+  if(st.view==='dia') await renderCalDia(ctx);
+  else if(st.view==='week') await renderCalWeek(ctx);
   else if(st.view==='month') await renderCalMonth(ctx);
   else await renderCalSummary(ctx);
 }
+
+/* ── Prontidão do dia ──────────────────────────────────────────
+   Quem fez check-in hoje e quem chegou fora do próprio padrão. A trilha da
+   agenda e a tela Hoje leem daqui, para não calcularem a mesma coisa duas
+   vezes com regras que podem divergir. */
+let prontidaoCache = { dia: null, dados: null };
+
+async function carregarProntidaoDoDia(){
+  const hojeStr = dateToStr(new Date());
+  if(prontidaoCache.dia === hojeStr && prontidaoCache.dados) return prontidaoCache.dados;
+  if(!sb || !currentUser) return { porAluno:{}, deHoje:[] };
+
+  // 120 dias cobrem com folga as 10 sessões que a linha de base exige, sem
+  // arrastar o histórico inteiro a cada abertura de tela.
+  const desde = new Date(); desde.setDate(desde.getDate() - 120);
+  const { data: sessoes } = await sb.from('training_sessions')
+    .select('student_id, started_at, ended_at, psr, estresse, dor, horas_sono, class_slot_id, origem')
+    .eq('professor_id', currentUser.id)
+    .gte('started_at', desde.toISOString());
+
+  const porAluno = {};
+  const deHoje = [];
+  (sessoes||[]).forEach(s=>{
+    const dia = dateToStr(new Date(s.started_at));
+    (porAluno[s.student_id] ||= { historico:[], hoje:null });
+    if(dia === hojeStr) { porAluno[s.student_id].hoje = s; deHoje.push(s); }
+    else porAluno[s.student_id].historico.push(s);
+  });
+
+  Object.values(porAluno).forEach(a=>{
+    const base = campo => evoMediaDp(a.historico.filter(s=>s[campo]!=null).map(s=>s[campo]));
+    a.bases = { psr: base('psr'), estresse: base('estresse'), dor: base('dor'), horas_sono: base('horas_sono') };
+    a.desvios = [];
+    if(!a.hoje) return;
+    // Cada item diz em que direção a nota piora, que é o que decide se o
+    // desvio merece alerta ou é só variação boa.
+    [['psr','Recuperação',true], ['horas_sono','Sono',true], ['estresse','Estresse',false], ['dor','Dor',false]]
+      .forEach(([campo, rotulo, menorEhPior])=>{
+        const valor = a.hoje[campo];
+        const b = a.bases[campo];
+        if(valor == null || b.n < EVO_MIN_BASE || !b.dp) return;
+        const z = (valor - b.media) / b.dp;
+        if(Math.abs(z) < EVO_LIMIAR_DP) return;
+        if(menorEhPior ? z < 0 : z > 0) a.desvios.push({ campo, rotulo, valor, media: b.media });
+      });
+  });
+
+  prontidaoCache = { dia: hojeStr, dados: { porAluno, deHoje } };
+  return prontidaoCache.dados;
+}
+
+function invalidarProntidao(){ prontidaoCache = { dia:null, dados:null }; }
+/* ── Agenda do dia em trilha de horas ──────────────────────────
+   Um dia por vez com os compromissos posicionados pela hora e com altura
+   proporcional à duração. No celular, sete colunas empilhadas viram uma lista
+   infinita; assim a ocupação do dia — inclusive os buracos — cabe na tela. */
+const TRILHA_PX_POR_MIN = 1.15;
+
+function minutosDoHorario(hhmm){
+  const [h,m] = String(hhmm).split(':').map(Number);
+  return h*60 + (m||0);
+}
+function horarioDeMinutos(min){
+  return `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+}
+
+async function compromissosDoDia(ctx, dia){
+  const ds = dateToStr(dia);
+  const fim = new Date(dia); fim.setDate(fim.getDate()+1);
+  const bookings = await fetchCalBookings(ctx, dia, fim);
+  const names = ctx==='prof' ? await fetchCalNames(bookings) : null;
+
+  const itens = (bookings||[]).map(b=>({
+    inicio: minutosDoHorario(b.time),
+    duracao: SESSION_DURATION_MIN || 45,
+    titulo: ctx==='prof' ? (names?.[b.student_id] || 'Aluno') : 'Seu treino',
+    sub: b.is_fixed ? 'Fixo' : null,
+    tipo: 'personal',
+  }));
+
+  if(ctx !== 'prof') return itens;
+
+  // Turmas do dia: o horário existe na grade, não há agendamento por aluno.
+  const { data: slots } = await sb.from('class_slots').select('*')
+    .eq('professor_id', currentUser.id).eq('weekday', dia.getDay()).eq('ativo', true);
+  if(!slots?.length) return itens.sort((a,b)=>a.inicio-b.inicio);
+
+  const grupos = gruposCache.length ? gruposCache : await carregarGrupos();
+  const { data: membros } = await sb.from('student_group_members').select('group_id, student_id');
+  const porGrupo = {};
+  (membros||[]).forEach(m=>{ (porGrupo[m.group_id] ||= []).push(m.student_id); });
+
+  const ehHoje = ds === dateToStr(new Date());
+  const prontidao = ehHoje ? await carregarProntidaoDoDia() : { porAluno:{}, deHoje:[] };
+
+  slots.forEach(s=>{
+    const alunos = porGrupo[s.group_id] || [];
+    const presentes = ehHoje
+      ? prontidao.deHoje.filter(x=> x.class_slot_id === s.id).length
+      : 0;
+    const comDesvio = ehHoje
+      ? alunos.filter(id => (prontidao.porAluno[id]?.desvios || []).length > 0).length
+      : 0;
+    itens.push({
+      inicio: minutosDoHorario(s.hora),
+      duracao: s.duracao_min,
+      titulo: grupos.find(g=>g.id===s.group_id)?.nome || 'Turma',
+      sub: `${alunos.length} ${alunos.length===1?'aluno':'alunos'}`,
+      presentes: ehHoje ? `${presentes}/${alunos.length}` : null,
+      alerta: comDesvio,
+      tipo: 'turma',
+      slotId: s.id,
+    });
+  });
+
+  return itens.sort((a,b)=>a.inicio-b.inicio);
+}
+
+async function renderCalDia(ctx){
+  const st = calState[ctx];
+  const bodyEl = document.getElementById(ctx+'-cal-body');
+  const labelEl = document.getElementById(ctx+'-cal-label');
+  const dia = new Date(st.anchor); dia.setHours(0,0,0,0);
+  const ehHoje = dateToStr(dia) === dateToStr(new Date());
+  if(labelEl) labelEl.textContent = `${ehHoje?'Hoje · ':''}${DAYS_FULL[dia.getDay()]}, ${dia.getDate()} de ${MONTHS_FULL[dia.getMonth()]}`;
+
+  const itens = await compromissosDoDia(ctx, dia);
+  bodyEl.innerHTML = itens.length ? trilhaHTML(itens, ehHoje)
+    : `<p class="cal-empty" style="padding:20px 0;text-align:center">Nenhum compromisso neste dia.</p>`;
+}
+
+function trilhaHTML(itens, ehHoje){
+  // A trilha cobre só a faixa em que há trabalho, arredondada para a hora
+  // cheia. Mostrar madrugada vazia só gastaria tela no celular.
+  const primeiro = Math.min(...itens.map(i=>i.inicio));
+  const ultimo   = Math.max(...itens.map(i=>i.inicio + i.duracao));
+  const inicio = Math.floor(primeiro/60)*60 - 30;
+  const fim    = Math.ceil(ultimo/60)*60 + 30;
+  const altura = (fim - inicio) * TRILHA_PX_POR_MIN;
+
+  let linhas = '';
+  for(let m = inicio; m <= fim; m += 30){
+    const cheia = m % 60 === 0;
+    linhas += `<div class="trilha-linha${cheia?' cheia':''}" style="top:${((m-inicio)*TRILHA_PX_POR_MIN).toFixed(1)}px">
+      ${cheia ? `<span class="trilha-hora">${horarioDeMinutos(m)}</span>` : ''}
+    </div>`;
+  }
+
+  const agora = new Date();
+  const agoraMin = agora.getHours()*60 + agora.getMinutes();
+  const marcaAgora = ehHoje && agoraMin >= inicio && agoraMin <= fim
+    ? `<div class="trilha-agora" style="top:${((agoraMin-inicio)*TRILHA_PX_POR_MIN).toFixed(1)}px"><span></span></div>`
+    : '';
+
+  const blocos = itens.map(i=>{
+    const topo = (i.inicio - inicio) * TRILHA_PX_POR_MIN;
+    // Piso de 58px: é o que o conteúdo do bloco ocupa. Sem isso um atendimento
+    // de 45 min corta a última linha, e é justamente onde ficam presença e alerta.
+    const alt = Math.max(58, i.duracao * TRILHA_PX_POR_MIN - 3);
+    const faixa = `${horarioDeMinutos(i.inicio)} – ${horarioDeMinutos(i.inicio + i.duracao)}`;
+    const acao = i.tipo === 'turma' && i.slotId
+      ? ` onclick="abrirTurmaDoDia('${jsAttr(i.slotId)}')" role="button" tabindex="0"` : '';
+    return `<div class="trilha-bloco ${i.tipo}"${acao} style="top:${topo.toFixed(1)}px;height:${alt.toFixed(1)}px">
+      <div class="trilha-bloco-hora">${faixa}</div>
+      <div class="trilha-bloco-nome">${escHtml(i.titulo)}</div>
+      <div class="trilha-bloco-tags">
+        ${i.sub ? `<span>${escHtml(i.sub)}</span>` : ''}
+        ${i.presentes ? `<span class="tag-presenca">${escHtml(i.presentes)} presentes</span>` : ''}
+        ${i.alerta ? `<span class="tag-alerta">${i.alerta} fora do padrão</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="trilha" style="height:${altura.toFixed(0)}px">${linhas}${marcaAgora}
+    <div class="trilha-blocos">${blocos}</div></div>`;
+}
+
+function abrirTurmaDoDia(slotId){
+  showProfTab('turmas');
+  setTimeout(()=>{
+    const el = document.getElementById('turma-hoje');
+    if(el) el.scrollIntoView({ block:'start' });
+  }, 120);
+}
+
 async function renderCalWeek(ctx){
   const st = calState[ctx];
   const bodyEl = document.getElementById(ctx+'-cal-body');
