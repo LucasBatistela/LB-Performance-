@@ -2092,19 +2092,18 @@ img { max-width: 100%; display: block; }
       </div>
       <!-- Tabs do professor -->
       <div class="admin-tabs" style="margin-bottom:24px">
-        <button class="admin-tab active" id="ptab-visao" onclick="showProfTab('visao')">Visão Geral</button>
+        <button class="admin-tab active" id="ptab-hoje" onclick="showProfTab('hoje')">Hoje</button>
         <button class="admin-tab" id="ptab-alunos" onclick="showProfTab('alunos')">Alunos</button>
         <button class="admin-tab" id="ptab-treino" data-modulo="montagemTreino" onclick="showProfTab('treino')">Treino</button>
         <button class="admin-tab" id="ptab-turmas" onclick="showProfTab('turmas')">Turmas</button>
-        <button class="admin-tab" id="ptab-agendamentos" onclick="showProfTab('agendamentos')">Agendamentos</button>
-        <button class="admin-tab" id="ptab-disponibilidade" onclick="showProfTab('disponibilidade')">Disponibilidade</button>
+        <button class="admin-tab" id="ptab-agenda" onclick="showProfTab('agenda')">Agenda</button>
+        <button class="admin-tab" id="ptab-horarios" onclick="showProfTab('horarios')">Horários</button>
         <button class="admin-tab" id="ptab-anamnese" onclick="showProfTab('anamnese')">Anamnese</button>
-        <button class="admin-tab" id="ptab-perfil" onclick="showProfTab('perfil')">Meu Perfil</button>
       </div>
       <!-- Visão Geral -->
-      <div id="prof-tab-visao">
+      <div id="prof-tab-hoje">
         <div class="dash-card is-highlight dash-card-clickable" style="margin-bottom:16px"
-          onclick="if(event.target.closest('[onclick]')!==this) return; showProfTab('agendamentos')" title="Ver todos os agendamentos">
+          onclick="if(event.target.closest('[onclick]')!==this) return; showProfTab('agenda')" title="Ver todos os agendamentos">
           <div class="dash-card-title">
             <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
             Agenda de hoje
@@ -2130,7 +2129,7 @@ img { max-width: 100%; display: block; }
             <div id="prof-alunos-lista"><p style="color:var(--muted);font-size:.88rem">Nenhum aluno vinculado.</p></div>
           </div>
           <div class="dash-card dash-card-clickable"
-            onclick="if(event.target.closest('[onclick]')!==this) return; showProfTab('agendamentos')" title="Ver todos os agendamentos">
+            onclick="if(event.target.closest('[onclick]')!==this) return; showProfTab('agenda')" title="Ver todos os agendamentos">
             <div class="dash-card-title">
               <span class="dash-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
               Próximos agendamentos
@@ -2292,7 +2291,7 @@ img { max-width: 100%; display: block; }
       </div>
 
       <!-- Agendamentos -->
-      <div id="prof-tab-agendamentos" hidden>
+      <div id="prof-tab-agenda" hidden>
         <div class="dash-card">
           <div class="dash-card-title" style="justify-content:space-between">
             <span style="display:flex;align-items:center;gap:10px">
@@ -2333,7 +2332,7 @@ img { max-width: 100%; display: block; }
         </div>
       </div>
       <!-- Disponibilidade -->
-      <div id="prof-tab-disponibilidade" hidden>
+      <div id="prof-tab-horarios" hidden>
         <div class="dash-card">
           <div class="dash-card-title" style="justify-content:space-between">
             <span style="display:flex;align-items:center;gap:10px">
@@ -7516,8 +7515,15 @@ async function loadProfDashboard() {
 }
 
 /* ── Professor tabs ───────────────────────────────────────────── */
+function abrirPerfilProfessor(){
+  const drop = document.getElementById('nav-profile-drop');
+  if(drop) drop.hidden = true;
+  showPage('dashboard-prof');
+  setTimeout(()=>showProfTab('perfil'), 50);
+}
+
 function showProfTab(tab) {
-  ['visao','alunos','turmas','treino','agendamentos','disponibilidade','anamnese','perfil'].forEach(t=>{
+  ['hoje','alunos','turmas','treino','agenda','horarios','anamnese','perfil'].forEach(t=>{
     const el = document.getElementById('prof-tab-'+t);
     const btn = document.getElementById('ptab-'+t);
     if(el) el.hidden = t!==tab;
@@ -7568,7 +7574,7 @@ function goToAgendamentos(){
   if(!currentUser || !currentProfile) { showPage('login'); return; }
   if(currentProfile.role==='professor'){
     showPage('dashboard-prof');
-    setTimeout(()=>showProfTab('agendamentos'), 50);
+    setTimeout(()=>showProfTab('agenda'), 50);
   } else {
     showPage('agendar');
   }
@@ -8287,7 +8293,7 @@ async function refreshBookingsRealtimeUI(){
   if(currentPage==='dashboard-aluno') loadAlunoDashboard();
   if(currentPage==='dashboard-prof'){
     loadProfDashboard();
-    if(document.getElementById('prof-tab-agendamentos')?.hidden===false) loadProfAllBookings();
+    if(document.getElementById('prof-tab-agenda')?.hidden===false) loadProfAllBookings();
   }
 }
 
@@ -9256,10 +9262,16 @@ function renderNavDrop() {
     const avatarHTML = avatarDataUrl
       ? `<img src="${avatarDataUrl}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0">`
       : `<div style="width:42px;height:42px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:.9rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getInitials(name)}</div>`;
-    const profileBtn = role==='student' ? `
-      <button class="nav-profile-drop-item" onclick="showPage('perfil-aluno');document.getElementById('nav-profile-drop').hidden=true">
-        <span>${UI_ICONS.user}</span> Meu perfil
-      </button>` : '';
+    // O perfil do professor é uma aba do painel, não uma página — por isso ele
+    // navega e depois troca de aba. Saiu da barra de abas porque não é coisa do
+    // dia a dia, e no celular cada aba a menos conta.
+    const profileBtn = role==='student'
+      ? `<button class="nav-profile-drop-item" onclick="showPage('perfil-aluno');document.getElementById('nav-profile-drop').hidden=true">
+          <span>${UI_ICONS.user}</span> Meu perfil
+        </button>`
+      : `<button class="nav-profile-drop-item" onclick="abrirPerfilProfessor()">
+          <span>${UI_ICONS.user}</span> Meu perfil
+        </button>`;
     el.innerHTML = `
       <div class="nav-profile-drop-header">
         <div style="display:flex;align-items:center;gap:12px">
