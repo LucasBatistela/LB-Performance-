@@ -1087,6 +1087,51 @@ img { max-width: 100%; display: block; }
 @media (max-width: 480px) {
   .evo-summary { grid-template-columns: 1fr 1fr; }
 }
+
+/* ─── QUESTIONÁRIOS PRÉ E PÓS-TREINO (PSR / PSE) ──────────────── */
+.q-intro { font-size: .88rem; color: var(--ink-2); margin-bottom: 20px; line-height: 1.6; }
+.q-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+.q-label { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+.q-hint { font-size: .78rem; color: var(--muted); margin-bottom: 12px; }
+/* A escala rola no eixo X em vez de quebrar linha: 11 botões numa tela de 360px
+   não cabem, e quebrar embaralha a noção de régua contínua. */
+.q-scale { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.q-scale button { flex: 1 0 38px; min-width: 38px; height: 44px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--ink-2);
+  font-weight: 700; font-size: .92rem; transition: background .12s, border-color .12s, color .12s; }
+.q-scale button:hover { border-color: var(--pine); }
+.q-scale button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.q-anchors { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px;
+  font-size: .72rem; color: var(--muted); }
+.q-anchor-sel { margin-top: 10px; font-size: .82rem; font-weight: 600; color: var(--pine); min-height: 1.2em; }
+.q-smileys { display: flex; gap: 8px; }
+.q-smileys button { flex: 1; height: 56px; border-radius: var(--radius-sm); border: 1.5px solid var(--border);
+  background: var(--surface); font-size: 1.5rem; line-height: 1; transition: background .12s, border-color .12s; }
+.q-smileys button.on { border-color: var(--pine); background: rgba(52,106,172,.12); }
+.q-err { color: var(--crit); font-size: .8rem; margin-top: 8px; }
+
+/* ─── MAPA CORPORAL DE DOR ────────────────────────────────────── */
+.body-map-switch { display: flex; gap: 6px; margin-bottom: 12px; }
+.body-map-switch button { flex: 1; padding: 9px; border-radius: 999px; border: 1.5px solid var(--border);
+  background: var(--surface); font-weight: 700; font-size: .82rem; color: var(--ink-2); }
+.body-map-switch button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
+.body-map { display: block; margin: 0 auto; max-width: 260px; width: 100%; height: auto; }
+.body-map .zona { fill: var(--surface-alt); stroke: var(--border); stroke-width: 1.5;
+  cursor: pointer; transition: fill .12s; }
+.body-map .zona:hover { fill: var(--citrus); }
+.body-map .zona.on { fill: var(--crit); stroke: var(--crit); }
+.body-map .deco { fill: var(--surface-alt); stroke: var(--border); stroke-width: 1.5; pointer-events: none; }
+.body-map-sel { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.body-map-chip { font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 999px;
+  background: var(--crit-bg); color: var(--crit); }
+.body-map-vazio { font-size: .8rem; color: var(--muted); }
+
+/* ─── BANNER DE SESSÃO EM ANDAMENTO ───────────────────────────── */
+.sessao-ativa { border: 1.5px solid var(--pine); background: rgba(52,106,172,.08);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sessao-ativa-txt { font-size: .85rem; font-weight: 600; }
+.sessao-ativa-sub { font-size: .75rem; color: var(--muted); font-weight: 400; }
 .mt-rest-time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pine); }
 .mt-load-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .mt-load-input { width: 90px; font-size: .88rem; padding: 8px 10px; }
@@ -1832,6 +1877,7 @@ img { max-width: 100%; display: block; }
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
         <button class="btn-ghost" style="font-size:.82rem;padding:8px 16px" onclick="openEvolucao()">Ver minha evolução →</button>
       </div>
+      <div id="mt-sessao-banner"></div>
       <div class="div-tabs" id="mt-division-tabs"></div>
       <div id="mt-content">
         <p style="color:var(--muted);font-size:.88rem">Carregando...</p>
@@ -1852,6 +1898,38 @@ img { max-width: 100%; display: block; }
     </div>
   </div>
 
+  <!-- PRÉ-TREINO — PSR + bem-estar, respondido ao chegar -->
+  <div class="page" id="page-pre-treino">
+    <div class="dash-wrap">
+      <div class="compact-page-title">
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <span>Antes de treinar</span>
+      </div>
+      <p class="q-intro">Leva menos de um minuto. Responda com sinceridade — é isso que permite ajustar o treino ao seu dia.</p>
+      <div id="pre-form"></div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn-ghost" style="flex:0 0 auto" onclick="goBack()">Cancelar</button>
+        <button class="btn-primary" style="flex:1" id="pre-submit-btn" onclick="submitPreTreino()">Começar o treino</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÓS-TREINO — PSE (session-RPE) + satisfação, respondido ao encerrar -->
+  <div class="page" id="page-pos-treino">
+    <div class="dash-wrap">
+      <div class="compact-page-title">
+        <span class="icon-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span>Terminando o treino</span>
+      </div>
+      <p class="q-intro">Última coisa: como foi esse treino para você?</p>
+      <div id="pos-form"></div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn-ghost" style="flex:0 0 auto" onclick="goBack()">Voltar</button>
+        <button class="btn-primary" style="flex:1" id="pos-submit-btn" onclick="submitPosTreino()">Encerrar treino</button>
+      </div>
+    </div>
+  </div>
+
   <!-- EDITOR DE TREINO (professor monta o treino de um aluno específico) -->
   <div class="page" id="page-treino-editor">
     <div class="dash-wrap">
@@ -1862,6 +1940,7 @@ img { max-width: 100%; display: block; }
       <div class="div-tabs" id="te-group-filter"></div>
       <div class="div-tabs" id="te-category-filter" hidden></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin:4px 0 16px">
+        <button class="btn-ghost" style="font-size:.85rem;padding:10px 18px" id="te-peso-toggle" onclick="toggleTrackWeight()" title="Pedir peso antes e depois do treino para este aluno">Peso: —</button>
         <button class="btn-ghost" style="font-size:.85rem;padding:10px 18px" onclick="openEvolucaoDoAlunoEditado()">Ver evolução</button>
         <button class="btn-primary" style="font-size:.85rem;padding:10px 18px" onclick="openDivisionModal()">+ Nova divisão</button>
       </div>
@@ -3156,9 +3235,32 @@ function goToTreinoEditor(studentId, studentName){
   loadStudentTreino(studentId);
 }
 
+// Peso pré/pós treino mede desidratação: vale para um caso específico, é atrito
+// puro no resto. Fica desligado por padrão e o professor liga por aluno.
+async function renderTrackWeightToggle(studentId){
+  const btn = document.getElementById('te-peso-toggle');
+  if(!btn || !sb || !studentId) return;
+  const { data } = await sb.from('students').select('track_weight').eq('id', studentId).maybeSingle();
+  const on = !!data?.track_weight;
+  btn.dataset.on = on ? '1' : '0';
+  btn.textContent = on ? 'Peso: pedindo' : 'Peso: não pede';
+  btn.style.color = on ? 'var(--pine)' : '';
+}
+
+async function toggleTrackWeight(){
+  const btn = document.getElementById('te-peso-toggle');
+  if(!btn || !sb || !mtSelectedStudentId) return;
+  const novo = btn.dataset.on !== '1';
+  const { error } = await sb.from('students').update({ track_weight: novo }).eq('id', mtSelectedStudentId);
+  if(error){ showToast('❌ Erro ao salvar: '+error.message); return; }
+  await renderTrackWeightToggle(mtSelectedStudentId);
+  showToast(novo ? '✅ Passará a pedir o peso a esse aluno.' : '✅ Não vai mais pedir o peso.');
+}
+
 async function loadStudentTreino(studentId){
   mtSelectedStudentId = studentId || null;
   if(!studentId) return;
+  renderTrackWeightToggle(studentId);
   const { data: divisions } = await sb.from('training_divisions').select('*')
     .eq('student_id', studentId).eq('professor_id', currentUser.id).order('order_index');
   mtDivisions = divisions || [];
@@ -3329,6 +3431,9 @@ async function loadMeuTreino(){
   const contentEl = document.getElementById('mt-content');
   if(!sb || !currentUser || !tabsEl || !contentEl) return;
   contentEl.innerHTML = '<p style="color:var(--muted);font-size:.88rem">Carregando...</p>';
+  // O banner de sessão é independente do treino montado: mesmo sem divisões
+  // vinculadas o aluno pode registrar que treinou.
+  carregarSessaoAtiva().then(renderSessaoBanner);
   const { data: divisions } = await sb.from('training_divisions').select('*').eq('student_id', currentUser.id).order('order_index');
   mtStudentDivisions = divisions || [];
   if(!mtStudentDivisions.length){
@@ -3636,13 +3741,341 @@ async function renderEvolucao(){
     ${exercicios.map(evoCardHTML).join('')}`;
 }
 
+/* ── PRÉ E PÓS-TREINO: PSR, PSE e bem-estar ────────────────────
+   Instrumentos: PSR de Laurent et al. (2011) para recuperação, respondido ao
+   chegar; session-RPE de Foster para esforço, respondido ao encerrar. A carga
+   interna (PSE × minutos) é coluna gerada no banco, não se calcula aqui. */
+
+// Lado direito/esquerdo é sempre o do ALUNO, não o de quem olha a tela: de
+// frente a imagem é espelhada, de costas não. Por isso os ids invertem de lado
+// entre as duas vistas.
+const CORPO_REGIOES = {
+  frente: [
+    {id:'pescoco',      nome:'Pescoço',                  f:'rect',    x:90,  y:49,  w:20, h:13, r:5},
+    {id:'ombro_d',      nome:'Ombro direito',            f:'ellipse', cx:62, cy:78, rx:16, ry:12},
+    {id:'ombro_e',      nome:'Ombro esquerdo',           f:'ellipse', cx:138,cy:78, rx:16, ry:12},
+    {id:'peitoral',     nome:'Peitoral',                 f:'rect',    x:74,  y:66,  w:52, h:40, r:8},
+    {id:'braco_d',      nome:'Braço direito',            f:'rect',    x:46,  y:92,  w:21, h:46, r:9},
+    {id:'braco_e',      nome:'Braço esquerdo',           f:'rect',    x:133, y:92,  w:21, h:46, r:9},
+    {id:'antebraco_d',  nome:'Antebraço direito',        f:'rect',    x:43,  y:142, w:19, h:44, r:8},
+    {id:'antebraco_e',  nome:'Antebraço esquerdo',       f:'rect',    x:138, y:142, w:19, h:44, r:8},
+    {id:'abdomen',      nome:'Abdômen',                  f:'rect',    x:76,  y:108, w:48, h:46, r:8},
+    {id:'virilha_d',    nome:'Quadril/virilha direita',  f:'rect',    x:74,  y:156, w:24, h:26, r:6},
+    {id:'virilha_e',    nome:'Quadril/virilha esquerda', f:'rect',    x:102, y:156, w:24, h:26, r:6},
+    {id:'coxa_ant_d',   nome:'Coxa direita (frente)',    f:'rect',    x:72,  y:184, w:26, h:62, r:10},
+    {id:'coxa_ant_e',   nome:'Coxa esquerda (frente)',   f:'rect',    x:102, y:184, w:26, h:62, r:10},
+    {id:'joelho_d',     nome:'Joelho direito',           f:'rect',    x:74,  y:248, w:22, h:20, r:7},
+    {id:'joelho_e',     nome:'Joelho esquerdo',          f:'rect',    x:104, y:248, w:22, h:20, r:7},
+    {id:'canela_d',     nome:'Canela direita',           f:'rect',    x:76,  y:270, w:20, h:60, r:8},
+    {id:'canela_e',     nome:'Canela esquerda',          f:'rect',    x:104, y:270, w:20, h:60, r:8},
+    {id:'pe_d',         nome:'Pé direito',               f:'rect',    x:72,  y:332, w:24, h:17, r:6},
+    {id:'pe_e',         nome:'Pé esquerdo',              f:'rect',    x:104, y:332, w:24, h:17, r:6},
+  ],
+  costas: [
+    {id:'cervical',       nome:'Cervical',                   f:'rect', x:90,  y:49,  w:20, h:13, r:5},
+    {id:'trapezio_e',     nome:'Trapézio esquerdo',          f:'rect', x:66,  y:64,  w:32, h:20, r:8},
+    {id:'trapezio_d',     nome:'Trapézio direito',           f:'rect', x:102, y:64,  w:32, h:20, r:8},
+    {id:'escapula_e',     nome:'Escápula esquerda',          f:'rect', x:70,  y:88,  w:28, h:34, r:7},
+    {id:'escapula_d',     nome:'Escápula direita',           f:'rect', x:102, y:88,  w:28, h:34, r:7},
+    {id:'lombar',         nome:'Lombar',                     f:'rect', x:76,  y:126, w:48, h:36, r:8},
+    {id:'gluteo_e',       nome:'Glúteo esquerdo',            f:'rect', x:72,  y:164, w:26, h:30, r:10},
+    {id:'gluteo_d',       nome:'Glúteo direito',             f:'rect', x:102, y:164, w:26, h:30, r:10},
+    {id:'post_coxa_e',    nome:'Posterior da coxa esquerda', f:'rect', x:72,  y:196, w:26, h:60, r:10},
+    {id:'post_coxa_d',    nome:'Posterior da coxa direita',  f:'rect', x:102, y:196, w:26, h:60, r:10},
+    {id:'panturrilha_e',  nome:'Panturrilha esquerda',       f:'rect', x:74,  y:258, w:22, h:56, r:9},
+    {id:'panturrilha_d',  nome:'Panturrilha direita',        f:'rect', x:104, y:258, w:22, h:56, r:9},
+    {id:'aquiles_e',      nome:'Tendão de Aquiles esquerdo', f:'rect', x:78,  y:316, w:14, h:20, r:5},
+    {id:'aquiles_d',      nome:'Tendão de Aquiles direito',  f:'rect', x:108, y:316, w:14, h:20, r:5},
+  ]
+};
+const CORPO_NOMES = Object.fromEntries(
+  [...CORPO_REGIOES.frente, ...CORPO_REGIOES.costas].map(z=>[z.id, z.nome])
+);
+// Braços de costas são só desenho: a lista do professor não distingue tríceps
+// de bíceps, e deixá-los clicáveis criaria região duplicada com a vista frontal.
+const CORPO_DECO = {
+  frente: [],
+  costas: [
+    {f:'rect', x:46,  y:88, w:20, h:92, r:9},
+    {f:'rect', x:134, y:88, w:20, h:92, r:9},
+    {f:'rect', x:72,  y:338, w:24, h:14, r:5},
+    {f:'rect', x:104, y:338, w:24, h:14, r:5},
+  ]
+};
+
+const ANCORAS = {
+  psr: ['Muito mal recuperado, exausto','Muito mal recuperado','Mal recuperado','Mal recuperado',
+        'Pouco recuperado','Moderadamente recuperado','Razoavelmente recuperado','Bem recuperado',
+        'Bem recuperado','Muito bem recuperado','Totalmente recuperado, cheio de energia'],
+  pse: ['Repouso','Muito leve','Leve','Moderado','Pouco intenso','Intenso',
+        'Intenso a muito intenso','Muito intenso','Muito intenso','Quase máximo','Máximo'],
+  estresse: ['Nenhum','Quase nenhum','Baixo','Baixo','Leve','Moderado',
+             'Moderado a alto','Alto','Alto','Muito alto','Extremo'],
+  dor: ['Nenhuma','Bem leve','Leve','Moderada','Forte','Muito forte'],
+};
+
+let qRespostas   = {};
+let dorRegioes   = new Set();
+let bodyMapLado  = 'frente';
+let sessaoAtiva  = null;
+let alunoPesaTreino = false;
+
+function qEscala(campo, min, max){
+  let bts = '';
+  for(let i=min;i<=max;i++){
+    bts += `<button type="button" id="q-${campo}-${i}" onclick="qSetValor('${campo}',${i})">${i}</button>`;
+  }
+  const anc = ANCORAS[campo];
+  return `<div class="q-scale">${bts}</div>
+    <div class="q-anchors"><span>${anc?escHtml(anc[min]):min}</span><span>${anc?escHtml(anc[max]):max}</span></div>
+    <div class="q-anchor-sel" id="q-${campo}-sel"></div>`;
+}
+
+function qSetValor(campo, valor){
+  qRespostas[campo] = valor;
+  const anc = ANCORAS[campo];
+  document.querySelectorAll(`[id^="q-${campo}-"]`).forEach(b=>{
+    if(b.tagName==='BUTTON') b.classList.toggle('on', b.id === `q-${campo}-${valor}`);
+  });
+  const sel = document.getElementById(`q-${campo}-sel`);
+  if(sel) sel.textContent = anc ? anc[valor] : '';
+  if(campo === 'dor') atualizaVisibilidadeMapaDor();
+}
+
+function qCard(titulo, dica, conteudo){
+  return `<div class="q-card">
+    <div class="q-label">${escHtml(titulo)}</div>
+    ${dica?`<div class="q-hint">${escHtml(dica)}</div>`:''}
+    ${conteudo}
+  </div>`;
+}
+
+/* ── Mapa corporal ───────────────────────────────────────────── */
+function bodyShapeSVG(z, classe){
+  const extra = classe==='zona' ? ` class="zona${dorRegioes.has(z.id)?' on':''}" onclick="toggleDorRegiao('${jsAttr(z.id)}')"><title>${escHtml(z.nome)}</title>` : ` class="deco">`;
+  if(z.f==='ellipse') return `<ellipse cx="${z.cx}" cy="${z.cy}" rx="${z.rx}" ry="${z.ry}"${extra}</ellipse>`;
+  return `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="${z.r}"${extra}</rect>`;
+}
+
+function renderBodyMap(){
+  const wrap = document.getElementById('body-map-wrap');
+  if(!wrap) return;
+  const zonas = CORPO_REGIOES[bodyMapLado].map(z=>bodyShapeSVG(z,'zona')).join('');
+  const deco  = CORPO_DECO[bodyMapLado].map(z=>bodyShapeSVG(z,'deco')).join('');
+  const selecionadas = [...dorRegioes];
+
+  wrap.innerHTML = `
+    <div class="body-map-switch">
+      <button type="button" class="${bodyMapLado==='frente'?'on':''}" onclick="setBodyMapLado('frente')">Frente</button>
+      <button type="button" class="${bodyMapLado==='costas'?'on':''}" onclick="setBodyMapLado('costas')">Costas</button>
+    </div>
+    <svg class="body-map" viewBox="0 0 200 360" role="group" aria-label="Mapa do corpo: toque onde dói">
+      <circle class="deco" cx="100" cy="30" r="21"/>
+      ${deco}${zonas}
+    </svg>
+    <div class="body-map-sel">${
+      selecionadas.length
+        ? selecionadas.map(id=>`<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)}</span>`).join('')
+        : '<span class="body-map-vazio">Toque no corpo para marcar onde dói. Pode marcar mais de um lugar, na frente e nas costas.</span>'
+    }</div>`;
+}
+
+function setBodyMapLado(lado){ bodyMapLado = lado; renderBodyMap(); }
+
+function toggleDorRegiao(id){
+  if(dorRegioes.has(id)) dorRegioes.delete(id); else dorRegioes.add(id);
+  renderBodyMap();
+}
+
+function atualizaVisibilidadeMapaDor(){
+  const card = document.getElementById('card-mapa-dor');
+  if(!card) return;
+  const temDor = (qRespostas.dor || 0) > 0;
+  card.hidden = !temDor;
+  if(!temDor) dorRegioes.clear(); else renderBodyMap();
+}
+
+/* ── Pré-treino ──────────────────────────────────────────────── */
+async function renderPreTreino(){
+  const el = document.getElementById('pre-form');
+  if(!el || !currentUser || !sb) return;
+  qRespostas = {}; dorRegioes.clear(); bodyMapLado = 'frente';
+
+  const { data: aluno } = await sb.from('students').select('track_weight').eq('id', currentUser.id).maybeSingle();
+  alunoPesaTreino = !!aluno?.track_weight;
+
+  el.innerHTML =
+    qCard('Como está sua recuperação para treinar hoje?',
+          'Pense no corpo todo, comparando com um dia em que você se sente 100%.',
+          qEscala('psr', 0, 10)) +
+    qCard('Como está seu nível de estresse hoje?', null, qEscala('estresse', 0, 10)) +
+    qCard('Está sentindo alguma dor?', null, qEscala('dor', 0, 5)) +
+    `<div class="q-card" id="card-mapa-dor" hidden>
+      <div class="q-label">Onde dói?</div>
+      <div id="body-map-wrap"></div>
+    </div>` +
+    qCard('Quantas horas você dormiu?', null, qEscala('horas_sono', 0, 11)) +
+    (alunoPesaTreino ? qCard('Peso antes do treino', 'Opcional.',
+      `<input type="number" step="0.1" inputmode="decimal" id="q-peso-pre" placeholder="kg">`) : '') +
+    qCard('Quer registrar mais alguma coisa?', 'Opcional.',
+      `<textarea id="q-obs-pre" rows="2" placeholder="Alguma coisa que o professor precise saber…"></textarea>`);
+
+  renderBodyMap();
+}
+
+async function submitPreTreino(){
+  if(!sb || !currentUser) return;
+  const btn = document.getElementById('pre-submit-btn');
+  const faltando = ['psr','estresse','dor','horas_sono'].filter(c=> qRespostas[c] == null);
+  if(faltando.length){ showToast('❌ Responda todas as perguntas antes de começar.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Começando…';
+
+  const { data: aluno } = await sb.from('students').select('professor_id').eq('id', currentUser.id).maybeSingle();
+  if(!aluno?.professor_id){
+    btn.disabled = false; btn.textContent = 'Começar o treino';
+    showToast('❌ Seu cadastro ainda não tem professor vinculado. Fale com ele.');
+    return;
+  }
+
+  // Se houver agendamento confirmado hoje, a sessão fica amarrada a ele; treino
+  // solo simplesmente não tem booking_id.
+  const hoje = dateToStr(new Date());
+  const { data: bk } = await sb.from('bookings').select('id')
+    .eq('student_id', currentUser.id).eq('date', hoje).eq('status','confirmed').limit(1).maybeSingle();
+
+  const pesoPre = parseFloat(document.getElementById('q-peso-pre')?.value || '');
+
+  const { data: sess, error } = await sb.from('training_sessions').insert({
+    student_id: currentUser.id,
+    professor_id: aluno.professor_id,
+    booking_id: bk?.id || null,
+    psr: qRespostas.psr, estresse: qRespostas.estresse,
+    dor: qRespostas.dor, horas_sono: qRespostas.horas_sono,
+    peso_pre: isFinite(pesoPre) ? pesoPre : null,
+    obs_pre: (document.getElementById('q-obs-pre')?.value || '').trim() || null
+  }).select().single();
+
+  btn.disabled = false; btn.textContent = 'Começar o treino';
+  if(error){
+    // O índice parcial garante uma sessão aberta por aluno; esse é o caso de
+    // ele ter iniciado num aparelho e tentado iniciar de novo em outro.
+    showToast(error.code === '23505'
+      ? '❌ Você já tem um treino em andamento. Encerre ele antes de começar outro.'
+      : '❌ Erro ao iniciar: ' + error.message);
+    return;
+  }
+
+  if(dorRegioes.size){
+    const linhas = [...dorRegioes].map(r=>({ session_id: sess.id, region: r }));
+    const { error: eDor } = await sb.from('session_pain_points').insert(linhas);
+    if(eDor) console.error('Erro ao salvar regiões de dor:', eDor);
+  }
+
+  sessaoAtiva = sess;
+  showToast('✅ Bom treino!');
+  showPage('meu-treino');
+}
+
+/* ── Pós-treino ──────────────────────────────────────────────── */
+async function renderPosTreino(){
+  const el = document.getElementById('pos-form');
+  if(!el || !currentUser || !sb) return;
+  qRespostas = {};
+
+  if(!sessaoAtiva) await carregarSessaoAtiva();
+  if(!sessaoAtiva){
+    el.innerHTML = `<div class="q-card"><p style="font-size:.88rem;color:var(--muted)">Nenhum treino em andamento. Inicie um treino antes de encerrar.</p></div>`;
+    const b = document.getElementById('pos-submit-btn'); if(b) b.hidden = true;
+    return;
+  }
+  const b = document.getElementById('pos-submit-btn'); if(b) b.hidden = false;
+
+  const minutos = Math.max(1, Math.round((Date.now() - new Date(sessaoAtiva.started_at).getTime())/60000));
+
+  el.innerHTML =
+    qCard('Quanto esforço esse treino exigiu de você?',
+          'Pense no treino inteiro, não só na parte mais pesada.',
+          qEscala('pse', 0, 10)) +
+    qCard('Quanto tempo durou?',
+          'Já vem preenchido pelo relógio. Ajuste se não bater.',
+          `<input type="number" inputmode="numeric" id="q-duracao" value="${minutos}" min="1" max="600"> <span class="q-hint" style="margin:6px 0 0">minutos</span>`) +
+    qCard('O que você achou do treino?', null,
+      `<div class="q-smileys">${
+        [[1,'😞'],[2,'😕'],[3,'😐'],[4,'🙂'],[5,'😄']].map(([v,e])=>
+          `<button type="button" id="q-satisfacao-${v}" onclick="qSetValor('satisfacao',${v})" aria-label="Nota ${v} de 5">${e}</button>`
+        ).join('')}</div>`) +
+    (alunoPesaTreino ? qCard('Peso depois do treino', 'Opcional.',
+      `<input type="number" step="0.1" inputmode="decimal" id="q-peso-pos" placeholder="kg">`) : '') +
+    qCard('Quer registrar mais alguma coisa?', 'Opcional.',
+      `<textarea id="q-obs-pos" rows="2" placeholder="Como foi, o que incomodou…"></textarea>`);
+}
+
+async function submitPosTreino(){
+  if(!sb || !sessaoAtiva) return;
+  const btn = document.getElementById('pos-submit-btn');
+  if(qRespostas.pse == null){ showToast('❌ Diga quanto esforço o treino exigiu.'); return; }
+  if(qRespostas.satisfacao == null){ showToast('❌ Diga o que você achou do treino.'); return; }
+  const duracao = parseInt(document.getElementById('q-duracao')?.value || '', 10);
+  if(!isFinite(duracao) || duracao < 1 || duracao > 600){ showToast('❌ Duração inválida.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Encerrando…';
+  const pesoPos = parseFloat(document.getElementById('q-peso-pos')?.value || '');
+
+  const { error } = await sb.from('training_sessions').update({
+    ended_at: new Date().toISOString(),
+    duration_min: duracao,
+    pse: qRespostas.pse,
+    satisfacao: qRespostas.satisfacao,
+    peso_pos: isFinite(pesoPos) ? pesoPos : null,
+    obs_pos: (document.getElementById('q-obs-pos')?.value || '').trim() || null
+  }).eq('id', sessaoAtiva.id);
+
+  btn.disabled = false; btn.textContent = 'Encerrar treino';
+  if(error){ showToast('❌ Erro ao encerrar: ' + error.message); return; }
+
+  sessaoAtiva = null;
+  showToast('✅ Treino registrado!');
+  showPage('evolucao');
+}
+
+/* ── Estado da sessão ────────────────────────────────────────── */
+async function carregarSessaoAtiva(){
+  if(!sb || !currentUser){ sessaoAtiva = null; return null; }
+  const { data } = await sb.from('training_sessions').select('*')
+    .eq('student_id', currentUser.id).is('ended_at', null)
+    .order('started_at', {ascending:false}).limit(1).maybeSingle();
+  sessaoAtiva = data || null;
+  return sessaoAtiva;
+}
+
+function renderSessaoBanner(){
+  const el = document.getElementById('mt-sessao-banner');
+  if(!el) return;
+  if(!sessaoAtiva){
+    el.innerHTML = `<div class="sessao-ativa" style="border-color:var(--border);background:transparent">
+      <div class="sessao-ativa-txt">Pronto para treinar?
+        <div class="sessao-ativa-sub">Responda 4 perguntas rápidas e comece.</div></div>
+      <button class="btn-primary" style="font-size:.85rem;padding:10px 20px" onclick="showPage('pre-treino')">Iniciar treino</button>
+    </div>`;
+    return;
+  }
+  const inicio = new Date(sessaoAtiva.started_at);
+  const hh = String(inicio.getHours()).padStart(2,'0'), mm = String(inicio.getMinutes()).padStart(2,'0');
+  el.innerHTML = `<div class="sessao-ativa">
+    <div class="sessao-ativa-txt">Treino em andamento
+      <div class="sessao-ativa-sub">Começou às ${hh}:${mm}</div></div>
+    <button class="btn-primary" style="font-size:.85rem;padding:10px 20px" onclick="showPage('pos-treino')">Encerrar treino</button>
+  </div>`;
+}
+
 /* ── Page routing ─────────────────────────────────────────────── */
 let currentPage = 'home';
 let pageHistory = [];
 function showPage(id, opts) {
   opts = opts || {};
   // Proteção de rota: dashboards exigem login
-  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student', 'meu-plano': 'student', 'treino-editor': 'professor', 'evolucao': null };
+  const protectedRoutes = { 'dashboard-aluno': 'student', 'dashboard-prof': 'professor', 'anamnese': 'student', 'config': null, 'notificacoes': null, 'duvidas': null, 'perfil-aluno': 'student', 'meu-treino': 'student', 'meu-plano': 'student', 'treino-editor': 'professor', 'evolucao': null, 'pre-treino': 'student', 'pos-treino': 'student' };
   if(id in protectedRoutes) {
     const requiredRole = protectedRoutes[id];
     if(!currentUser || !currentProfile) { showPage('login'); return; }
@@ -3677,6 +4110,8 @@ function showPage(id, opts) {
   if(id==='perfil-aluno') fillProfileCard();
   if(id==='meu-treino') loadMeuTreino();
   if(id==='evolucao') renderEvolucao();
+  if(id==='pre-treino') renderPreTreino();
+  if(id==='pos-treino') renderPosTreino();
   const backBtn = document.getElementById('nav-back-btn');
   if(backBtn) backBtn.hidden = (id==='home' || id==='redefinir-senha');
 }
