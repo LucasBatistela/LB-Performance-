@@ -1124,20 +1124,32 @@ img { max-width: 100%; display: block; }
 .body-map-switch button { flex: 1; padding: 9px; border-radius: 999px; border: 1.5px solid var(--border);
   background: var(--surface); font-weight: 700; font-size: .82rem; color: var(--ink-2); }
 .body-map-switch button.on { background: var(--pine); border-color: var(--pine); color: #fff; }
-.body-map { display: block; margin: 0 auto; max-width: 290px; width: 100%; height: auto; }
-/* Traço fino e claro entre os músculos: é o que dá leitura de desenho
-   anatômico em vez de bloco. O preenchimento quase transparente deixa a linha
-   mandar na imagem. */
-.body-map .zona { fill: var(--pine); fill-opacity: .13; stroke: var(--pine); stroke-opacity: .55;
+.body-map { display: block; margin: 0 auto; max-width: 300px; width: 100%; height: auto; }
+/* A silhueta é o corpo cinza; os músculos são pintados por cima e recortados
+   por ela, e o contorno vem por último para fechar a borda com nitidez. */
+.body-map .silhueta { fill: var(--surface-alt); stroke: none; pointer-events: none; }
+/* A cabeça recebe o mesmo tom das regiões musculares e o mesmo contorno do
+   corpo. Sem isso ela fica mais clara que o resto — não há músculo desenhado
+   sobre ela — e lê como bolha solta flutuando acima dos ombros. O tronco é
+   preenchido depois e cobre o arco de baixo, costurando cabeça e pescoço. */
+.body-map .cabeca { fill: var(--ink-2); fill-opacity: .18;
+  stroke: var(--ink-2); stroke-opacity: .5; stroke-width: 2; pointer-events: none; }
+.body-map .contorno { fill: none; stroke: var(--ink-2); stroke-opacity: .5;
+  stroke-width: 2; stroke-linejoin: round; pointer-events: none; }
+.body-map .zona { fill: var(--ink-2); fill-opacity: .18; stroke: var(--ink-2); stroke-opacity: .42;
   stroke-width: 1.1; stroke-linejoin: round; cursor: pointer;
   transition: fill-opacity .12s, fill .12s; }
-.body-map .zona:hover { fill-opacity: .34; }
-.body-map .zona:focus-visible { outline: none; stroke: var(--ink); stroke-width: 2; }
-.body-map .zona.on { fill: var(--crit); fill-opacity: .8; stroke: var(--crit); stroke-opacity: 1; }
-.body-map .deco { fill: var(--pine); fill-opacity: .13; stroke: var(--pine); stroke-opacity: .55;
-  stroke-width: 1.1; pointer-events: none; }
-.body-map-lado { fill: var(--muted); font-size: 13px; font-weight: 700;
+.body-map .zona:hover { fill-opacity: .4; }
+.body-map .zona:focus-visible { outline: none; stroke: var(--ink); stroke-width: 2.2; }
+.body-map .zona.on { fill: var(--crit); fill-opacity: .85; stroke: var(--crit); stroke-opacity: 1; }
+.body-map .estrias path { fill: none; stroke: var(--ink-2); stroke-opacity: .3;
+  stroke-width: 1; stroke-linecap: round; pointer-events: none; }
+.body-map-lado { fill: var(--muted); font-size: 15px; font-weight: 700;
   font-family: var(--font-b); pointer-events: none; }
+.body-map-troca { text-align: center; margin-top: 8px; }
+.body-map-troca button { font-size: .74rem; color: var(--muted); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+.body-map-troca button:hover { color: var(--pine); }
 .body-map-sel { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
 .body-map-chip { font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 999px;
   background: var(--crit-bg); color: var(--crit); }
@@ -4072,17 +4084,8 @@ function evoBadgeDesvio(valor, base, ondeMenorEhPior){
   return `<span class="evo-badge ${pior?'alerta':'bom'}">${z>0?'acima':'abaixo'} do padrão dele</span>`;
 }
 
-function bodyHeatSVG(lado, contagem, max){
-  const zonas = CORPO_REGIOES[lado].map(z=>{
-    const n = contagem[z.id] || 0;
-    // piso de 0.15 pra uma queixa isolada não sumir no fundo
-    const op = n && max ? (0.15 + 0.85 * (n / max)) : 0;
-    const est = n ? ` style="fill:var(--crit);fill-opacity:${op.toFixed(2)};stroke:var(--crit)"` : '';
-    return `<path class="zona" d="${z.d}"${est}><title>${escHtml(z.nome)}: ${n} ${n===1?'vez':'vezes'}</title></path>`;
-  }).join('');
-  const deco = CORPO_DECO[lado].map(z=>bodyShapeSVG(z,'deco')).join('');
-  return `<svg class="body-map" viewBox="0 0 ${CORPO_W} ${CORPO_H}" role="img" aria-label="Mapa de calor de dor — ${lado}">
-    ${bodyMapCabeca()}${deco}${zonas}${bodyMapLegendaLados(lado)}</svg>`;
+function bodyHeatSVG(lado, contagem, max, genero){
+  return corpoSVG({ genero: genero || 'm', vista: lado, modo: 'calor', contagem, max });
 }
 
 // PSE e PSR na mesma escala 0–10 de propósito: escalar cada uma pelo próprio
@@ -4174,6 +4177,9 @@ async function renderEvolucaoProfessor(){
     return;
   }
 
+  const { data: dadosAluno } = await sb.from('students').select('gender').eq('id', evoStudentId).maybeSingle();
+  const generoAluno = dadosAluno?.gender === 'F' ? 'f' : 'm';
+
   const concluidas = (sessoes||[]).filter(s=>s.ended_at);
   const hojeStr = dateToStr(new Date());
   const deHoje = (sessoes||[]).find(s=> dateToStr(new Date(s.started_at)) === hojeStr);
@@ -4228,8 +4234,8 @@ async function renderEvolucaoProfessor(){
   const dorBloco = !maxDor
     ? `<div class="dash-card"><p style="color:var(--muted);font-size:.88rem">Nenhuma queixa de dor registrada.</p></div>`
     : `<div class="evo-heat">
-        <div>${bodyHeatSVG('frente', contagem, maxDor)}<div class="evo-heat-lbl">Frente</div></div>
-        <div>${bodyHeatSVG('costas', contagem, maxDor)}<div class="evo-heat-lbl">Costas</div></div>
+        <div>${bodyHeatSVG('frente', contagem, maxDor, generoAluno)}<div class="evo-heat-lbl">Frente</div></div>
+        <div>${bodyHeatSVG('costas', contagem, maxDor, generoAluno)}<div class="evo-heat-lbl">Costas</div></div>
       </div>
       <div class="body-map-sel" style="justify-content:center">${ranking.map(([id,n])=>
         `<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)} · ${n}</span>`).join('')}</div>`;
@@ -4257,12 +4263,20 @@ function trocarAlunoEvolucao(id, nome){
    interna (PSE × minutos) é coluna gerada no banco, não se calcula aqui. */
 
 /* ── Mapa corporal anatômico ───────────────────────────────────
-   As formas são geradas por spline a partir de poucos pontos: dá curva
-   orgânica sem escrever bezier à mão, e o espelhamento sai de graça, o que
-   garante que os dois lados do corpo fiquem simétricos de verdade.
-   Cada região é um músculo nomeado — o aluno toca onde dói e o professor lê
-   "vasto lateral direito", não "coxa". */
-const CORPO_W = 260, CORPO_H = 520;
+   O corpo tem um contorno único e os músculos são desenhados DENTRO dele,
+   recortados por esse contorno. A versão anterior montava o corpo a partir de
+   manchas soltas, e era por isso que lia como bonequinho segmentado: a silhueta
+   era o que sobrava das peças, em vez de ser o que manda na figura.
+
+   O recorte também libera as formas internas de terem bordas exatas — elas
+   podem transbordar que o clip resolve —, o que é o que torna viável desenhar
+   músculo com curva de verdade à mão.
+
+   A figura feminina não é um arquivo separado: os mesmos músculos passam por
+   um ajuste de proporção por altura (ombro mais estreito, cintura mais alta e
+   marcada, quadril mais largo), e só o peitoral é redesenhado. Isso mantém a
+   anatomia coerente entre as duas e evita duas fontes de verdade divergindo. */
+const CORPO_W = 300, CORPO_H = 620;
 
 // Catmull-Rom fechada convertida em bezier cúbica.
 function pathSuave(pts){
@@ -4278,74 +4292,164 @@ function pathSuave(pts){
 }
 const espelha = pts => pts.map(([x,y])=>[CORPO_W - x, y]);
 
+// O contorno é desenhado só pela metade; a outra vem do espelho, em ordem
+// inversa, pra fechar o caminho. Garante simetria e corta a autoria pela metade.
+function contornoCompleto(meia){
+  return [...meia, ...espelha(meia.slice(0, -1)).reverse()];
+}
+
+/* Ajuste feminino. Não é "encolher tudo": a proporção muda por altura — ombro
+   mais estreito, cintura mais alta e marcada, quadril mais largo. Os braços
+   ficam fora dessa conta porque ocupam a mesma faixa de altura do quadril, e
+   alargar ali jogaria a mão pra fora da tela. */
+const ESCALA_FEM = [[0,0.97],[100,0.95],[150,0.88],[205,0.84],[245,0.93],[280,1.10],[335,1.06],[425,1.00],[620,0.95]];
+function escalaFem(y){
+  for(let i=0;i<ESCALA_FEM.length-1;i++){
+    const [y0,s0] = ESCALA_FEM[i], [y1,s1] = ESCALA_FEM[i+1];
+    if(y <= y1){ const t = Math.max(0, Math.min(1, (y-y0)/(y1-y0))); return s0 + (s1-s0)*t; }
+  }
+  return ESCALA_FEM[ESCALA_FEM.length-1][1];
+}
+function paraFeminino(pts, parte){
+  if(parte === 'braco') return pts.map(([x,y])=>[150 + (x-150)*0.90, y]);
+  return pts.map(([x,y])=>[150 + (x-150)*escalaFem(y), y]);
+}
+
 // Os pontos são sempre do lado ESQUERDO DA TELA. De frente esse lado é o
 // direito do aluno; de costas, o esquerdo. Por isso o sufixo depende da vista.
-function par(base, nome, pts, vista){
+function par(base, nome, pts, vista, parte){
   const [ladoTela, ladoEspelho] = vista === 'frente' ? ['d','e'] : ['e','d'];
   const rot = s => s === 'd' ? 'direito' : 'esquerdo';
   const conc = nome.endsWith('a') || nome.includes('Lombar');
   const fem = s => s === 'd' ? 'direita' : 'esquerda';
   return [
-    { id:`${base}_${ladoTela}`,   nome:`${nome} ${conc?fem(ladoTela):rot(ladoTela)}`,     d:pathSuave(pts) },
-    { id:`${base}_${ladoEspelho}`,nome:`${nome} ${conc?fem(ladoEspelho):rot(ladoEspelho)}`,d:pathSuave(espelha(pts)) },
+    { id:`${base}_${ladoTela}`,   nome:`${nome} ${conc?fem(ladoTela):rot(ladoTela)}`,     pts, parte },
+    { id:`${base}_${ladoEspelho}`,nome:`${nome} ${conc?fem(ladoEspelho):rot(ladoEspelho)}`,pts: espelha(pts), parte },
   ];
 }
-const solo = (id, nome, pts) => ({ id, nome, d: pathSuave(pts) });
+const solo = (id, nome, pts, parte) => ({ id, nome, pts, parte });
 
-const CORPO_REGIOES = {
+// Metade do contorno, do pescoço descendo pelo braço e pela perna até a virilha.
+// Frente e costas compartilham a silhueta: nessa estilização ela é a mesma.
+const SILHUETA_MEIA = [
+  [136,58],[124,76],[106,88],[86,96],[68,110],[54,142],[42,180],[32,208],[20,242],
+  [10,274],[2,296],[0,318],[14,330],[32,324],[42,308],[52,286],[64,254],[76,220],
+  [86,196],[98,162],[108,136],[112,172],[116,212],[120,252],[112,284],[104,314],
+  [100,354],[102,394],[106,428],[110,468],[114,510],[116,540],[108,566],[142,568],
+  [140,540],[138,482],[136,430],[138,398],[142,354],[146,310],[150,304]
+];
+
+// Índices de SILHUETA_MEIA que formam o braço, do ombro à axila.
+const SILHUETA_BRACO = [4, 20];
+const MAO = [[14,276],[0,300],[0,324],[18,334],[36,322],[40,296]];
+const PE_COSTAS = [[102,552],[144,552],[146,574],[98,574]];
+
+// Estrias: linhas de fibra dentro dos músculos maiores. É o que dá leitura de
+// prancha anatômica em vez de mancha chapada.
+const ESTRIAS = {
+  reto_abdominal: [[[130,218],[170,218]],[[130,244],[170,244]],[[130,268],[170,268]],[[150,194],[150,290]]],
+  peitoral_d:     [[[146,118],[110,136]],[[147,142],[104,158]],[[148,166],[112,182]]],
+  grande_dorsal_e:[[[144,184],[104,198]],[[146,208],[102,218]],[[144,232],[112,242]]],
+  gluteo_max_e:   [[[144,312],[106,328]],[[146,334],[104,348]]],
+  vasto_lateral_d:[[[102,340],[94,424]]],
+  reto_femoral_d: [[[130,336],[126,412]]],
+  biceps_d:       [[[86,132],[58,196]]],
+  isquiotibiais_e:[[[120,368],[116,444]]],
+  gastrocnemio_e: [[[120,458],[118,518]]],
+};
+
+const MUSCULOS = {
   frente: [
-    solo('pescoco_ant','Pescoço (esternocleidomastóideo)', [[118,70],[142,70],[146,92],[130,96],[114,92]]),
-    ...par('trapezio_sup','Trapézio superior',   [[112,90],[96,96],[78,108],[92,116],[108,102]], 'frente'),
-    ...par('deltoide_ant','Deltoide anterior',   [[78,106],[64,116],[58,134],[60,152],[72,158],[84,142],[88,120]], 'frente'),
-    ...par('peitoral','Peitoral maior',          [[126,98],[104,102],[92,116],[88,136],[94,154],[112,162],[126,158]], 'frente'),
-    ...par('biceps','Bíceps braquial',           [[70,158],[60,168],[57,190],[60,210],[72,216],[80,196],[82,168]], 'frente'),
-    ...par('antebraco_ant','Antebraço (flexores)',[[62,214],[54,236],[50,264],[52,288],[64,292],[72,262],[76,228]], 'frente'),
-    solo('reto_abdominal','Reto abdominal',      [[114,162],[146,162],[150,196],[148,230],[130,242],[112,230],[110,196]]),
-    ...par('obliquo','Oblíquo',                  [[94,158],[88,178],[90,208],[98,232],[110,236],[110,196],[112,164]], 'frente'),
-    ...par('iliopsoas','Flexor do quadril (iliopsoas)', [[110,238],[98,252],[94,272],[104,282],[120,278],[124,258],[122,242]], 'frente'),
-    ...par('vasto_lateral','Vasto lateral',      [[94,272],[84,296],[80,330],[84,362],[96,372],[102,336],[104,298]], 'frente'),
-    ...par('reto_femoral','Reto femoral',        [[104,282],[100,308],[100,340],[106,356],[122,356],[124,330],[124,300]], 'frente'),
-    ...par('vasto_medial','Vasto medial',        [[106,356],[102,372],[106,386],[120,388],[126,372],[124,356]], 'frente'),
-    ...par('adutores','Adutor',                  [[126,278],[130,284],[130,346],[122,348],[120,312],[122,284]], 'frente'),
-    ...par('joelho','Joelho (tendão patelar)',   [[88,372],[86,390],[92,404],[110,408],[122,400],[124,384],[110,376],[96,374]], 'frente'),
-    ...par('tibial_ant','Tibial anterior',       [[96,406],[90,436],[88,468],[92,490],[106,492],[110,458],[112,424]], 'frente'),
-    ...par('pe','Tornozelo e pé',                [[92,492],[86,506],[88,516],[116,516],[118,502],[110,492]], 'frente'),
+    solo('pescoco_ant','Pescoço (esternocleidomastóideo)', [[132,54],[168,54],[174,104],[150,116],[126,104]], 'tronco'),
+    ...par('trapezio_sup','Trapézio superior',   [[134,62],[106,82],[82,98],[104,122],[130,96]], 'frente','tronco'),
+    ...par('deltoide_ant','Deltoide anterior',   [[88,86],[60,102],[48,134],[66,158],[96,150],[110,120],[108,92]], 'frente','braco'),
+    ...par('peitoral','Peitoral maior',          [[150,98],[116,104],[98,128],[96,160],[112,188],[142,196],[150,190]], 'frente','tronco'),
+    ...par('biceps','Bíceps braquial',           [[70,106],[46,152],[32,204],[62,226],[94,180],[112,132]], 'frente','braco'),
+    ...par('antebraco_ant','Antebraço (flexores)',[[32,196],[6,268],[0,314],[32,328],[62,262],[80,208]], 'frente','braco'),
+    solo('reto_abdominal','Reto abdominal',      [[128,190],[172,190],[176,234],[172,276],[150,294],[128,276],[124,234]], 'tronco'),
+    ...par('obliquo','Oblíquo',                  [[106,182],[98,214],[102,252],[114,280],[128,282],[126,234],[130,192]], 'frente','tronco'),
+    ...par('iliopsoas','Flexor do quadril (iliopsoas)', [[126,282],[106,296],[98,320],[114,334],[138,328],[142,300]], 'frente','tronco'),
+    ...par('vasto_lateral','Vasto lateral',      [[102,316],[88,348],[84,392],[90,428],[108,436],[118,388],[120,342]], 'frente','perna'),
+    ...par('reto_femoral','Reto femoral',        [[118,320],[112,356],[112,396],[118,418],[142,418],[146,380],[144,340]], 'frente','perna'),
+    ...par('vasto_medial','Vasto medial',        [[118,412],[110,432],[116,452],[138,456],[146,434],[144,412]], 'frente','perna'),
+    ...par('adutores','Adutor',                  [[144,314],[149,320],[149,406],[138,408],[134,360],[138,322]], 'frente','perna'),
+    ...par('joelho','Joelho (tendão patelar)',   [[98,430],[92,452],[98,474],[128,478],[146,466],[148,444],[126,432],[106,430]], 'frente','perna'),
+    ...par('tibial_ant','Tibial anterior',       [[104,472],[96,510],[94,546],[102,564],[126,564],[130,520],[132,480]], 'frente','perna'),
+    ...par('pe','Tornozelo e pé',                [[102,552],[92,574],[96,586],[146,586],[148,566],[132,552]], 'frente','perna'),
   ],
   costas: [
-    solo('cervical_post','Cervical (extensores do pescoço)', [[118,70],[142,70],[146,92],[130,96],[114,92]]),
-    ...par('trapezio_sup','Trapézio superior',   [[112,88],[94,96],[78,108],[96,124],[118,112],[126,96]], 'costas'),
-    ...par('deltoide_post','Deltoide posterior', [[78,106],[64,116],[58,134],[60,152],[72,158],[84,142],[88,120]], 'costas'),
-    ...par('trapezio_med','Trapézio médio e romboides', [[96,126],[118,114],[128,122],[128,150],[108,158],[94,148]], 'costas'),
-    ...par('grande_dorsal','Grande dorsal',      [[92,152],[110,160],[128,156],[128,200],[112,214],[96,194],[88,170]], 'costas'),
-    ...par('triceps','Tríceps braquial',         [[70,158],[60,168],[57,190],[60,210],[72,216],[80,196],[82,168]], 'costas'),
-    ...par('antebraco_post','Antebraço (extensores)', [[62,214],[54,236],[50,264],[52,288],[64,292],[72,262],[76,228]], 'costas'),
-    ...par('eretores','Lombar (eretores da espinha)', [[106,210],[124,208],[124,250],[112,254],[104,232]], 'costas'),
-    solo('fascia_toracolombar','Fáscia toracolombar', [[126,208],[134,208],[136,246],[130,258],[124,246]]),
-    ...par('gluteo_med','Glúteo médio',          [[88,244],[104,248],[102,266],[86,266],[82,254]], 'costas'),
-    ...par('gluteo_max','Glúteo máximo',         [[96,254],[120,252],[128,264],[128,292],[112,302],[94,290],[90,270]], 'costas'),
-    ...par('isquiotibiais','Isquiotibiais',      [[92,302],[112,306],[124,302],[124,350],[112,372],[94,366],[88,332]], 'costas'),
-    ...par('poplite','Posterior do joelho',      [[92,370],[122,374],[122,390],[94,390]], 'costas'),
-    ...par('gastrocnemio','Gastrocnêmio',        [[92,392],[122,392],[122,432],[110,448],[94,436],[88,414]], 'costas'),
-    ...par('soleo','Sóleo',                      [[94,442],[118,444],[116,476],[100,478],[94,462]], 'costas'),
-    ...par('aquiles','Tendão de Aquiles',        [[102,480],[116,480],[116,500],[104,500]], 'costas'),
+    solo('cervical_post','Cervical (extensores do pescoço)', [[132,54],[168,54],[174,104],[150,116],[126,104]], 'tronco'),
+    ...par('trapezio_sup','Trapézio superior',   [[136,58],[100,78],[74,96],[98,136],[136,120],[150,86]], 'costas','tronco'),
+    ...par('deltoide_post','Deltoide posterior', [[88,86],[60,102],[48,134],[66,158],[96,150],[110,120],[108,92]], 'costas','braco'),
+    ...par('trapezio_med','Trapézio médio e romboides', [[104,134],[134,118],[149,128],[149,168],[120,180],[100,158]], 'costas','tronco'),
+    ...par('grande_dorsal','Grande dorsal',      [[92,156],[122,188],[149,178],[149,248],[128,274],[100,232],[84,184]], 'costas','tronco'),
+    ...par('triceps','Tríceps braquial',         [[70,106],[46,152],[32,204],[62,226],[94,180],[112,132]], 'costas','braco'),
+    ...par('antebraco_post','Antebraço (extensores)', [[32,196],[6,268],[0,314],[32,328],[62,262],[80,208]], 'costas','braco'),
+    ...par('eretores','Lombar (eretores da espinha)', [[106,236],[134,230],[134,288],[118,294],[104,264]], 'costas','tronco'),
+    solo('fascia_toracolombar','Fáscia toracolombar', [[136,230],[164,230],[166,286],[150,302],[134,286]], 'tronco'),
+    ...par('gluteo_med','Glúteo médio',          [[98,286],[122,290],[118,314],[94,316],[90,298]], 'costas','tronco'),
+    ...par('gluteo_max','Glúteo máximo',         [[104,300],[134,296],[149,310],[149,352],[126,368],[100,352],[94,324]], 'costas','perna'),
+    ...par('isquiotibiais','Isquiotibiais',      [[98,356],[126,362],[146,356],[146,428],[126,452],[100,444],[92,398]], 'costas','perna'),
+    ...par('gastrocnemio','Gastrocnêmio',        [[98,452],[140,452],[142,504],[124,526],[100,510],[92,480]], 'costas','perna'),
+    ...par('soleo','Sóleo (e tendão de Aquiles)',[[98,512],[136,514],[134,566],[108,568],[98,540]], 'costas','perna'),
   ]
 };
+
+// Na figura feminina só o peitoral é redesenhado; o resto vem do ajuste de
+// proporção. O músculo é o mesmo, o contorno da região é que muda.
+const PEITORAL_FEM = [[150,100],[122,106],[102,128],[98,162],[110,192],[136,200],[150,192]];
+
 const CORPO_NOMES = Object.fromEntries(
-  [...CORPO_REGIOES.frente, ...CORPO_REGIOES.costas].map(z=>[z.id, z.nome])
+  [...MUSCULOS.frente, ...MUSCULOS.costas].map(z=>[z.id, z.nome])
 );
-// Cabeça e mãos não entram na lista de queixas — desenho só, para o corpo fechar.
-const CORPO_DECO = {
-  frente: [
-    { d: pathSuave([[52,294],[47,312],[52,326],[65,323],[67,302]]) },
-    { d: pathSuave(espelha([[52,294],[47,312],[52,326],[65,323],[67,302]])) },
-  ],
-  costas: [
-    { d: pathSuave([[52,294],[47,312],[52,326],[65,323],[67,302]]) },
-    { d: pathSuave(espelha([[52,294],[47,312],[52,326],[65,323],[67,302]])) },
-    { d: pathSuave([[98,500],[120,500],[122,514],[94,514]]) },
-    { d: pathSuave(espelha([[98,500],[120,500],[122,514],[94,514]])) },
-  ]
-};
+
+// Monta a figura pronta para desenho, já com o ajuste de proporção aplicado.
+function figuraCorpo(genero, vista){
+  const fem = genero === 'f';
+  const ajusta = (pts, parte) => fem ? paraFeminino(pts, parte) : pts;
+
+  const musculos = MUSCULOS[vista].map(m=>{
+    let pts = m.pts;
+    if(fem && m.id.startsWith('peitoral_')){
+      pts = m.id.endsWith('_e') ? espelha(PEITORAL_FEM) : PEITORAL_FEM;
+    }
+    return { id:m.id, nome:m.nome, d: pathSuave(ajusta(pts, m.parte)) };
+  });
+
+  const estrias = [];
+  Object.entries(ESTRIAS).forEach(([id, linhas])=>{
+    const alvos = id.endsWith('_d') || id.endsWith('_e')
+      ? [[id, false], [id.slice(0,-2) + (id.endsWith('_d')?'_e':'_d'), true]]
+      : [[id, false]];
+    alvos.forEach(([alvoId, espelhar])=>{
+      if(!musculos.some(m=>m.id === alvoId)) return;
+      const parte = (MUSCULOS[vista].find(m=>m.id === alvoId) || {}).parte || 'tronco';
+      linhas.forEach(([a,b])=>{
+        const seg = espelhar ? espelha([a,b]) : [a,b];
+        const [p1,p2] = ajusta(seg, parte);
+        estrias.push(`M${p1[0].toFixed(1)},${p1[1].toFixed(1)} L${p2[0].toFixed(1)},${p2[1].toFixed(1)}`);
+      });
+    });
+  });
+
+  const deco = [ajusta(MAO,'braco'), espelha(ajusta(MAO,'braco'))];
+  if(vista === 'costas'){ deco.push(ajusta(PE_COSTAS,'perna')); }
+
+  // O contorno é um traço só que passa pelo braço e pelo tronco, então o ajuste
+  // não pode ser uniforme: alargar o quadril na altura em que a mão está jogaria
+  // a mão para fora da tela.
+  const meia = SILHUETA_MEIA.map((p,i)=>{
+    if(!fem) return p;
+    const naBraco = i >= SILHUETA_BRACO[0] && i <= SILHUETA_BRACO[1];
+    return paraFeminino([p], naBraco ? 'braco' : 'tronco')[0];
+  });
+
+  return {
+    silhueta: pathSuave(contornoCompleto(meia)),
+    cabeca: fem ? { cx:150, cy:44, rx:25, ry:33 } : { cx:150, cy:44, rx:27, ry:34 },
+    musculos, estrias, deco: deco.map(pathSuave),
+  };
+}
 
 const ANCORAS = {
   psr: ['Muito mal recuperado, exausto','Muito mal recuperado','Mal recuperado','Mal recuperado',
@@ -4394,6 +4498,9 @@ function faceSVG(qualidade){
 let qRespostas   = {};
 let dorRegioes   = new Set();
 let bodyMapLado  = 'frente';
+// Vem do gênero do cadastro; sem informação, masculino. O aluno pode trocar a
+// qualquer momento — o cadastro não precisa ser a última palavra sobre isso.
+let bodyMapGenero = 'm';
 let sessaoAtiva  = null;
 let alunoPesaTreino = false;
 let checkinSlots = [];
@@ -4441,31 +4548,51 @@ function qCard(titulo, dica, conteudo){
 }
 
 /* ── Mapa corporal ───────────────────────────────────────────── */
-function bodyShapeSVG(z, classe){
-  if(classe !== 'zona') return `<path class="deco" d="${z.d}"/>`;
-  return `<path class="zona${dorRegioes.has(z.id)?' on':''}" d="${z.d}"
-    onclick="toggleDorRegiao('${jsAttr(z.id)}')" role="button" tabindex="0"
-    onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDorRegiao('${jsAttr(z.id)}')}"
-    ><title>${escHtml(z.nome)}</title></path>`;
-}
-
-function bodyMapCabeca(){
-  return `<ellipse class="deco" cx="130" cy="40" rx="26" ry="33"/>`;
-}
-
 // "Esq." e "Dir." são do ALUNO. Sem esse rótulo, de frente a pessoa marca o
 // lado trocado, porque a imagem está espelhada em relação ao corpo dela.
 function bodyMapLegendaLados(vista){
   const esqNaEsquerda = vista === 'costas';
-  return `<text class="body-map-lado" x="14" y="118">${esqNaEsquerda?'Esq.':'Dir.'}</text>
-          <text class="body-map-lado" x="246" y="118" text-anchor="end">${esqNaEsquerda?'Dir.':'Esq.'}</text>`;
+  return `<text class="body-map-lado" x="6" y="132">${esqNaEsquerda?'Esq.':'Dir.'}</text>
+          <text class="body-map-lado" x="294" y="132" text-anchor="end">${esqNaEsquerda?'Dir.':'Esq.'}</text>`;
+}
+
+/* Desenha a figura. `modo` 'selecao' é o mapa que o aluno toca; 'calor' é o
+   acumulado que o professor lê. Os dois compartilham a mesma geometria de
+   propósito: o que o professor vê marcado é exatamente onde o aluno tocou. */
+function corpoSVG({ genero, vista, modo = 'selecao', contagem = {}, max = 0 }){
+  const f = figuraCorpo(genero, vista);
+  const cid = `clip-${genero}-${vista}-${modo}`;
+
+  const musculos = f.musculos.map(m=>{
+    if(modo === 'calor'){
+      const n = contagem[m.id] || 0;
+      // piso de 0.18 pra uma queixa isolada não sumir no fundo
+      const est = n && max ? ` style="fill:var(--crit);fill-opacity:${(0.18 + 0.82*(n/max)).toFixed(2)}"` : '';
+      return `<path class="zona" d="${m.d}"${est}><title>${escHtml(m.nome)}: ${n} ${n===1?'vez':'vezes'}</title></path>`;
+    }
+    return `<path class="zona${dorRegioes.has(m.id)?' on':''}" d="${m.d}" role="button" tabindex="0"
+      onclick="toggleDorRegiao('${jsAttr(m.id)}')"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDorRegiao('${jsAttr(m.id)}')}"
+      ><title>${escHtml(m.nome)}</title></path>`;
+  }).join('');
+
+  return `<svg class="body-map" viewBox="0 0 ${CORPO_W} ${CORPO_H}"
+      role="${modo==='calor'?'img':'group'}" aria-label="${modo==='calor'?'Mapa de calor de dor':'Mapa do corpo: toque no músculo onde dói'}">
+    <defs><clipPath id="${cid}"><path d="${f.silhueta}"/></clipPath></defs>
+    <ellipse class="silhueta" cx="${f.cabeca.cx}" cy="${f.cabeca.cy}" rx="${f.cabeca.rx}" ry="${f.cabeca.ry}"/>
+    <ellipse class="cabeca" cx="${f.cabeca.cx}" cy="${f.cabeca.cy}" rx="${f.cabeca.rx}" ry="${f.cabeca.ry}"/>
+    <path class="silhueta" d="${f.silhueta}"/>
+    ${f.deco.map(d=>`<path class="silhueta" d="${d}"/>`).join('')}
+    <g clip-path="url(#${cid})">${musculos}</g>
+    <g class="estrias" clip-path="url(#${cid})">${f.estrias.map(d=>`<path d="${d}"/>`).join('')}</g>
+    <path class="contorno" d="${f.silhueta}"/>
+    ${bodyMapLegendaLados(vista)}
+  </svg>`;
 }
 
 function renderBodyMap(){
   const wrap = document.getElementById('body-map-wrap');
   if(!wrap) return;
-  const zonas = CORPO_REGIOES[bodyMapLado].map(z=>bodyShapeSVG(z,'zona')).join('');
-  const deco  = CORPO_DECO[bodyMapLado].map(z=>bodyShapeSVG(z,'deco')).join('');
   const selecionadas = [...dorRegioes];
 
   wrap.innerHTML = `
@@ -4473,14 +4600,22 @@ function renderBodyMap(){
       <button type="button" class="${bodyMapLado==='frente'?'on':''}" onclick="setBodyMapLado('frente')">Frente</button>
       <button type="button" class="${bodyMapLado==='costas'?'on':''}" onclick="setBodyMapLado('costas')">Costas</button>
     </div>
-    <svg class="body-map" viewBox="0 0 ${CORPO_W} ${CORPO_H}" role="group" aria-label="Mapa do corpo: toque no músculo onde dói">
-      ${bodyMapCabeca()}${deco}${zonas}${bodyMapLegendaLados(bodyMapLado)}
-    </svg>
+    ${corpoSVG({ genero: bodyMapGenero, vista: bodyMapLado })}
+    <div class="body-map-troca">
+      <button type="button" onclick="alternarGeneroBoneco()">
+        Usando o corpo ${bodyMapGenero==='f'?'feminino':'masculino'} · trocar
+      </button>
+    </div>
     <div class="body-map-sel">${
       selecionadas.length
         ? selecionadas.map(id=>`<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)}</span>`).join('')
         : '<span class="body-map-vazio">Toque no músculo onde dói. Pode marcar mais de um, na frente e nas costas.</span>'
     }</div>`;
+}
+
+function alternarGeneroBoneco(){
+  bodyMapGenero = bodyMapGenero === 'f' ? 'm' : 'f';
+  renderBodyMap();
 }
 
 function setBodyMapLado(lado){ bodyMapLado = lado; renderBodyMap(); }
@@ -4542,8 +4677,9 @@ async function renderPreTreino(){
   if(!el || !currentUser || !sb) return;
   qRespostas = {}; dorRegioes.clear(); bodyMapLado = 'frente';
 
-  const { data: aluno } = await sb.from('students').select('track_weight').eq('id', currentUser.id).maybeSingle();
+  const { data: aluno } = await sb.from('students').select('track_weight, gender').eq('id', currentUser.id).maybeSingle();
   alunoPesaTreino = !!aluno?.track_weight;
+  bodyMapGenero = aluno?.gender === 'F' ? 'f' : 'm';
   await carregarTurmasDeHoje();
 
   el.innerHTML = qCardTurma() +
