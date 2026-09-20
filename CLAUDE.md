@@ -15,6 +15,14 @@ There is nothing to install or build. To work on the site, edit `index.html` dir
 (or serve the directory with any static file server — the app makes no assumptions about a specific host).
 There is no linter, formatter, or test runner configured in this repo.
 
+**Serving it locally is worth the trouble**, because with no test suite the only way to check a UI change is to
+load the page: a syntax error anywhere in the single inline `<script>` kills the whole app, and the browser
+console is what tells you. This machine has no `node` and no real `python` (the `python.exe` on PATH is the
+Microsoft Store stub, which fails), but Git Bash ships `perl`, which can serve a directory from core modules
+alone. Write a small `IO::Socket::INET` loop to a scratch file and run it against the repo root — don't commit
+the server into the project. Loading `index.html` over `http://` rather than `file://` also matters: Supabase
+auth and the CDN scripts behave differently on a `file://` origin.
+
 ## Architecture
 
 ### Single-file SPA
