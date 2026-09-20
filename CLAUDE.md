@@ -83,6 +83,35 @@ CSS custom properties on `:root` define a light palette; `@media (prefers-color-
 `:root[data-theme="dark"]` override it. `toggleTheme()` persists the user's choice to `localStorage`
 (`lb_theme`), and a small inline `<script>` in `<head>` applies it before first paint to avoid a flash.
 
+## Monitoramento de carga interna (PSE / PSR)
+
+The training-load module rests on published instruments, and the wording of each question is part of the
+instrument — don't paraphrase them casually:
+
+- **PSR** (recuperação), 0–10, answered on arrival — Laurent et al., 2011, *J Strength Cond Res*
+  ([DOI](https://doi.org/10.1519/JSC.0b013e3181c69ec6)), validated for resistance training by Tolusso et al.
+  ([DOI](https://doi.org/10.1123/ijspp.2021-0360)).
+- **PSE** (esforço), CR-10, answered at the end — the session-RPE method, reviewed by Foster et al.
+  ([DOI](https://doi.org/10.1123/ijspp.2020-0599)) and by Haddad et al. ([DOI](https://doi.org/10.3389/fnins.2017.00612)).
+- **Monotonia e strain** — Foster, 1998 ([DOI](https://doi.org/10.1097/00005768-199807000-00023)).
+- **ACWR is deliberately absent.** It is contested in the literature and was left out until it can be grounded
+  as firmly as the rest. Don't add it casually.
+
+`training_sessions` is the central table. It exists **independently of `bookings`** — a session the student
+trains alone still counts, because monotonia and strain are computed over the whole week and would be wrong if
+half the sessions were missing. `carga` (PSE × minutos) is a generated column: don't recompute it in the client.
+`session_pain_points` holds one row per body region reported. A partial unique index enforces one open session
+per student.
+
+**Two rules the dashboards must keep:**
+
+1. **Never compare students to each other.** The PSR validation is explicit that equal scores across people do
+   not mean equal recovery. Every deviation is measured against that student's own baseline, which needs
+   `EVO_MIN_BASE` (10) sessions before any alert is shown.
+2. **The student view carries no jargon.** `page-evolucao` renders two ways off `currentProfile.role`:
+   the professor gets monotonia, strain, z-score badges and raw per-session answers; the student gets
+   frequency, load progression and plain-Portuguese sentences. Keep that split when adding to either.
+
 ## Rendering user text
 
 Anything a student can type reaches the professor's screen: their own `full_name`, their anamnese answers, and
