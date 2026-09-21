@@ -65,6 +65,8 @@
   --good:        #227a4f; --good-bg: #E4F3EB;
   --warn:        #96760a; --warn-bg: #FFF2B8; --warn-vivid: #EAB308;
   --crit:        #a83a33; --crit-bg: #FBE7E5;
+  /* Acento do estúdio: identidade de grupo de confirmação, fora da paleta de status. */
+  --estudio:     #b85f1d;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -74,6 +76,7 @@
     --good:        #4fbf88; --good-bg: #0f2a1e;
     --warn:        #f3c331; --warn-bg: #3d2f06; --warn-vivid: #FBBF24;
     --crit:        #e07068; --crit-bg: #2c1512;
+    --estudio:     #f0a464;
   }
 }
 :root[data-theme="dark"] {
@@ -83,6 +86,7 @@
   --good:        #4fbf88; --good-bg: #0f2a1e;
   --warn:        #f3c331; --warn-bg: #3d2f06; --warn-vivid: #FBBF24;
   --crit:        #e07068; --crit-bg: #2c1512;
+  --estudio:     #f0a464;
 }
 
 /* ─── RESET ───────────────────────────────────────────────────── */
@@ -1239,6 +1243,15 @@ img { max-width: 100%; display: block; }
 .grupo-chev { color: var(--muted); transition: transform .15s; display: inline-block; }
 .grupo-chev.on { transform: rotate(180deg); }
 .grupo-corpo { padding: 0 14px 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.grupo-tag { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 2px;
+  background: rgba(52,106,172,.14); color: var(--pine); }
+.grupo-tag.conf { background: rgba(224,122,47,.16); color: var(--estudio); }
+.grupo-config { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px;
+  margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.grupo-campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.grupo-campo > span { font-size: .76rem; font-weight: 600; color: var(--muted); }
+.grupo-campo input { width: 100%; }
 .grupo-membros { display: flex; flex-wrap: wrap; gap: 6px; }
 .membro-chip { font-size: .78rem; font-weight: 600; padding: 7px 12px; border-radius: 999px;
   border: 1.5px solid var(--border); background: var(--surface); color: var(--ink-2); }
@@ -1265,6 +1278,11 @@ img { max-width: 100%; display: block; }
   padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--border);
   background: var(--surface); color: var(--ink-2); }
 .presenca-chip.on { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+/* Furou = confirmou e não veio. É o único estado que pede ação do professor, então
+   é o único que ganha cor de alerta; quem avisou que não vinha só sai de cena. */
+.presenca-chip.furou { background: var(--crit-bg); border-color: var(--crit); color: var(--crit); }
+.presenca-chip.avisou { opacity: .5; }
+.turma-furo { color: var(--crit); font-weight: 700; }
 .presenca-marca { width: .8em; font-weight: 800; }
 .presenca-psr { font-size: .7rem; opacity: .75; font-weight: 700; }
 .turma-nota { font-size: .74rem; color: var(--muted); line-height: 1.6; margin-top: 12px; }
@@ -2281,9 +2299,15 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
           </div>
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">
             Um aluno pode estar em mais de um grupo. Use os grupos para filtrar sua lista e para ler as métricas por turma.
+            A <strong>modalidade</strong> decide o que ele vê na agenda: no agendamento ele escolhe o horário;
+            na confirmação o horário já existe e ele só diz se vai.
           </p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-            <input type="text" id="novo-grupo-nome" placeholder="Nome do grupo (ex: Funcional)" style="flex:1;min-width:180px">
+            <input type="text" id="novo-grupo-nome" placeholder="Nome do grupo (ex: Funcional)" style="flex:1;min-width:160px">
+            <div class="select-wrap" style="min-width:180px"><select id="novo-grupo-modalidade">
+              <option value="agendamento">Agendamento (personal)</option>
+              <option value="confirmacao">Confirmação (turma fixa)</option>
+            </select></div>
             <button class="btn-primary" style="font-size:.85rem;padding:10px 18px" onclick="criarGrupo()">Criar grupo</button>
           </div>
           <div id="lista-grupos"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
@@ -2295,7 +2319,8 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
             Grade de horários
           </div>
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">
-            Os horários fixos das turmas. Não há agendamento nem vaga — o horário existe e o aluno aparece.
+            Os horários fixos dos grupos de confirmação. Não há agendamento nem vaga — o horário existe,
+            o aluno confirma se vai e aparece.
           </p>
           <div id="grade-turmas"><p style="color:var(--muted);font-size:.88rem">Carregando...</p></div>
         </div>
@@ -5304,8 +5329,9 @@ async function criarGrupo(){
   const inp = document.getElementById('novo-grupo-nome');
   const nome = (inp?.value||'').trim();
   if(!nome){ showToast('❌ Dê um nome ao grupo.'); return; }
+  const modalidade = document.getElementById('novo-grupo-modalidade')?.value || 'agendamento';
   const { error } = await sb.from('student_groups')
-    .insert({ professor_id: currentUser.id, nome, ordem: gruposCache.length });
+    .insert({ professor_id: currentUser.id, nome, modalidade, ordem: gruposCache.length });
   if(error){
     showToast(error.code === '23505' ? '❌ Já existe um grupo com esse nome.' : '❌ '+error.message);
     return;
@@ -5339,11 +5365,13 @@ async function renderListaGrupos(){
 
   el.innerHTML = gruposCache.map(g=>{
     const n = (porGrupo[g.id]||[]).length;
+    const conf = g.modalidade === 'confirmacao';
     return `<div class="grupo-row">
       <div class="grupo-head" onclick="abrirGrupo('${jsAttr(g.id)}')">
         <div>
-          <div class="grupo-nome">${escHtml(g.nome)}</div>
-          <div class="grupo-sub">${n} ${n===1?'aluno':'alunos'}</div>
+          <div class="grupo-nome">${escHtml(g.nome)}
+            <span class="grupo-tag ${conf?'conf':''}">${conf?'confirmação':'agendamento'}</span></div>
+          <div class="grupo-sub">${n} ${n===1?'aluno':'alunos'}${conf && g.local_nome ? ' · '+escHtml(g.local_nome) : ''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <button class="btn-ghost" style="font-size:.76rem;padding:6px 12px"
@@ -5377,10 +5405,64 @@ async function renderMembrosGrupo(groupId){
   const linhas = alunos.map((a,i)=>({ id:a.id, nome: perfis[i]?.data?.full_name || 'Aluno', dentro: dentro.has(a.id) }))
     .sort((x,y)=> x.nome.localeCompare(y.nome));
 
-  el.innerHTML = `<p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Toque para incluir ou tirar do grupo.</p>
+  el.innerHTML = configGrupoHTML(groupId) +
+    `<p style="font-size:.78rem;color:var(--muted);margin:14px 0 10px">Toque para incluir ou tirar do grupo.</p>
     <div class="grupo-membros">${linhas.map(l=>`
       <button type="button" class="membro-chip ${l.dentro?'on':''}"
         onclick="alternarMembro('${jsAttr(groupId)}','${jsAttr(l.id)}',${l.dentro})">${escHtml(l.nome)}</button>`).join('')}</div>`;
+}
+
+/* A identidade (nome do local, cor, logo) só faz sentido no grupo de confirmação:
+   é ela que monta o bloco do estúdio na agenda do aluno. No grupo de agendamento
+   não existe bloco nenhum, então os campos ficam escondidos em vez de confundir. */
+function configGrupoHTML(groupId){
+  const g = gruposCache.find(x=>x.id===groupId) || {};
+  const conf = g.modalidade === 'confirmacao';
+  return `<div class="grupo-config">
+    <label class="grupo-campo"><span>Como esse grupo usa a agenda</span>
+      <div class="select-wrap"><select id="gc-modalidade"
+        onchange="document.getElementById('gc-identidade').hidden = this.value !== 'confirmacao'">
+        <option value="agendamento"${conf?'':' selected'}>Agendamento — ele escolhe o horário</option>
+        <option value="confirmacao"${conf?' selected':''}>Confirmação — ele só confirma presença</option>
+      </select></div></label>
+    <div id="gc-identidade"${conf?'':' hidden'}>
+      <label class="grupo-campo"><span>Nome do local, como o aluno vê</span>
+        <input type="text" id="gc-local" value="${escHtml(g.local_nome||'')}" placeholder="Ex: Estúdio 10"></label>
+      <label class="grupo-campo"><span>Cor do bloco</span>
+        <input type="color" id="gc-cor" value="${escHtml(g.cor||'#E07A2F')}" style="max-width:70px;padding:4px"></label>
+      <label class="grupo-campo"><span>Endereço do logo (opcional)</span>
+        <input type="url" id="gc-logo" value="${escHtml(g.logo_url||'')}" placeholder="https://…"></label>
+    </div>
+    <button class="btn-primary" style="font-size:.82rem;padding:9px 16px;align-self:flex-start"
+      onclick="salvarConfigGrupo('${jsAttr(groupId)}')">Salvar grupo</button>
+  </div>`;
+}
+
+async function salvarConfigGrupo(groupId){
+  const modalidade = document.getElementById('gc-modalidade')?.value || 'agendamento';
+  const conf = modalidade === 'confirmacao';
+
+  /* Sair da confirmação não apaga a grade, mas some com ela da tela do aluno.
+     Avisar antes evita a leitura de que os horários se perderam. */
+  const antes = gruposCache.find(g=>g.id===groupId)?.modalidade;
+  if(antes === 'confirmacao' && !conf){
+    const { count } = await sb.from('class_slots')
+      .select('id', { count:'exact', head:true }).eq('group_id', groupId);
+    if(count){
+      const um = count === 1;
+      if(!await showAppConfirm(`Esse grupo tem ${count} ${um?'horário':'horários'} na grade. Virando agendamento, ${um?'ele sai':'eles saem'} da agenda do aluno — ${um?'continua salvo e volta':'continuam salvos e voltam'} se você marcar confirmação de novo. Seguir?`)) return;
+    }
+  }
+  const patch = {
+    modalidade,
+    local_nome: conf ? ((document.getElementById('gc-local')?.value||'').trim() || null) : null,
+    cor:        conf ? (document.getElementById('gc-cor')?.value || null) : null,
+    logo_url:   conf ? ((document.getElementById('gc-logo')?.value||'').trim() || null) : null,
+  };
+  const { error } = await sb.from('student_groups').update(patch).eq('id', groupId);
+  if(error){ showToast('❌ '+error.message); return; }
+  await carregarGrupos(); renderListaGrupos(); renderGradeTurmas();
+  showToast('✅ Grupo atualizado.');
 }
 
 async function alternarMembro(groupId, studentId, estaDentro){
@@ -5416,14 +5498,22 @@ async function renderGradeTurmas(){
     </div>`;
   }).join('');
 
-  el.innerHTML = dias + `
+  /* A grade é dos grupos de confirmação. No grupo de agendamento o horário nasce
+     da janela de disponibilidade, não de uma aula fixa — oferecer os dois aqui
+     criaria horário que aluno nenhum enxerga. */
+  const deConfirmacao = gruposCache.filter(g=>g.modalidade === 'confirmacao');
+
+  el.innerHTML = dias + (deConfirmacao.length ? `
     <div class="grade-add">
       <div class="select-wrap"><select id="turma-dia">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}">${DIAS_SEMANA[d]}</option>`).join('')}</select></div>
       <input type="time" id="turma-hora" value="06:00">
-      <div class="select-wrap"><select id="turma-grupo">${gruposCache.map(g=>`<option value="${escHtml(g.id)}">${escHtml(g.nome)}</option>`).join('') || '<option value="">Crie um grupo antes</option>'}</select></div>
+      <div class="select-wrap"><select id="turma-grupo">${deConfirmacao.map(g=>`<option value="${escHtml(g.id)}">${escHtml(g.nome)}</option>`).join('')}</select></div>
       <input type="number" id="turma-duracao" value="60" min="10" max="300" style="max-width:90px" title="Duração em minutos">
       <button class="btn-primary" style="font-size:.82rem;padding:9px 16px" onclick="criarTurma()">Adicionar</button>
-    </div>`;
+    </div>` : `
+    <p style="font-size:.82rem;color:var(--muted);margin-top:14px">
+      Você ainda não tem grupo de confirmação. Abra um grupo em <strong>Grupos</strong>, marque-o como
+      <strong>confirmação</strong> e a grade dele aparece aqui.</p>`);
 }
 
 async function criarTurma(){
@@ -5472,6 +5562,14 @@ async function renderTurmaHoje(alvoId = 'turma-hoje', recolhido = false){
     .select('*, session_pain_points(region)')
     .eq('professor_id', currentUser.id).gte('started_at', hojeStr + 'T00:00:00');
 
+  /* Previsto × realizado. São duas coisas diferentes e é de propósito que estejam
+     em tabelas separadas: a confirmação é o que o aluno disse que ia fazer, o
+     check-in é o que aconteceu. Quem disse que vinha e não veio é a informação que
+     não existia antes — e é a única falta que vale uma mensagem. */
+  const { data: confirmacoes } = await sb.from('class_confirmations')
+    .select('class_slot_id, student_id, vai')
+    .eq('data', hojeStr).in('class_slot_id', slots.map(s=>s.id));
+
   const blocos = [];
   for(const slot of slots){
     const { data: membros } = await sb.from('student_group_members').select('student_id').eq('group_id', slot.group_id);
@@ -5487,29 +5585,46 @@ async function renderTurmaHoje(alvoId = 'turma-hoje', recolhido = false){
     const psrs = daTurma.filter(s=>s.psr!=null).map(s=>s.psr);
     const media = arr => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '—';
 
+    const disse = {};
+    (confirmacoes||[]).forEach(c=>{ if(c.class_slot_id === slot.id) disse[c.student_id] = c.vai; });
+
     const linhas = ids.map((id,i)=>{
       const nome = perfis[i]?.data?.full_name || 'Aluno';
       const s = porAluno[id];
       const veio = !!s;
       const porProfessor = s?.origem === 'professor';
-      return { id, nome, s, veio, porProfessor };
+      const confirmou = disse[id];
+      return { id, nome, s, veio, porProfessor, confirmou };
     }).sort((a,b)=> a.nome.localeCompare(b.nome));
 
+    const prometidos = linhas.filter(l=>l.confirmou === true).length;
+    const furaram = linhas.filter(l=>l.confirmou === true && !l.veio).length;
+
     const cabecalho = `<div class="turma-hora">${escHtml(slot.hora)}</div>
-        <div class="turma-resumo">${presentes} de ${ids.length} presentes${psrs.length?` · PSR médio ${media(psrs)}`:''}</div>`;
+        <div class="turma-resumo">${presentes} de ${ids.length} presentes${
+          prometidos ? ` · ${prometidos} confirmaram` : ''}${
+          psrs.length?` · PSR médio ${media(psrs)}`:''}${
+          furaram ? `<span class="turma-furo"> · ${furaram} ${furaram===1?'confirmou e não veio':'confirmaram e não vieram'}</span>` : ''}</div>`;
 
     blocos.push(`<${recolhido?'details':'div'} class="turma-bloco">
       <${recolhido?'summary':'div'} class="turma-head">
         ${cabecalho}
       </${recolhido?'summary':'div'}>
-      <div class="turma-lista">${linhas.map(l=>`
-        <button type="button" class="presenca-chip ${l.veio?'on':''}"
+      <div class="turma-lista">${linhas.map(l=>{
+        const furou  = l.confirmou === true  && !l.veio;
+        const avisou = l.confirmou === false && !l.veio;
+        const titulo = l.veio ? (l.porProfessor ? 'Marcado por você — toque para desfazer' : 'Fez check-in')
+          : furou  ? 'Confirmou que vinha e não apareceu'
+          : avisou ? 'Avisou que não vinha'
+          : 'Não respondeu — toque para marcar presença';
+        return `
+        <button type="button" class="presenca-chip ${l.veio?'on':''}${furou?' furou':''}${avisou?' avisou':''}"
           onclick="alternarPresenca('${jsAttr(l.id)}','${jsAttr(slot.id)}','${hojeStr}','${jsAttr(l.s?.id||'')}',${l.porProfessor})"
-          title="${l.veio ? (l.porProfessor ? 'Marcado por você — toque para desfazer' : 'Fez check-in') : 'Toque para marcar presença'}">
-          <span class="presenca-marca">${l.veio ? '✓' : ''}</span>${escHtml(l.nome)}${
+          title="${titulo}">
+          <span class="presenca-marca">${l.veio ? '✓' : furou ? '!' : avisou ? '–' : ''}</span>${escHtml(l.nome)}${
             l.s && l.s.psr!=null ? `<span class="presenca-psr">PSR ${l.s.psr}</span>` : ''}
-        </button>`).join('')}</div>
-      <p class="turma-nota">Quem fez check-in já aparece marcado. Toque em quem treinou e esqueceu de responder — isso registra a presença, sem inventar respostas de questionário.</p>
+        </button>`;}).join('')}</div>
+      <p class="turma-nota">Quem fez check-in já aparece marcado; quem confirmou e não apareceu fica destacado, e quem avisou que não vinha fica apagado. Toque em quem treinou e esqueceu de responder — isso registra a presença, sem inventar respostas de questionário.</p>
     </${recolhido?'details':'div'}>`);
   }
 

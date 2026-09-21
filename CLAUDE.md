@@ -127,6 +127,17 @@ his own labels (not a fixed enum — he intends to add more), a student can be i
 picked at pre-registration (it rides on `pending_registrations.group_id` and materializes in
 `recover_student_profile` / `link_google_student_signup`) or assigned later on the Turmas tab.
 
+**`student_groups.modalidade` decides what the student sees on the agenda**, and it is the only switch that
+does: `agendamento` gives the booking calendar, `confirmacao` gives the studio block with Vou / Não vou and
+hides booking entirely. A student in both sees both, stacked. The identity columns (`local_nome`, `cor`,
+`logo_url`) only render for `confirmacao`, and `salvarConfigGrupo()` nulls them when a group leaves that
+modality, so a stale studio name can't resurface later. The Grade de horários tab only offers `confirmacao`
+groups, because a `class_slot` on a booking group would be a class no student could ever see.
+
+`class_confirmations` is **intention**, `training_sessions` is **reality** — that separation is the whole point.
+Crossing them is what `renderTurmaHoje()` shows as *confirmou e não veio*, the only absence worth a message.
+Don't collapse the two tables into one "attendance" table.
+
 `class_slots` models the studio as it actually works: **no booking and no capacity** — the slot exists and
 students show up. The student's check-in figures out which class it belongs to from the clock, with an option
 to correct it. Attendance comes from that check-in; `marcar_presenca` lets the professor add whoever trained
