@@ -1022,6 +1022,17 @@ img { max-width: 100%; display: block; }
 .cal-nav { display: flex; align-items: center; gap: 10px; }
 .cal-nav-btn { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; font-size: 1rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; }
 .cal-nav-btn:hover { background: var(--surface-alt); }
+
+/* ─── Alvos de toque no celular ────────────────────────────────
+   O desenho fica igual; o que cresce é a área que responde ao dedo. Trocar o
+   mês com uma bolinha de 30px é errar e voltar, e essas setas são das coisas
+   mais tocadas do app. */
+@media (max-width: 820px) {
+  .cal-nav-btn { width: 40px; height: 40px; }
+  .cal-view-btn { padding: 11px 14px; }
+  .view-switch-btn { padding: 11px 12px; }
+  .footer-nav a { padding: 8px 0; }
+}
 .cal-nav-label { font-weight: 700; font-size: .9rem; min-width: 120px; text-align: center; }
 .cal-filter { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .cal-filter select { padding: 7px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface); font-size: .85rem; }
