@@ -201,6 +201,22 @@ student's account with a password of their own and skip every check above. `inic
 wrong guesses at 5 per CPF per 15 minutes, because the first-access password is shared across the professor's
 students and is therefore worth guessing.
 
+## O calendário não lê a agenda alheia
+
+To draw the calendar, a student needs to know **which** slots are taken — not whose they are, nor what the
+person wrote in the booking's `obs` field. The old policy handed over whole rows because that was the only way
+to answer the first question. `horarios_ocupados(professor_id)` and `horarios_pulados(professor_id)` answer it
+and nothing else, both `SECURITY DEFINER`; on `bookings` a student now reads only their own rows.
+
+**Keep the pair together.** Without `horarios_pulados` the calendar errs the other way: a classmate's fixed slot
+that was skipped that week still shows as taken, and the student is blocked from a free hour.
+
+`bookings.obs` is what the student writes when booking. It used to be stored and shown to nobody — including
+the person it was addressed to. It now appears as a `✎ recado` tag on the professor's hour rail (the block is
+sized by the appointment's duration, so a third line would overlap the next hour) and in full under the row in
+the bookings list. **Not on projected occurrences of a fixed slot**: the note was written about one day, and
+repeating it every week would read as a standing warning.
+
 ## Escritas que ninguém espera
 
 A Supabase query builder is a **thenable that resolves with `{ data, error }`** — a failed write does not

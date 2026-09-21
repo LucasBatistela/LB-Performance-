@@ -741,6 +741,10 @@ img { max-width: 100%; display: block; }
 .bookings-table th { text-align: left; padding: 8px 12px; font-size: .75rem;
   text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
   border-bottom: 1px solid var(--border); }
+/* Recado do aluno: linha própria embaixo do agendamento, para poder ser longo
+   sem espremer a tabela no celular. */
+.booking-obs td { font-size: .8rem; font-style: italic; color: var(--ink-2);
+  padding-top: 0 !important; border-bottom: 1px solid var(--border); white-space: normal; }
 .bookings-table td { padding: 10px 12px; border-bottom: 1px solid var(--border);
   vertical-align: top; }
 .booking-tag { display: inline-block; padding: 2px 9px; border-radius: 20px;
@@ -1278,6 +1282,10 @@ img { max-width: 100%; display: block; }
   font-size: .68rem; color: var(--muted); font-weight: 600; }
 .trilha-bloco-tags .tag-presenca { color: var(--good); }
 .trilha-bloco-tags .tag-alerta { color: var(--crit); font-weight: 700; }
+/* Na trilha o bloco tem a altura do atendimento — não cabe mais uma linha sem
+   invadir o horário seguinte. Aqui vai só o aviso de que existe recado; o texto
+   inteiro fica na lista da agenda, que pode crescer. */
+.trilha-bloco-tags .tag-recado { color: var(--citrus); font-weight: 700; }
 
 /* ─── GRUPOS E TURMAS ─────────────────────────────────────────── */
 .grupo-row { border: 1.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
@@ -3296,6 +3304,9 @@ async function compromissosDoDia(ctx, dia){
     duracao: SESSION_DURATION_MIN || 45,
     titulo: ctx==='prof' ? (names?.[b.student_id] || 'Aluno') : 'Seu treino',
     sub: b.is_fixed ? 'Fixo' : null,
+    // O que o aluno escreveu ao agendar. Era guardado e não era mostrado a
+    // ninguém — inclusive a quem ele escreveu.
+    obs: ctx==='prof' ? (b.obs || null) : null,
     tipo: 'personal',
   }));
 
@@ -3388,6 +3399,7 @@ function trilhaHTML(itens, ehHoje){
         ${i.sub ? `<span>${escHtml(i.sub)}</span>` : ''}
         ${i.presentes ? `<span class="tag-presenca">${escHtml(i.presentes)} presentes</span>` : ''}
         ${i.alerta ? `<span class="tag-alerta">${i.alerta} fora do padrão</span>` : ''}
+        ${i.obs ? `<span class="tag-recado" title="${escHtml(i.obs)}">✎ recado</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -6642,18 +6654,26 @@ async function refreshScheduleData(){
   const future=new Date(today); future.setDate(future.getDate()+30);
   const futureStr=dateToStr(future);
 
-  const { data: bookings } = await sb.from('bookings').select('id,date,time,is_fixed')
-    .eq('professor_id', profId).eq('status','confirmed');
-  profBookingsCache = bookings || [];
+  /* Para montar o calendário só é preciso saber QUAIS horários estão ocupados.
+     A RPC devolve exatamente isso — dia, hora e se é fixo — e nada mais: nem de
+     quem é o agendamento, nem o que a pessoa escreveu no campo de observação.
+     Antes o aluno lia a linha inteira dos colegas, porque era o único jeito de
+     responder essa pergunta. De quebra, virou uma ida ao servidor em vez de duas. */
+  const { data: ocupados } = await sb.rpc('horarios_ocupados', { p_professor_id: profId });
+  const todos = (ocupados||[]).map(o=>({ id:o.id, date:o.data, time:o.hora, is_fixed:o.is_fixed, status:o.status }));
+
+  const bookings = todos.filter(b=>b.status === 'confirmed');
+  profBookingsCache = bookings;
 
   // Horário fixo semanal — bloqueia o horário nas próximas semanas mesmo sem uma linha física por semana.
-  // Busca à parte (sem filtro de status): a série continua ativa mesmo se a semana da própria linha-âncora
+  // Sem filtro de status: a série continua ativa mesmo se a semana da própria linha-âncora
   // tiver sido cancelada — só o "Desfixar" encerra a série de verdade.
-  const { data: fixedAnchors } = await sb.from('bookings').select('*')
-    .eq('professor_id', profId).eq('is_fixed', true);
+  const fixedAnchors = todos.filter(b=>b.is_fixed);
   if(fixedAnchors?.length){
-    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date')
-      .in('booking_id', fixedAnchors.map(a=>a.id));
+    /* Pela mesma razão da consulta acima: o aluno não lê a tabela de faltas
+       programadas dos colegas. Sem isto o calendário erraria para o outro lado —
+       mostraria como ocupado um horário fixo que foi pulado naquela semana. */
+    const { data: skipRows } = await sb.rpc('horarios_pulados', { p_professor_id: profId });
     const skipsByBooking = {};
     (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
     const physicalKeySet = new Set((bookings||[]).map(b=>b.date+'|'+b.time));
@@ -8487,7 +8507,11 @@ async function loadProfAllBookings() {
         <td><span class="booking-tag ${b.type==='presencial'?'tag-presencial':'tag-online'}">${b.type||''}</span></td>
         <td style="font-size:.82rem">${escHtml(names[i].data?.phone||'')}</td>
         <td>${actions}</td>
-      </tr>`;
+      </tr>
+      ${/* O recado que o aluno deixou ao agendar. Só na linha real: a projeção de
+            um horário fixo repetiria o mesmo recado em toda semana futura, e ele
+            foi escrito sobre um dia só. */''}
+      ${(!b.virtual && b.obs) ? `<tr class="booking-obs"><td colspan="6">✎ ${escHtml(b.obs)}</td></tr>` : ''}`;
     }).join('')}</tbody></table></div>`;
 }
 async function profCancelBooking(id) {
