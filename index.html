@@ -2030,7 +2030,10 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
                 display:flex;align-items:center;justify-content:center;
                 border:2px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.18)"
               title="Editar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-            <input type="file" id="dash-avatar-input" accept="image/*" capture="environment"
+            <!-- Sem `capture`: esse atributo manda o celular abrir a câmera traseira
+                 direto e, no Android, tira a galeria da jogada. Sem ele o aparelho
+                 oferece as duas coisas, que é o que a legenda abaixo promete. -->
+            <input type="file" id="dash-avatar-input" accept="image/*"
               style="display:none" onchange="handleAvatarUpload(this)">
           </div>
         </div>
@@ -2477,8 +2480,8 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
                   display:flex;align-items:center;justify-content:center;
                   border:2px solid var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.18)"
                 title="Editar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-              <input type="file" id="prof-avatar-input" accept="image/*" capture="environment"
-                style="display:none" onchange="handleProfAvatarUpload(this)">
+              <input type="file" id="prof-avatar-input" accept="image/*"
+                style="display:none" onchange="handleAvatarUpload(this)">
             </div>
           </div>
           <p style="text-align:center;font-size:.78rem;color:var(--muted);margin-top:-16px;margin-bottom:20px">
@@ -7790,6 +7793,7 @@ async function loadUserAndRedirect(user) {
     } catch(_){}
   }
   updateNavAvatar();
+  migrarAvatarLocal();
   if(profile?.role==='professor') {
     await loadProfDashboard();
     await loadProfessorSettings(user.id);
@@ -8754,7 +8758,10 @@ function getInitials(name) {
   return parts[0]?.[0]?.toUpperCase()||'?';
 }
 
-function loadAvatarFromStorage() {
+/* Quem manda é o perfil. O localStorage é só o atalho de quem já abriu o app
+   neste aparelho — e o resgate de quem tinha foto antes de ela subir. */
+function avatarAtual() {
+  if(currentProfile?.avatar_url) return currentProfile.avatar_url;
   if(!currentUser) return null;
   try { return localStorage.getItem('avatar_'+currentUser.id) || null; } catch(_){ return null; }
 }
@@ -8763,7 +8770,7 @@ function updateNavAvatar() {
   const circle = document.getElementById('nav-avatar-circle');
   if(!circle) return;
   if(currentUser && currentProfile) {
-    const avatarDataUrl = loadAvatarFromStorage();
+    const avatarDataUrl = avatarAtual();
     if(avatarDataUrl) {
       circle.innerHTML = `<img src="${avatarDataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
     } else {
@@ -9803,7 +9810,7 @@ function renderNavDrop() {
     const name = currentProfile.full_name || 'Usuário';
     const role = currentProfile.role;
     const page = role==='professor' ? 'dashboard-prof' : 'dashboard-aluno';
-    const avatarDataUrl = loadAvatarFromStorage();
+    const avatarDataUrl = avatarAtual();
     const avatarHTML = avatarDataUrl
       ? `<img src="${avatarDataUrl}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0">`
       : `<div style="width:42px;height:42px;border-radius:50%;background:var(--pine);color:#fff;font-family:var(--font-d);font-size:.9rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getInitials(name)}</div>`;
@@ -9853,29 +9860,88 @@ document.addEventListener('click', function(e) {
   if(drop && !drop.hidden && wrap && !wrap.contains(e.target)) drop.hidden = true;
 });
 
-/* ── PERFIL DO ALUNO ──────────────────────────────────────────── */
-function handleAvatarUpload(input) {
-  const file = input.files[0];
-  if(!file) return;
-  // Compress to max 400px and save as JPEG for storage efficiency
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const maxSize = 400;
-      const scale = Math.min(1, maxSize/Math.max(img.width,img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width*scale; canvas.height = img.height*scale;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      try { if(currentUser) localStorage.setItem('avatar_'+currentUser.id, dataUrl); } catch(_){}
-      applyAvatar(dataUrl);
-      updateNavAvatar();
-      showToast('✅ Foto atualizada!');
+/* ── FOTO DE PERFIL ────────────────────────────────────────────
+   A foto vai para o Supabase Storage e o endereço dela para profiles.avatar_url.
+   O localStorage continua guardando uma cópia, mas agora só como cache local —
+   antes ele era o único lugar, então trocar de celular, entrar de outro
+   navegador ou limpar os dados apagava a foto, e ninguém além do próprio dono
+   chegava a vê-la. Vale para aluno e professor: é o mesmo fluxo nas duas telas. */
+const AVATAR_MAX_PX = 400;
+
+function comprimirImagem(file, maxPx){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = ()=> reject(new Error('Não consegui ler esse arquivo.'));
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = ()=> reject(new Error('Esse arquivo não parece ser uma imagem.'));
+      img.onload = ()=>{
+        const escala = Math.min(1, maxPx/Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.max(1, Math.round(img.width*escala));
+        canvas.height = Math.max(1, Math.round(img.height*escala));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('Não consegui converter a imagem.')),
+          'image/jpeg', 0.85);
+      };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleAvatarUpload(input){
+  const file = input.files?.[0];
+  input.value = ''; // sem isso, reescolher o mesmo arquivo não dispara o onchange
+  if(!file) return;
+  if(!sb || !currentUser){ showToast('❌ Faça login novamente.'); return; }
+
+  showToast('Enviando foto…');
+  let blob;
+  try { blob = await comprimirImagem(file, AVATAR_MAX_PX); }
+  catch(e){ showToast('❌ '+e.message); return; }
+
+  const caminho = `${currentUser.id}/avatar.jpg`;
+  const { error: upErr } = await sb.storage.from('avatars')
+    .upload(caminho, blob, { contentType:'image/jpeg', upsert:true });
+  if(upErr){ showToast('❌ Não consegui enviar a foto: '+upErr.message); return; }
+
+  /* O caminho é sempre o mesmo, logo a URL também seria — e o CDN devolveria a
+     foto antiga. O carimbo de tempo obriga o navegador a buscar a nova. */
+  const { data: pub } = sb.storage.from('avatars').getPublicUrl(caminho);
+  const url = `${pub.publicUrl}?v=${Date.now()}`;
+
+  const { error: dbErr } = await sb.from('profiles').update({ avatar_url: url }).eq('id', currentUser.id);
+  if(dbErr){ showToast('❌ Foto enviada, mas não consegui salvá-la no seu perfil: '+dbErr.message); return; }
+
+  currentProfile = { ...currentProfile, avatar_url: url };
+  try { localStorage.setItem('avatar_'+currentUser.id, url); } catch(_){}
+  applyAvatar(url);
+  updateNavAvatar();
+  showToast('✅ Foto atualizada!');
+}
+
+/* Quem já tinha foto a tinha só neste aparelho. Na primeira entrada depois da
+   mudança ela sobe sozinha, em vez de sumir ou obrigar a escolher de novo. */
+async function migrarAvatarLocal(){
+  if(!sb || !currentUser || currentProfile?.avatar_url) return;
+  let antiga = null;
+  try { antiga = localStorage.getItem('avatar_'+currentUser.id); } catch(_){ return; }
+  if(!antiga || !antiga.startsWith('data:image/')) return;
+  try {
+    const blob = await (await fetch(antiga)).blob();
+    const caminho = `${currentUser.id}/avatar.jpg`;
+    const { error } = await sb.storage.from('avatars')
+      .upload(caminho, blob, { contentType:'image/jpeg', upsert:true });
+    if(error) return;
+    const { data: pub } = sb.storage.from('avatars').getPublicUrl(caminho);
+    const url = `${pub.publicUrl}?v=${Date.now()}`;
+    const { error: dbErr } = await sb.from('profiles').update({ avatar_url: url }).eq('id', currentUser.id);
+    if(dbErr) return;
+    currentProfile = { ...currentProfile, avatar_url: url };
+    try { localStorage.setItem('avatar_'+currentUser.id, url); } catch(_){}
+    updateNavAvatar();
+  } catch(_){ /* migração é oportunista: falhar aqui não pode atrapalhar o login */ }
 }
 
 function applyAvatar(dataUrl) {
@@ -9916,7 +9982,7 @@ function fillProfileCard() {
       : (currentUser.email||'').replace(/@alunos\.lb$/,'');
   }
   if(initEl) initEl.textContent = getInitials(currentProfile.full_name||'');
-  applyAvatar(loadAvatarFromStorage());
+  applyAvatar(avatarAtual());
   renderGoogleLinkStatus('dash');
 }
 
@@ -10319,29 +10385,6 @@ async function deletePendingStudent(cpf) {
 }
 
 /* ── PERFIL DO PROFESSOR ──────────────────────────────────────── */
-function handleProfAvatarUpload(input) {
-  const file = input.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const maxSize = 400;
-      const scale = Math.min(1, maxSize/Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width*scale; canvas.height = img.height*scale;
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      try { if(currentUser) localStorage.setItem('avatar_'+currentUser.id, dataUrl); } catch(_){}
-      applyAvatar(dataUrl);
-      updateNavAvatar();
-      showToast('✅ Foto atualizada!');
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
 function fillProfProfileCard() {
   if(!currentProfile) return;
   const nameEl  = document.getElementById('prof-profile-name');
@@ -10353,7 +10396,7 @@ function fillProfProfileCard() {
   if(phoneEl) phoneEl.value = currentProfile.phone || '';
   initPhoneFieldCountry('prof-profile-phone', currentProfile.phone_country);
   if(initEl)  initEl.textContent = getInitials(currentProfile.full_name||'');
-  applyAvatar(loadAvatarFromStorage());
+  applyAvatar(avatarAtual());
   renderGoogleLinkStatus('prof');
 }
 
