@@ -199,7 +199,13 @@ Two settings live outside the code and are not in version control:
 
 - `EMAILJS_PRIVATE_KEY` — Edge Function secret, from EmailJS → Account → API Keys. Without it,
   `request-password-reset` returns `email_nao_configurado` and no reset email goes out.
-- **Leaked password protection** — Supabase dashboard → Authentication → Policies. Off by default.
+- **Password policy** — Supabase dashboard → Authentication → Sign In / Providers → Email (not "Policies").
+  Off/minimal by default. Two caveats before treating it as a fix: **leaked-password protection requires the
+  Pro plan**, and this org is on Free; and more importantly, **the dashboard policy does not reach this app's
+  students at all.** `professor_reset_student_password` and `confirm_student_password_reset` write
+  `auth.users.encrypted_password` directly via `crypt()`, bypassing GoTrue, so the only rule in force for a
+  student password is the `length < 6` check inside those two functions. Hardening student passwords means
+  editing those functions; the dashboard setting only covers the professor's own account.
 
 ## Claude Code setup in this repo
 
