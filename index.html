@@ -91,6 +91,11 @@
 
 /* ─── RESET ───────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* O atributo hidden perde para qualquer display declarado — inline ou em classe.
+   Sem esta regra, cada elemento que usa hidden precisa da sua própria linha
+   `[hidden] { display: none }`, e quem esquecer ganha um campo que nunca some.
+   Foi o que aconteceu com o horário de início/fim das exceções de data. */
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { font-family: var(--font-b); background: var(--ground); color: var(--ink);
   line-height: 1.65; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -703,9 +708,15 @@ img { max-width: 100%; display: block; }
 .sched-time-label { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--ink-2); }
 .sched-time-label input[type="time"] { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: .85rem; }
 .exception-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.exception-form input, .exception-form select { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: .85rem; }
-.exception-item { display: flex; justify-content: space-between; align-items: center;
+/* No celular os quatro controles não cabem lado a lado: cada um ocupa a linha
+   inteira em vez de espremer, e só o botão fica do tamanho do texto. */
+.exception-form > * { flex: 1 1 150px; }
+.exception-form > button { flex: 0 0 auto; }
+.exception-form input, .exception-form select { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: .85rem; }
+.exception-item { display: flex; justify-content: space-between; align-items: center; gap: 12px;
   padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: .85rem; margin-bottom: 6px; }
+.exception-item > span { flex: 1; }
+.exception-item > button { flex: 0 0 auto; }
 .bookings-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .bookings-table th { text-align: left; padding: 8px 12px; font-size: .75rem;
   text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
@@ -1305,6 +1316,8 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
 .aula-item:last-child { border-bottom: none; }
 .aula-item.vai { background: var(--good-bg); }
 .aula-item.nao-vai { opacity: .55; }
+.aula-item.cancelada { opacity: .6; }
+.aula-sem { font-size: .78rem; font-weight: 700; color: var(--crit); white-space: nowrap; }
 .aula-quando { display: flex; flex-direction: column; font-size: .86rem; }
 .aula-quando span { font-size: .76rem; color: var(--muted); }
 .aula-acoes { display: flex; gap: 6px; }
@@ -5232,6 +5245,15 @@ async function renderAulasFixas(){
   const jaDisse = {};
   (confs||[]).forEach(c=>{ jaDisse[`${c.class_slot_id}|${c.data}`] = c.vai; });
 
+  /* Dia fechado para as turmas cancela a aula. Some-la da lista seria pior do
+     que mostrá-la cancelada: o aluno conhece a grade dele e a ausência viraria
+     dúvida. Aparece, e aparece sem botão. */
+  const { data: fechados } = await sb.from('schedule_exceptions')
+    .select('date').eq('type','closed').neq('aplica_a','agendamento')
+    .in('professor_id', [...new Set(slots.map(s=>s.professor_id))])
+    .gte('date', dateToStr(hoje));
+  const diasSemAula = new Set((fechados||[]).map(f=>f.date));
+
   const agora = new Date();
   const ocorrencias = [];
   for(let i=0; i<DIAS_PARA_CONFIRMAR; i++){
@@ -5241,6 +5263,7 @@ async function renderAulasFixas(){
       const quando = new Date(d); quando.setHours(h, m, 0, 0);
       if(quando <= agora) return; // aula que já passou não se confirma
       ocorrencias.push({ slot:s, data:dateToStr(d), quando,
+        cancelada: diasSemAula.has(dateToStr(d)),
         grupo: deConfirmacao.find(g=>g.id === s.group_id) });
     });
   }
@@ -5263,11 +5286,15 @@ async function renderAulasFixas(){
         const resp = jaDisse[`${o.slot.id}|${o.data}`];
         const dia = o.quando;
         const ehHoje = dateToStr(dia) === dateToStr(new Date());
-        return `<div class="aula-item${resp===true?' vai':resp===false?' nao-vai':''}">
-          <div class="aula-quando">
+        const quando = `<div class="aula-quando">
             <strong>${ehHoje ? 'Hoje' : DAYS_FULL[dia.getDay()]}</strong>
             <span>${dia.getDate()}/${String(dia.getMonth()+1).padStart(2,'0')} · ${escHtml(o.slot.hora)}</span>
-          </div>
+          </div>`;
+        if(o.cancelada) return `<div class="aula-item cancelada">${quando}
+          <div class="aula-sem">Sem aula nesse dia</div>
+        </div>`;
+        return `<div class="aula-item${resp===true?' vai':resp===false?' nao-vai':''}">
+          ${quando}
           <div class="aula-acoes">
             <button type="button" class="aula-btn${resp===true?' on':''}"
               onclick="confirmarAula('${jsAttr(o.slot.id)}','${o.data}',true)">Vou</button>
@@ -5555,6 +5582,15 @@ async function renderTurmaHoje(alvoId = 'turma-hoje', recolhido = false){
 
   if(!slots?.length){
     el.innerHTML = `<p style="color:var(--muted);font-size:.88rem">Nenhuma turma marcada para ${DIAS_SEMANA[hoje.getDay()].toLowerCase()} na sua grade.</p>`;
+    return;
+  }
+
+  // O dia fechado para as turmas vale aqui também: chamar presença de aula que
+  // não aconteceu registraria falta de gente que não tinha aula.
+  const { data: excecaoHoje } = await sb.from('schedule_exceptions')
+    .select('type, aplica_a').eq('professor_id', currentUser.id).eq('date', hojeStr).maybeSingle();
+  if(excecaoHoje?.type === 'closed' && excecaoHoje.aplica_a !== 'agendamento'){
+    el.innerHTML = `<p style="color:var(--muted);font-size:.88rem">Você fechou este dia para as turmas — não há aula hoje.</p>`;
     return;
   }
 
@@ -6310,8 +6346,11 @@ async function refreshScheduleData(){
 
   const { data: exceptions } = await sb.from('schedule_exceptions').select('*')
     .eq('professor_id', profId).gte('date', todayStr).lte('date', futureStr);
+  /* Só entram no mapa do agendamento as exceções que valem para ele. A exceção
+     marcada "só turmas" fecha a aula fixa e não tem nada a dizer sobre horário
+     livre — filtrar aqui mantém getAvailableSlots() sem saber que escopo existe. */
   profExceptionsMap={};
-  (exceptions||[]).forEach(e=>{ profExceptionsMap[e.date]=e; });
+  (exceptions||[]).forEach(e=>{ if(e.aplica_a !== 'turmas') profExceptionsMap[e.date]=e; });
 
   const years=[...new Set([today.getFullYear(), future.getFullYear()])];
   const sets=await Promise.all(years.map(fetchHolidaysForYear));
@@ -8152,13 +8191,18 @@ async function renderProfDisponibilidade() {
 
     <hr style="border:none;border-top:1px solid var(--border);margin:28px 0">
     <h4 style="font-family:var(--font-d);margin-bottom:8px">Exceções de data</h4>
-    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:14px">Feriados nacionais já bloqueiam a agenda automaticamente. Use aqui pra fechar um dia útil (folga, imprevisto) ou abrir um dia normalmente fechado (fim de semana, ou um feriado em que você quer atender).</p>
+    <p style="font-size:.85rem;color:var(--ink-2);margin-bottom:14px">Feriados nacionais já bloqueiam a agenda automaticamente. Use aqui pra fechar um dia útil (folga, imprevisto) ou abrir um dia normalmente fechado (fim de semana, ou um feriado em que você quer atender). Fechar um dia pode valer só para os agendamentos, só para as turmas fixas, ou para os dois.</p>
     <div class="exception-form">
-      <input type="date" id="exc-date">
-      <select id="exc-type" onchange="toggleExcTimeFields()">
+      <input type="date" id="exc-date" min="${dateToStr(new Date())}">
+      <div class="select-wrap"><select id="exc-type" onchange="toggleExcTimeFields()">
         <option value="closed">Fechar este dia</option>
         <option value="open">Abrir este dia</option>
-      </select>
+      </select></div>
+      <div class="select-wrap" id="exc-escopo-wrap"><select id="exc-escopo">
+        <option value="ambos">Agendamentos e turmas</option>
+        <option value="agendamento">Só os agendamentos</option>
+        <option value="turmas">Só as turmas fixas</option>
+      </select></div>
       <span id="exc-time-fields" hidden style="display:flex;gap:8px;align-items:center">
         <input type="time" id="exc-start" value="08:00">
         <span>até</span>
@@ -8195,6 +8239,11 @@ async function saveWeeklySchedule(){
 function toggleExcTimeFields(){
   const type=document.getElementById('exc-type').value;
   document.getElementById('exc-time-fields').hidden = type!=='open';
+  /* "Abrir este dia" é uma janela de atendimento com início e fim — isso é
+     conceito de agendamento. Não existe abrir uma aula fixa que não está na
+     grade, então o escopo some em vez de oferecer uma escolha sem efeito. */
+  const escopo=document.getElementById('exc-escopo-wrap');
+  if(escopo) escopo.hidden = type==='open';
 }
 async function loadExceptions(){
   if(!sb || !currentUser) return;
@@ -8202,46 +8251,55 @@ async function loadExceptions(){
   const { data } = await sb.from('schedule_exceptions').select('*')
     .eq('professor_id', currentUser.id).gte('date', todayStr).order('date');
   profExceptionsMap={};
-  (data||[]).forEach(e=>{ profExceptionsMap[e.date]=e; });
+  (data||[]).forEach(e=>{ if(e.aplica_a !== 'turmas') profExceptionsMap[e.date]=e; });
   renderExceptionsList(data||[]);
 }
 function renderExceptionsList(list){
   const el=document.getElementById('exceptions-list');
   if(!el) return;
   if(!list.length){ el.innerHTML='<p style="color:var(--muted);font-size:.85rem">Nenhuma exceção cadastrada.</p>'; return; }
+  const ESCOPO_TEXTO = { ambos:'agendamentos e turmas', agendamento:'só agendamentos', turmas:'só turmas fixas' };
   el.innerHTML = list.map(e=>{
     const d=new Date(e.date+'T12:00:00');
-    const ds=`${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    const ds=`${DAYS_FULL[d.getDay()]} ${d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
     const label = e.type==='closed' ? 'Fechado' : `Aberto (${(e.start_time||'').slice(0,5)}–${(e.end_time||'').slice(0,5)})`;
+    // O escopo só existe quando fecha: abrir é sempre janela de agendamento.
+    const escopo = e.type==='closed' ? ` · ${ESCOPO_TEXTO[e.aplica_a] || ESCOPO_TEXTO.ambos}` : '';
     return `<div class="exception-item">
-      <span>${ds} — ${label}</span>
-      <button style="font-size:.75rem;color:#C0392B" onclick="removeException('${e.id}')">Remover</button>
+      <span>${escHtml(ds)} — ${label}<span style="color:var(--muted)">${escopo}</span></span>
+      <button style="font-size:.75rem;color:var(--crit)" onclick="removeException('${jsAttr(e.id)}')">Remover</button>
     </div>`;
   }).join('');
 }
 async function addException(){
   const date=document.getElementById('exc-date').value;
-  if(!date){ alert('Escolha uma data.'); return; }
+  if(!date){ showToast('❌ Escolha uma data.'); return; }
+  /* A lista só mostra de hoje em diante. Sem esta guarda, uma exceção no passado
+     salva de verdade e some da tela — parece que não salvou. */
+  if(date < dateToStr(new Date())){ showToast('❌ Essa data já passou. Escolha hoje ou um dia à frente.'); return; }
   const type=document.getElementById('exc-type').value;
+  const aplica_a = type==='open' ? 'agendamento' : (document.getElementById('exc-escopo')?.value || 'ambos');
   let start=null, end=null;
   if(type==='open'){
     start=document.getElementById('exc-start').value;
     end=document.getElementById('exc-end').value;
-    if(!start || !end || start>=end){ alert('Defina um horário de início e fim válidos.'); return; }
+    if(!start || !end || start>=end){ showToast('❌ Defina um horário de início e fim válidos.'); return; }
   }
   const { data, error } = await sb.from('schedule_exceptions').upsert({
-    professor_id: currentUser.id, date, type, start_time: start, end_time: end
+    professor_id: currentUser.id, date, type, start_time: start, end_time: end, aplica_a
   }, { onConflict: 'professor_id,date' }).select();
-  if(error){ alert('Erro ao salvar exceção: ' + error.message); return; }
-  if(!data || !data.length){ alert('Não foi possível salvar: nenhuma linha foi criada/atualizada no banco (provável permissão faltando). Fale com o suporte técnico.'); return; }
+  if(error){ showToast('❌ Erro ao salvar exceção: ' + error.message); return; }
+  if(!data || !data.length){ showToast('❌ Nada foi salvo no banco — provável permissão faltando.'); return; }
   document.getElementById('exc-date').value='';
   await loadExceptions();
+  showToast('✅ Exceção salva.');
 }
 async function removeException(id){
-  if(!(await showAppConfirm('Remover esta exceção?'))) return;
+  if(!(await showAppConfirm('Remover esta exceção? O dia volta a seguir o horário normal.'))) return;
   const { error } = await sb.from('schedule_exceptions').delete().eq('id', id);
-  if(error){ alert('Erro ao remover: ' + error.message); return; }
+  if(error){ showToast('❌ Erro ao remover: ' + error.message); return; }
   await loadExceptions();
+  showToast('✅ Exceção removida.');
 }
 
 async function renderProfAnamnese() {

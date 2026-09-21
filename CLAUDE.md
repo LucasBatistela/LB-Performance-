@@ -144,10 +144,24 @@ to correct it. Attendance comes from that check-in; `marcar_presenca` lets the p
 and forgot to answer, tagged `origem = 'professor'` so it registers presence without inventing PSR/PSE answers.
 The reverse is deliberately blocked — a student's check-in is their data and is not deleted from a roll call.
 
+**`schedule_exceptions.aplica_a` says which of the two schedules a closure hits** — `agendamento`, `turmas`
+or `ambos` (the default, and what the form offers). Both places that build `profExceptionsMap` drop rows whose
+scope is `turmas`, which is why `getAvailableSlots()` never had to learn that scope exists; `renderAulasFixas()`
+and `renderTurmaHoje()` read the other side. A `type='open'` row is a booking window with a start and end time,
+so a check constraint pins it to `aplica_a='agendamento'` — there is no "opening" a fixed class that isn't in
+the grid.
+
 **Watch for RLS recursion here.** `student_groups` and `student_group_members` reference each other, and naive
 policies deadlock with `infinite recursion detected in policy`. `e_membro_do_grupo()` is `SECURITY DEFINER` for
 exactly that reason: it reads membership without triggering RLS. Any new policy spanning these two tables
 should go through it rather than re-querying the other table directly.
+
+## `[hidden]` is global, don't re-declare it
+
+`[hidden] { display: none !important; }` sits in the reset. It is there because the `hidden` attribute loses to
+any declared `display` — inline or from a class — and this file has a dozen one-off
+`.thing[hidden] { display: none }` rules that were each written after someone hit that. Toggling `el.hidden`
+now just works; don't add another per-element rule.
 
 ## Rendering user text
 
