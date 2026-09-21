@@ -7914,21 +7914,28 @@ async function loginAluno() {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
   if(!error) { await loadUserAndRedirect(data.user); return; }
 
-  /* 2. Login falhou — pode ser primeiro acesso. Quem decide é o banco: a RPC
-        confere o CPF contra os pré-cadastros e a senha digitada contra a senha
-        padrão que o professor definiu. A senha padrão nunca chega até aqui, e a
-        tabela de pré-cadastros deixou de ser legível de fora — ela guarda CPF,
-        nome, telefone e e-mail de todo mundo que ele cadastrou.
-        Resposta única para CPF inexistente e senha errada, para a tela não virar
-        um verificador de "esse CPF está cadastrado?". */
-  errEl.textContent='Verificando cadastro…'; errEl.style.display='block';
-  const { data: preReg } = await sb.rpc('iniciar_primeiro_acesso', { p_cpf: cpf, p_senha: senha });
-  if(!preReg) { errEl.textContent='CPF/e-mail ou senha inválidos.'; errEl.style.display='block'; return; }
-
-  // 3. Criar a conta com a mesma senha padrão que ele acabou de digitar
+  /* 2. Login falhou — pode ser primeiro acesso, e a conta nasce no servidor, não
+        aqui. A função confere o CPF contra os pré-cadastros e a senha digitada
+        contra a senha padrão do professor antes de criar qualquer coisa, e só
+        então o cadastro público do GoTrue pode ficar desligado: enquanto ele
+        respondia, quem soubesse um CPF pré-cadastrado criava a conta daquele
+        aluno com a senha que quisesse.
+        A senha padrão nunca chega ao navegador, e a resposta é a mesma para CPF
+        inexistente, senha errada e CPF travado por tentativas — senão a tela
+        vira um verificador de "esse CPF está cadastrado?". */
   errEl.textContent='Criando sua conta…'; errEl.style.display='block';
-  const { error: signUpErr } = await sb.auth.signUp({ email, password: senha });
-  if(signUpErr) { errEl.textContent='Erro ao criar conta: '+signUpErr.message; errEl.style.display='block'; return; }
+  const { error: criarErr } = await sb.functions.invoke('criar-conta-aluno', { body: { cpf, senha } });
+  if(criarErr) {
+    let codigo = '';
+    try { codigo = (await criarErr.context?.json())?.error || ''; } catch(e){}
+    errEl.textContent = codigo === 'ja_existe'
+      ? 'Você já tem conta. Entre com a senha que você criou, ou use "Esqueci minha senha".'
+      : codigo === 'invalido'
+        ? 'CPF/e-mail ou senha inválidos.'
+        : 'Não foi possível criar sua conta agora. Avise seu professor.';
+    errEl.style.display='block';
+    return;
+  }
 
   // 4. Login imediato — precisa de sessão autenticada para o passo seguinte
   errEl.textContent='Entrando…'; errEl.style.display='block';

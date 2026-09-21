@@ -66,8 +66,11 @@ top of the file (`index.html:25-41`).
 which calls the EmailJS REST API server-side with a private key held in the `EMAILJS_PRIVATE_KEY` secret. The
 code must never be returned to the client; that is the whole point of the function existing. See below.
 
-### The one server-side piece: `request-password-reset`
-The only Edge Function in the project. It runs with `verify_jwt = false` (whoever is resetting a password is
+### The server-side pieces
+Two Edge Functions, both `verify_jwt = false` because in both cases the person is logged out by definition:
+`criar-conta-aluno` (see **Primeiro acesso do aluno**) and `request-password-reset`.
+
+`request-password-reset` runs with `verify_jwt = false` (whoever is resetting a password is
 logged out by definition) and protects itself instead by: rate-limiting to 3 codes per student per 15 minutes,
 answering identically whether or not the CPF exists (so it can't be used to enumerate students), and never
 putting the code in the response. It writes the code through the `store_reset_code` RPC, which bcrypt-hashes
@@ -172,9 +175,12 @@ transaction. The group link has to live there: only the professor can write `stu
 old client-side path silently dropped whatever group was chosen at pre-registration. The password-change
 dialog no longer has any way out except logging out.
 
-**Still open, and it needs a decision, not a patch:** public sign-up is on, so anyone who knows a registered
-CPF can call `sb.auth.signUp` directly with a password of their choosing and skip all of the above. Closing it
-means turning off public sign-ups and moving account creation into an Edge Function.
+**The account is created server-side**, by the `criar-conta-aluno` Edge Function (`verify_jwt = false`, same
+reason as the other one). The client never calls `sb.auth.signUp` any more. That exists so public sign-ups can
+be **off** in the dashboard: while that endpoint answered, anyone who knew a registered CPF could create that
+student's account with a password of their own and skip every check above. `iniciar_primeiro_acesso` also caps
+wrong guesses at 5 per CPF per 15 minutes, because the first-access password is shared across the professor's
+students and is therefore worth guessing.
 
 ## Escritas que ninguém espera
 
@@ -219,6 +225,9 @@ Two settings live outside the code and are not in version control:
 
 - `EMAILJS_PRIVATE_KEY` — Edge Function secret, from EmailJS → Account → API Keys. Without it,
   `request-password-reset` returns `email_nao_configurado` and no reset email goes out.
+- **Public sign-ups must be OFF** — Authentication → Sign In / Providers → Email → *Allow new users to sign up*.
+  `criar-conta-aluno` creates accounts with the service role and is unaffected by it. Leaving it on re-opens
+  exactly the hole that Edge Function exists to close.
 - **Password policy** — Supabase dashboard → Authentication → Sign In / Providers → Email (not "Policies").
   Off/minimal by default. Two caveats before treating it as a fix: **leaked-password protection requires the
   Pro plan**, and this org is on Free; and more importantly, **the dashboard policy does not reach this app's
