@@ -1331,6 +1331,19 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
   padding: 12px 16px 6px; font-weight: 800; font-size: .88rem; color: var(--ink); }
 .aula-dia-titulo span { font-weight: 600; font-size: .78rem; color: var(--muted); }
 .aula-sem { padding: 6px 16px 14px; font-size: .82rem; color: var(--muted); font-style: italic; }
+/* Os horários do dia. 44px de alvo: no celular, botão menor que isso erra o toque. */
+.hora-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 16px 12px; }
+.hora-btn { min-height: 44px; padding: 10px 18px; border-radius: 50px; font-weight: 700;
+  font-size: .9rem; border: 1.5px solid var(--border); background: var(--surface); color: var(--ink); }
+/* A resposta é a cor; o anel diz qual está aberto para responder. As duas coisas
+   se somam, porque um horário já respondido continua podendo ser reaberto. */
+.hora-btn.vai { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.hora-btn.nao-vai { opacity: .5; text-decoration: line-through; }
+.hora-btn.aberto { border-color: var(--pine); box-shadow: 0 0 0 3px rgba(52,106,172,.35); }
+.hora-confirma { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap; margin: 0 16px 14px; padding: 12px 14px;
+  background: var(--surface-alt); border-radius: var(--radius-sm); }
+.hora-confirma-label { font-size: .85rem; font-weight: 700; color: var(--ink-2); }
 .aula-quando { display: flex; flex-direction: column; font-size: .86rem; }
 .aula-quando span { font-size: .76rem; color: var(--muted); }
 .aula-acoes { display: flex; gap: 6px; }
@@ -5242,6 +5255,8 @@ const DIAS_PARA_CONFIRMAR = 7;
    é apertado. */
 const DIAS_FEIRA = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
 let aulasFixasDados = null;
+// Um horário aberto por vez na tela inteira: ele responde um e passa ao próximo.
+let aulaSelecionada = null;   // { slotId, data }
 
 async function renderAulasFixas(){
   const wrap = document.getElementById('aulas-fixas-wrap');
@@ -5330,27 +5345,45 @@ function desenharAulasFixas(){
 
       // Dia fechado aparece mesmo assim, sem botões: sumir com ele faria o aluno
       // achar que a aula dele saiu da grade.
-      const corpo = diasSemAula.has(ds)
-        ? `<p class="aula-sem">Seu professor fechou este dia — não há aula.</p>`
-        : `<div class="aula-lista">${horarios.map(s=>{
-            const resp = jaDisse[`${s.id}|${ds}`];
-            return `<div class="aula-item${resp===true?' vai':resp===false?' nao-vai':''}">
-              <div class="aula-quando">
-                <strong>${escHtml(s.hora)}</strong>
-                <span>${s.duracao_min} min</span>
-              </div>
-              <div class="aula-acoes">
-                <button type="button" class="aula-btn${resp===true?' on':''}"
-                  onclick="confirmarAula('${jsAttr(s.id)}','${ds}',true)">Vou</button>
-                <button type="button" class="aula-btn nao${resp===false?' on':''}"
-                  onclick="confirmarAula('${jsAttr(s.id)}','${ds}',false)">Não vou</button>
-              </div>
-            </div>`;
-          }).join('')}</div>`;
+      if(diasSemAula.has(ds)){
+        dias.push(`<div class="aula-dia">
+          <div class="aula-dia-titulo">${titulo}</div>
+          <p class="aula-sem">Seu professor fechou este dia — não há aula.</p>
+        </div>`);
+        continue;
+      }
+
+      const grade = horarios.map(s=>{
+        const resp = jaDisse[`${s.id}|${ds}`];
+        const aberto = aulaSelecionada && aulaSelecionada.slotId === s.id && aulaSelecionada.data === ds;
+        const cls = ['hora-btn'];
+        if(resp === true)  cls.push('vai');
+        if(resp === false) cls.push('nao-vai');
+        if(aberto) cls.push('aberto');
+        return `<button type="button" class="${cls.join(' ')}"
+          onclick="selecionarAula('${jsAttr(s.id)}','${ds}')">${escHtml(s.hora)}</button>`;
+      }).join('');
+
+      /* A confirmação só abre no horário que o aluno tocou. Mostrar os dois
+         botões em todos de uma vez transformava a tela numa parede de botões —
+         ele tem uma aula no dia, não quatro. */
+      const alvo = aulaSelecionada && aulaSelecionada.data === ds
+        ? horarios.find(s=>s.id === aulaSelecionada.slotId) : null;
+      const resp = alvo ? jaDisse[`${alvo.id}|${ds}`] : undefined;
+      const confirma = alvo ? `<div class="hora-confirma">
+          <span class="hora-confirma-label">${escHtml(alvo.hora)} · você vai?</span>
+          <div class="aula-acoes">
+            <button type="button" class="aula-btn${resp===true?' on':''}"
+              onclick="confirmarAula('${jsAttr(alvo.id)}','${ds}',true)">Vou</button>
+            <button type="button" class="aula-btn nao${resp===false?' on':''}"
+              onclick="confirmarAula('${jsAttr(alvo.id)}','${ds}',false)">Não vou</button>
+          </div>
+        </div>` : '';
 
       dias.push(`<div class="aula-dia">
         <div class="aula-dia-titulo">${titulo}</div>
-        ${corpo}
+        <div class="hora-grid">${grade}</div>
+        ${confirma}
       </div>`);
     }
 
@@ -5362,12 +5395,19 @@ function desenharAulasFixas(){
         ${logo ? `<img class="local-logo" src="${escHtml(logo)}" alt="">` : ''}
         <div>
           <div class="local-nome">${escHtml(grupo.local_nome || grupo.nome)}</div>
-          <div class="local-sub">Diga se você vai a cada aula</div>
+          <div class="local-sub">Toque no seu horário e diga se vai</div>
         </div>
       </div>
       ${conteudo}
     </div>`;
   }).join('');
+}
+
+// Tocar de novo no mesmo horário fecha: é como o aluno desfaz sem precisar de X.
+function selecionarAula(slotId, data){
+  aulaSelecionada = (aulaSelecionada && aulaSelecionada.slotId === slotId && aulaSelecionada.data === data)
+    ? null : { slotId, data };
+  desenharAulasFixas();
 }
 
 async function confirmarAula(slotId, data, vai){
