@@ -3516,25 +3516,6 @@ async function getBookingsInRange(opts){
   return [...real, ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
 }
 
-/* Junta os agendamentos reais do professor com as próximas ocorrências projetadas dos horários fixos, num intervalo de datas */
-async function getProfessorBookingsInRange(profId, fromDate, toDateExclusive){
-  const fromStr = dateToStr(fromDate), toStr = dateToStr(toDateExclusive);
-  const [realRes, anchorRes] = await Promise.all([
-    sb.from('bookings').select('*').eq('professor_id',profId).gte('date',fromStr).lt('date',toStr).eq('status','confirmed').order('date').order('time'),
-    sb.from('bookings').select('*').eq('professor_id',profId).eq('is_fixed',true)
-  ]);
-  const real = realRes.data || [];
-  const anchors = anchorRes.data || [];
-  let virtual = [];
-  if(anchors.length){
-    const { data: skipRows } = await sb.from('fixed_booking_skips').select('booking_id,skip_date').in('booking_id', anchors.map(a=>a.id));
-    const skipsByBooking = {};
-    (skipRows||[]).forEach(s=>{ (skipsByBooking[s.booking_id] ||= new Set()).add(s.skip_date); });
-    const physicalKeySet = new Set(real.map(b=>b.date+'|'+b.time));
-    virtual = expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, fromDate, toDateExclusive);
-  }
-  return [...real, ...virtual].sort((a,b)=> a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
-}
 let SESSION_DURATION_MIN = 45;
 function generateSlotsForWindow(startStr, endStr, durationMin){
   if(!startStr || !endStr) return [];
@@ -8382,15 +8363,7 @@ function goToInicio(){
   if(!currentUser || !currentProfile) { showPage('login'); return; }
   showPage(currentProfile.role==='professor' ? 'dashboard-prof' : 'dashboard-aluno');
 }
-function goToMeuTreino(){
-  if(!currentUser || !currentProfile) { showPage('login'); return; }
-  if(currentProfile.role==='professor'){
-    showPage('dashboard-prof');
-    setTimeout(()=>showProfTab('treino'), 50);
-  } else {
-    showPage('meu-treino');
-  }
-}
+
 // "Meu plano" (menu ☰) — só faz sentido pro aluno (plano de assinatura contratado).
 // Se um professor clicar (mesmo menu serve os dois papéis), manda pro painel dele.
 function goToMeuPlano(){
@@ -8796,10 +8769,6 @@ const DISEASE_STATS = {
   'Ansiedade ou depressão': { pct:'Ansiedade: 9,3% · Depressão: 10,2%', source:'OMS 2019 / PNS 2019 (IBGE)' },
 };
 
-function anamLevelBar(scaleIdx, total, level){
-  const pct = Math.round(((scaleIdx+1)/total)*100);
-  return { pct, level };
-}
 function esc(v){ return (v===undefined||v===null||v==='') ? '' : escHtml(v); }
 
 function buildAnamMetricCards(data){
