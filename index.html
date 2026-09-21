@@ -2757,10 +2757,10 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
 <div id="first-login-pwd-overlay" class="overlay" hidden>
   <div class="modal-box" style="max-width:380px">
     <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px">Defina sua nova senha</div>
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px">Por segurança, troque a senha padrão (seu CPF) por uma senha só sua.</p>
-    <div class="form-row"><label>Senha atual (seu CPF)</label>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px">A senha que seu professor te passou é temporária e outras pessoas a conhecem. Escolha agora uma senha só sua.</p>
+    <div class="form-row"><label>Senha do primeiro acesso</label>
       <div class="pwd-field">
-        <input type="password" id="flp-current-password" placeholder="Só números" autocomplete="current-password" inputmode="numeric">
+        <input type="password" id="flp-current-password" placeholder="A que seu professor te passou" autocomplete="current-password">
         <button type="button" class="pwd-toggle" aria-label="Mostrar senha" onclick="togglePwdVisibility('flp-current-password', this)">
           <svg class="pwd-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg class="pwd-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61C3.65 8.42 1 12 1 12s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
@@ -7302,6 +7302,11 @@ async function enviarPedidoAnamnese(studentId, studentName){
 // (professor_settings) e atualiza state.admin. Chamado tanto pro professor (com o próprio id)
 // quanto pro aluno (com o id do professor dele) — precisa estar disponível pros dois lados,
 // já que quem dispara o e-mail de confirmação/cancelamento é o navegador de quem faz a ação.
+/* Só o valor mostrado enquanto o professor ainda não salvou o dele. O mesmo
+   literal existe dentro de iniciar_primeiro_acesso() no banco, que é quem
+   realmente confere — aqui é apenas o que a tela exibe. */
+const SENHA_PADRAO_FALLBACK = 'LBPerformance2026';
+
 async function loadProfessorSettings(professorId){
   if(!sb || !professorId) return;
   try {
@@ -7311,6 +7316,7 @@ async function loadProfessorSettings(professorId){
       state.admin = {
         ...state.admin,
         email: data.contact_email || '',
+        senhaPadraoAlunos: data.senha_padrao_alunos || SENHA_PADRAO_FALLBACK,
         emailjs: {
           serviceId:           data.emailjs_service_id || '',
           templateId:          data.emailjs_template_id || '',
@@ -7333,6 +7339,9 @@ async function loadProfessorSettings(professorId){
 async function saveConfig(){
   if(!sb || !currentUser){ showToast('❌ Sistema indisponível.'); return; }
   const email=(document.getElementById('cfg-email')?.value)||state.admin.email;
+  const senhaPadrao=(document.getElementById('cfg-senha-padrao')?.value||'').trim()
+    || state.admin.senhaPadraoAlunos || SENHA_PADRAO_FALLBACK;
+  if(senhaPadrao.length < 8){ showToast('❌ A senha do primeiro acesso precisa ter pelo menos 8 caracteres.'); return; }
   const emailjs={
     serviceId:        (document.getElementById('cfg-ejs-service')?.value||'').trim(),
     templateId:       (document.getElementById('cfg-ejs-template')?.value||'').trim(),
@@ -7345,6 +7354,7 @@ async function saveConfig(){
   const { error } = await sb.from('professor_settings').upsert({
     professor_id: currentUser.id,
     contact_email: email,
+    senha_padrao_alunos: senhaPadrao,
     emailjs_service_id: emailjs.serviceId,
     emailjs_template_id: emailjs.templateId,
     emailjs_cancel_template_id: emailjs.cancelTemplateId,
@@ -7353,7 +7363,7 @@ async function saveConfig(){
     emailjs_reset_service_id: emailjs.resetServiceId,
     emailjs_reset_public_key: emailjs.resetPublicKey
   }, { onConflict: 'professor_id' });
-  if(!error){ state.admin.email=email; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
+  if(!error){ state.admin.email=email; state.admin.senhaPadraoAlunos=senhaPadrao; state.admin.emailjs=emailjs; showToast('Configurações salvas!'); }
   else showToast('❌ Erro ao salvar: '+error.message);
 }
 
@@ -7439,7 +7449,10 @@ async function saveRecoveredPassword() {
   showPage('login');
 }
 
-/* ── TROCA DE SENHA NO 1º LOGIN DO ALUNO (senha padrão = CPF) ────── */
+/* ── TROCA DE SENHA NO 1º LOGIN DO ALUNO ──────────────────────────
+   A senha do primeiro acesso é definida pelo professor em Configurações e é a
+   mesma para todos os alunos dele — ou seja, é conhecida por mais gente que o
+   dono da conta. Por isso a troca aqui não tem "depois". */
 function showFirstLoginPasswordChange() {
   document.getElementById('flp-current-password').value = '';
   document.getElementById('flp-new-password').value = '';
@@ -7768,43 +7781,42 @@ async function loginAluno() {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
   if(!error) { await loadUserAndRedirect(data.user); return; }
 
-  // 2. Login falhou — auto-registro apenas se senha === CPF (primeiro acesso)
-  if(senha !== cpf) { errEl.textContent='CPF/e-mail ou senha inválidos.'; errEl.style.display='block'; return; }
-
+  /* 2. Login falhou — pode ser primeiro acesso. Quem decide é o banco: a RPC
+        confere o CPF contra os pré-cadastros e a senha digitada contra a senha
+        padrão que o professor definiu. A senha padrão nunca chega até aqui, e a
+        tabela de pré-cadastros deixou de ser legível de fora — ela guarda CPF,
+        nome, telefone e e-mail de todo mundo que ele cadastrou.
+        Resposta única para CPF inexistente e senha errada, para a tela não virar
+        um verificador de "esse CPF está cadastrado?". */
   errEl.textContent='Verificando cadastro…'; errEl.style.display='block';
+  const { data: preReg } = await sb.rpc('iniciar_primeiro_acesso', { p_cpf: cpf, p_senha: senha });
+  if(!preReg) { errEl.textContent='CPF/e-mail ou senha inválidos.'; errEl.style.display='block'; return; }
 
-  // 3. Buscar pré-cadastro
-  const { data: preReg } = await sb.from('pending_registrations').select('*').eq('cpf', cpf).maybeSingle();
-  if(!preReg) { errEl.textContent='Cadastro não encontrado. Peça ao professor para te cadastrar.'; errEl.style.display='block'; return; }
-
-  // 4. Criar conta via signUp
+  // 3. Criar a conta com a mesma senha padrão que ele acabou de digitar
   errEl.textContent='Criando sua conta…'; errEl.style.display='block';
-  const { data: signUpData, error: signUpErr } = await sb.auth.signUp({ email, password: cpf });
+  const { error: signUpErr } = await sb.auth.signUp({ email, password: senha });
   if(signUpErr) { errEl.textContent='Erro ao criar conta: '+signUpErr.message; errEl.style.display='block'; return; }
 
-  // 5. Login imediato — garante sessão autenticada antes dos inserts
+  // 4. Login imediato — precisa de sessão autenticada para o passo seguinte
   errEl.textContent='Entrando…'; errEl.style.display='block';
-  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: cpf });
+  const { data: loginData, error: loginErr } = await sb.auth.signInWithPassword({ email, password: senha });
   if(loginErr) {
-    errEl.textContent='Conta criada! Faça login novamente com seu CPF/e-mail e senha.';
+    errEl.textContent='Conta criada! Faça login novamente com seu CPF e a senha do primeiro acesso.';
     errEl.style.display='block'; return;
   }
 
-  // 6. Criar/atualizar perfil e vínculo com sessão autenticada
-  const { error: p1 } = await sb.from('profiles').upsert({ id: loginData.user.id, full_name: preReg.full_name, phone: preReg.phone||null, email: preReg.email||null, role: 'student' }, { onConflict: 'id' });
-  const { error: s1 } = await sb.from('students').upsert({ id: loginData.user.id, cpf: cpf, professor_id: preReg.professor_id, gender: preReg.gender||null }, { onConflict: 'id' });
-  if(p1) console.error('Erro ao criar perfil:', p1);
-  if(s1) console.error('Erro ao vincular aluno:', s1);
-  if(p1 || s1) {
-    errEl.textContent = 'Conta criada, mas houve um erro ao salvar seu perfil. Avise seu professor (código: '+((p1||s1).code||'?')+').';
+  /* 5. Perfil, vínculo com o professor, grupo e limpeza do pré-cadastro, tudo
+        numa transação só. Eram quatro escritas soltas aqui, com um ramo de erro
+        para quando metade passasse — e o grupo se perdia no caminho, porque o
+        aluno não tem permissão para se inserir num grupo: só o professor tem. */
+  const { error: concErr } = await sb.rpc('concluir_primeiro_acesso');
+  if(concErr) {
+    errEl.textContent = 'Conta criada, mas houve um erro ao salvar seu perfil. Avise seu professor.';
     errEl.style.display='block';
-    await loadUserAndRedirect(loginData.user);
-    return;
+    console.error('concluir_primeiro_acesso:', concErr);
+  } else {
+    errEl.style.display='none';
   }
-
-  await sb.from('pending_registrations').delete().eq('cpf', cpf);
-
-  errEl.style.display='none';
   await loadUserAndRedirect(loginData.user);
 }
 
@@ -8727,7 +8739,16 @@ function renderProfConfig() {
     <div style="max-width:480px;display:flex;flex-direction:column;gap:16px">
       <div class="form-row">
         <label style="font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.05em">E-mail de notificação</label>
-        <input type="email" id="cfg-email" value="${state.admin?.email||''}" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+        <input type="email" id="cfg-email" value="${escHtml(state.admin?.email||'')}" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+      </div>
+      <div class="form-row">
+        <label style="font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:.05em">Senha do primeiro acesso</label>
+        <input type="text" id="cfg-senha-padrao" value="${escHtml(state.admin?.senhaPadraoAlunos||SENHA_PADRAO_FALLBACK)}" autocomplete="off"
+          style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)">
+        <p style="font-size:.78rem;color:var(--muted);margin-top:6px">
+          É a senha que você passa ao aluno junto com o CPF. Ele é obrigado a trocá-la assim que entra,
+          então ela vale só para a primeira vez. Mínimo de 8 caracteres.
+        </p>
       </div>
       <div style="border:1.5px solid var(--border);border-radius:var(--radius);padding:20px">
         <div style="font-weight:700;font-size:.85rem;margin-bottom:4px;display:flex;align-items:center;gap:6px"><span class="icon-inline" style="width:15px;height:15px;color:var(--pine)">${UI_ICONS.mail}</span> EmailJS — configuração geral</div>
@@ -10322,13 +10343,14 @@ async function cadastrarAluno() {
     <div style="background:var(--surface-alt);border-radius:var(--radius-sm);padding:18px;border:1.5px solid var(--border)">
       <div style="font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px"><span class="icon-inline good" style="width:18px;height:18px">${UI_ICONS.check}</span> Aluno pré-cadastrado!</div>
       <div style="font-size:.88rem;line-height:2.2;color:var(--ink-2)">
-        <b>Nome:</b> ${nome}<br>
-        <b>Login (CPF ou e-mail):</b> ${cpfFmt} ou ${email}<br>
-        <b>Senha inicial:</b> ${cpfRaw}<br>
+        <b>Nome:</b> ${escHtml(nome)}<br>
+        <b>Login (CPF ou e-mail):</b> ${escHtml(cpfFmt)} ou ${escHtml(email)}<br>
+        <b>Senha do primeiro acesso:</b> ${escHtml(state.admin?.senhaPadraoAlunos || SENHA_PADRAO_FALLBACK)}<br>
         <b>Acesso:</b> Menu → Área do Aluno
       </div>
       <p style="font-size:.78rem;color:var(--muted);margin-top:10px">
-        Passe essas credenciais ao aluno. No primeiro acesso, a conta é criada automaticamente.
+        Passe essas credenciais ao aluno. A conta é criada no primeiro acesso, e ele é obrigado a
+        trocar a senha antes de entrar. Para mudar a senha do primeiro acesso, vá em Configurações.
       </p>
     </div>`;
 

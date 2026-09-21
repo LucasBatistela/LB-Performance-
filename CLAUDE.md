@@ -156,6 +156,26 @@ policies deadlock with `infinite recursion detected in policy`. `e_membro_do_gru
 exactly that reason: it reads membership without triggering RLS. Any new policy spanning these two tables
 should go through it rather than re-querying the other table directly.
 
+## Primeiro acesso do aluno
+
+The student's first login used to be: password **equals their own CPF**, which is also their login, and the
+"change it now" dialog had a *Depois* button and closed on a backdrop click. On top of that,
+`pending_registrations` — CPF, full name, phone, gender, e-mail — was readable by `anon` with `USING (true)`,
+so the publishable key in the page source was enough to dump the list.
+
+Now: the professor sets a shared first-access password in Configurações
+(`professor_settings.senha_padrao_alunos`), and **the browser never learns it**.
+`iniciar_primeiro_acesso(cpf, senha)` checks both server-side and returns `null` for a wrong password *and* for
+an unknown CPF — same answer on purpose, so the screen isn't an "is this CPF registered?" oracle. Then
+`concluir_primeiro_acesso()` creates profile + student + **group membership** + clears the pending row in one
+transaction. The group link has to live there: only the professor can write `student_group_members`, so the
+old client-side path silently dropped whatever group was chosen at pre-registration. The password-change
+dialog no longer has any way out except logging out.
+
+**Still open, and it needs a decision, not a patch:** public sign-up is on, so anyone who knows a registered
+CPF can call `sb.auth.signUp` directly with a password of their choosing and skip all of the above. Closing it
+means turning off public sign-ups and moving account creation into an Edge Function.
+
 ## Escritas que ninguém espera
 
 A Supabase query builder is a **thenable that resolves with `{ data, error }`** — a failed write does not
