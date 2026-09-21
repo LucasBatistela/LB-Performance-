@@ -137,6 +137,11 @@ hides booking entirely. A student in both sees both, stacked. The identity colum
 modality, so a stale studio name can't resurface later. The Grade de horários tab only offers `confirmacao`
 groups, because a `class_slot` on a booking group would be a class no student could ever see.
 
+On the student's side a confirmation is **one class per day per group**: confirming a time flips any other
+time that student had confirmed that day to `vai = false` (not delete — by picking 07:00 they have said they
+won't be at 06:00, and the professor should read "avisou", not "não respondeu"). The DB does not enforce this;
+`desmarcarOutrosDoDia()` does, because the rule is about how this studio runs, not about the data.
+
 `class_confirmations` is **intention**, `training_sessions` is **reality** — that separation is the whole point.
 Crossing them is what `renderTurmaHoje()` shows as *confirmou e não veio*, the only absence worth a message.
 Don't collapse the two tables into one "attendance" table.

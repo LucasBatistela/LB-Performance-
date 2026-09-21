@@ -5416,14 +5416,45 @@ async function confirmarAula(slotId, data, vai){
     .upsert({ class_slot_id: slotId, student_id: currentUser.id, data, vai },
             { onConflict: 'class_slot_id,student_id,data' });
   if(error){ showToast('❌ '+error.message); return; }
-  showToast(vai ? '✅ Presença confirmada!' : 'Avisado que você não vai.');
 
-  if(aulasFixasDados){
-    aulasFixasDados.jaDisse[`${slotId}|${data}`] = vai;
-    desenharAulasFixas();
-    return;
-  }
+  if(aulasFixasDados) aulasFixasDados.jaDisse[`${slotId}|${data}`] = vai;
+  const trocados = vai ? await desmarcarOutrosDoDia(slotId, data) : [];
+
+  showToast(
+    !vai ? 'Avisado que você não vai.'
+    : trocados.length ? `✅ Confirmado. Desmarquei ${trocados.join(' e ')} do mesmo dia.`
+    : '✅ Presença confirmada!');
+
+  if(aulasFixasDados){ desenharAulasFixas(); return; }
   renderAulasFixas();
+}
+
+/* Uma aula por dia no mesmo local: confirmar um horário desmarca o outro que ele
+   já tinha confirmado naquele dia. Marcar 06:00 e depois 07:00 sem perceber era
+   fácil, e o aluno acabava nas duas listas de presença.
+   Vira "não vou" em vez de sumir: escolhendo as 07:00 ele disse, na prática, que
+   não estará nas 06:00 — e assim o professor lê "avisou" e não "não respondeu". */
+async function desmarcarOutrosDoDia(slotId, data){
+  if(!aulasFixasDados) return [];
+  const grupoId = Object.keys(aulasFixasDados.slotsPorGrupo)
+    .find(g => aulasFixasDados.slotsPorGrupo[g].some(s => s.id === slotId));
+  if(!grupoId) return [];
+
+  const diaDaSemana = strToDate(data).getDay();
+  const outros = (aulasFixasDados.slotsPorGrupo[grupoId] || []).filter(s =>
+    s.id !== slotId && s.weekday === diaDaSemana &&
+    aulasFixasDados.jaDisse[`${s.id}|${data}`] === true);
+
+  const trocados = [];
+  for(const s of outros){
+    const { error } = await sb.from('class_confirmations')
+      .upsert({ class_slot_id: s.id, student_id: currentUser.id, data, vai: false },
+              { onConflict: 'class_slot_id,student_id,data' });
+    if(error){ console.error('Não consegui desmarcar', s.hora, error.message); continue; }
+    aulasFixasDados.jaDisse[`${s.id}|${data}`] = false;
+    trocados.push(s.hora);
+  }
+  return trocados;
 }
 
 /* ── GRUPOS E TURMAS ───────────────────────────────────────────
