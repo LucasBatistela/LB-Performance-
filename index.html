@@ -2969,7 +2969,7 @@ async function notifyBookingCancelled(booking, cancelledBy, kind){
       p_title: `${currentProfile?.full_name||'Aluno'} ${acao} ${kind==='unfixed'?'um horário fixo':'um agendamento'}`,
       p_body: `${dateStr} às ${booking.time}`,
       p_link: 'dashboard-prof'
-    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+    }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
     if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && window.emailjs){
       try {
         emailjs.init(ejsCfg.publicKey);
@@ -2990,7 +2990,7 @@ async function notifyBookingCancelled(booking, cancelledBy, kind){
       p_title: kind==='unfixed' ? 'Seu professor desfixou um horário' : 'Seu professor cancelou um agendamento',
       p_body: `${dateStr} às ${booking.time}`,
       p_link: 'dashboard-aluno'
-    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+    }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
     if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && window.emailjs){
       try {
         const { data: sp } = await sb.from('profiles').select('full_name,email').eq('id', booking.student_id).single();
@@ -6647,7 +6647,7 @@ async function submitBooking(dateStr, time){
       p_title: `Novo agendamento de ${currentProfile.full_name||'aluno'}`,
       p_body: `${formatDate(dateStr)} às ${time}${isFixed?' · fixo (toda semana)':''}`,
       p_link: 'dashboard-prof'
-    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+    }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
     await loadAlunoDashboard();
     showPage('dashboard-aluno');
     showBookingMessage(isFixed ? 'Agendamento fixo confirmado! Esse horário será reservado toda semana automaticamente.' : 'Agendamento confirmado! Verifique seu e-mail.', 'success');
@@ -7246,19 +7246,19 @@ async function anamSubmit(){
       if(insErr){ saveError = insErr; console.error('Erro ao salvar anamnese:',insErr); }
       else {
         // Tranca a próxima anamnese — só destrava quando o professor pedir de novo
-        sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+        sb.from('students').update({ anamnese_unlocked: false }).eq('id', currentUser?.id).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
         if(professorId) {
           // Essa ficha resolve o lembrete de "ainda não preencheu", se existir.
           // Vai por RPC porque a notificação é do professor, e o RLS (com razão)
           // não deixa um usuário apagar linha do feed de outro.
           sb.rpc('clear_my_notification_to_professor', { p_type: 'anamnese_missing' })
-            .then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+            .then(avisarFalhaDeFundo, avisarFalhaDeFundo);
           sb.rpc('create_notification', {
             p_recipient_id: professorId, p_type: 'anamnese_submitted',
             p_title: `Nova ficha de anamnese: ${anamData.nome||currentProfile?.full_name||'Aluno'}`,
             p_body: 'Toque para analisar.',
             p_link: 'dashboard-prof', p_related_id: insRow?.id||null
-          }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+          }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
         }
       }
     } catch(e){ saveError = e; console.error('Erro ao salvar anamnese:',e); }
@@ -7364,6 +7364,17 @@ function checkURLParams(){
 const SUPABASE_URL = 'https://upmealfqrodhpqdpceec.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_hRCllkJR2g-l7o3gU04Fnw_6e3ptJzL';
 let sb = null;
+
+/* Escrita disparada e esquecida — notificação, marcação de lida, limpeza.
+   O builder do Supabase é um thenable que RESOLVE com { error } em vez de
+   rejeitar: um `.catch` encadeado nunca dispara e um `.then(()=>{})` joga o erro
+   fora. Foi assim que uma escrita em coluna que não existia rodou em todo login
+   por meses sem ninguém ver. Se a escrita não precisa ser esperada, ela termina
+   aqui — que é o único lugar onde ela ainda pode reclamar. */
+function avisarFalhaDeFundo(r){
+  const msg = r && r.error ? r.error.message : (r instanceof Error ? r.message : null);
+  if(msg) console.error('Falhou em segundo plano:', msg);
+}
 let currentUser = null;
 let currentProfile = null;
 let currentStudentData = null;
@@ -7851,7 +7862,7 @@ async function loadUserAndRedirect(user) {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if(tz){
         currentProfile = { ...currentProfile, timezone: tz };
-        sb.from('profiles').update({ timezone: tz }).eq('id', user.id).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+        sb.from('profiles').update({ timezone: tz }).eq('id', user.id).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
       }
     } catch(_){}
   }
@@ -8772,7 +8783,7 @@ async function cancelarAgendamento(id) {
     p_title: `${currentProfile?.full_name||'Aluno'} cancelou um agendamento`,
     p_body: `${formatDate(booking.date)} às ${booking.time}`,
     p_link: 'dashboard-prof'
-  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+  }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
   // Notifica o professor por email
   const ejsCfg = state.admin?.emailjs;
   if(ejsCfg?.serviceId && ejsCfg?.cancelTemplateId && ejsCfg?.publicKey && booking) {
@@ -8949,7 +8960,7 @@ function subscribeNotifications(){
 function cleanupOldNotifications(){
   if(!sb || !currentUser) return;
   const cutoff = new Date(Date.now() - 60*24*60*60*1000).toISOString();
-  sb.from('notifications').delete().eq('recipient_id', currentUser.id).lt('created_at', cutoff).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+  sb.from('notifications').delete().eq('recipient_id', currentUser.id).lt('created_at', cutoff).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
 }
 
 async function ensureAnamMissingNotifications(profId, studentIds){
@@ -8969,7 +8980,7 @@ async function ensureAnamMissingNotifications(profId, studentIds){
       p_title: `${name} ainda não preencheu a ficha de anamnese`,
       p_body: 'Toque para ver o aluno.',
       p_link: 'dashboard-prof', p_related_id: id
-    }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+    }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
   }));
 }
 
@@ -9766,7 +9777,7 @@ async function sendDuvidaAudioMessage(blob){
     p_title: `Nova mensagem de ${senderName}`,
     p_body: '🎤 Enviou um áudio',
     p_link: 'duvidas', p_related_id: currentProfile.role==='professor' ? duvidasCurrentStudentId : null
-  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+  }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
 }
 
 async function sendDuvidaMessage(){
@@ -9815,7 +9826,7 @@ async function sendDuvidaMessage(){
     p_title: `Nova mensagem de ${senderName}`,
     p_body: body ? (body.length>60?body.slice(0,60)+'…':body) : (mediaType==='video'?'Enviou um vídeo':'Enviou uma foto'),
     p_link: 'duvidas', p_related_id: currentProfile.role==='professor' ? duvidasCurrentStudentId : null
-  }).then(()=>{}).catch(err=>console.error('Erro em operação de fundo:', err));
+  }).then(avisarFalhaDeFundo, avisarFalhaDeFundo);
 }
 
 async function loadAlunoDuvidasPreview(){

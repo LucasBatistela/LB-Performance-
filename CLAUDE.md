@@ -156,6 +156,14 @@ policies deadlock with `infinite recursion detected in policy`. `e_membro_do_gru
 exactly that reason: it reads membership without triggering RLS. Any new policy spanning these two tables
 should go through it rather than re-querying the other table directly.
 
+## Escritas que ninguém espera
+
+A Supabase query builder is a **thenable that resolves with `{ data, error }`** — a failed write does not
+reject. So `.then(()=>{})` discards the error and a chained `.catch` never runs. Twelve fire-and-forget writes
+in this file were written that way, which is how `update({ timezone })` against a column that did not exist ran
+on every single login for months in silence. Any write you don't await ends in
+`.then(avisarFalhaDeFundo, avisarFalhaDeFundo)`; anything you do await checks `error` before claiming success.
+
 ## Imagens que o usuário envia
 
 `profiles.avatar_url` and `student_groups.logo_url` hold a **public Storage URL**, not image bytes and not a
