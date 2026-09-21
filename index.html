@@ -1218,6 +1218,8 @@ img { max-width: 100%; display: block; }
   padding: 8px 6px; border-bottom: 1.5px solid var(--border); }
 .evo-tabela td { padding: 9px 6px; border-bottom: 1px solid var(--border); }
 .evo-nota { font-size: .74rem; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+.evo-nota a { color: var(--pine); text-decoration: underline; text-underline-offset: 2px; }
+.evo-nota strong { color: var(--ink-2); }
 .evo-legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-top: 8px; }
 .evo-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
 .evo-heat { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -4237,6 +4239,59 @@ async function evoCargasHTML(sid, ehProfessor){
     ${exercicios.map(evoCardHTML).join('')}`;
 }
 
+/* ── Base científica do painel ────────────────────────────────────
+   As notas abaixo existem para o professor, não para enfeitar a tela. Cada uma
+   diz o que a medida sustenta E onde ela para — um número apresentado além do
+   que o estudo mostra não protege ninguém numa conversa difícil, atrapalha.
+
+   Regra para quem mexer aqui: só entra referência que fale do que está na tela.
+   A anamnese, por exemplo, não tem nota nenhuma de propósito: é um formulário
+   próprio, e citar a validação do PAR-Q+ ao lado dele seria emprestar
+   credibilidade de um instrumento que não é este. */
+const REFS = {
+  saw: { txt: 'Saw, Main &amp; Gastin (2016), Br J Sports Med',
+         doi: 'https://doi.org/10.1136/bjsports-2015-094758' },
+  hooper: { txt: 'Hooper &amp; Mackinnon (1995), Sports Med',
+            doi: 'https://doi.org/10.2165/00007256-199520050-00003' },
+  laurent: { txt: 'Laurent et al. (2011), J Strength Cond Res',
+             doi: 'https://doi.org/10.1519/JSC.0b013e3181c69ec6' },
+  tolusso: { txt: 'Tolusso et al. (2022), Int J Sports Physiol Perform',
+             doi: 'https://doi.org/10.1123/ijspp.2021-0360' },
+  foster98: { txt: 'Foster (1998), Med Sci Sports Exerc',
+              doi: 'https://doi.org/10.1097/00005768-199807000-00023' },
+  foster21: { txt: 'Foster et al. (2021), Int J Sports Physiol Perform',
+              doi: 'https://doi.org/10.1123/ijspp.2020-0599' },
+  haddad: { txt: 'Haddad et al. (2017), Front Neurosci',
+            doi: 'https://doi.org/10.3389/fnins.2017.00612' },
+  tavares: { txt: 'Tavares et al. (2017), J Sports Med Phys Fitness',
+             doi: 'https://doi.org/10.23736/S0022-4707.17.07618-6' },
+};
+function ref(...chaves){
+  return chaves.map(k=>`<a href="${REFS[k].doi}" target="_blank" rel="noopener noreferrer">${REFS[k].txt}</a>`).join(' · ');
+}
+
+const NOTA_PRONTIDAO = `<p class="evo-nota">
+  Os quatro números são do próprio aluno, comparados com a média dele nas sessões anteriores — não com
+  a de outros alunos. Isso não é preciosismo: o estudo que validou a escala de recuperação em treino de
+  força adverte que notas iguais entre duas pessoas <strong>não</strong> significam recuperação igual.
+  Medidas subjetivas como estas acompanham a carga de treino com mais sensibilidade do que marcadores
+  objetivos de uso corrente, e o conjunto sono / estresse / dor vem do registro de bem-estar clássico do
+  monitoramento de overtraining.<br>${ref('tolusso','laurent','saw','hooper')}</p>`;
+
+const NOTA_CARGA = `<p class="evo-nota">
+  Carga = PSE × minutos, o método session-RPE: 36 estudos confirmam sua validade e consistência em
+  esportes e faixas etárias diferentes, inclusive em treino de força e em população não atleta.
+  Monotonia e strain seguem Foster (1998), que ligou doenças e lesões à ultrapassagem de limiares
+  <strong>individuais</strong> — não existe corte universal, e o que importa é o padrão deste aluno ao
+  longo das semanas.<br>${ref('foster21','haddad','foster98')}</p>`;
+
+const NOTA_DOR = `<p class="evo-nota">
+  Registrar a dor músculo a músculo, e não numa pergunta só, é o que permite ver que a queixa se
+  concentra sempre no mesmo lugar. Em atletas monitorados dessa forma, a dor por região respondeu à
+  carga de treino de um jeito que a pergunta única não mostrava.<br>${ref('tavares')}
+  <span style="display:block;margin-top:6px">Isto é registro de dor percebida no treino — não é diagnóstico
+  nem substitui avaliação clínica.</span></p>`;
+
 async function renderEvolucao(){
   const el = document.getElementById('evo-content');
   const titulo = document.getElementById('evo-title');
@@ -4537,7 +4592,8 @@ async function renderEvolucaoProfessor(){
       ${(deHoje.session_pain_points||[]).length
         ? `<p style="font-size:.8rem;color:var(--crit);margin:-6px 0 16px">Dor hoje em: ${escHtml((deHoje.session_pain_points||[]).map(p=>CORPO_NOMES[p.region]||p.region).join(', '))}</p>`
         : ''}
-      ${deHoje.obs_pre ? `<p style="font-size:.82rem;color:var(--ink-2);margin:-6px 0 16px"><strong>Ele escreveu:</strong> ${escHtml(deHoje.obs_pre)}</p>` : ''}`;
+      ${deHoje.obs_pre ? `<p style="font-size:.82rem;color:var(--ink-2);margin:-6px 0 16px"><strong>Ele escreveu:</strong> ${escHtml(deHoje.obs_pre)}</p>` : ''}
+      ${NOTA_PRONTIDAO}`;
 
   // 2) Carga da semana, monotonia e strain
   const semanas = evoSemanas(concluidas, 6);
@@ -4554,7 +4610,7 @@ async function renderEvolucaoProfessor(){
         <td>${evoFormataData(w.inicio)}</td><td>${w.sessoes}</td><td>${Math.round(w.carga)}</td>
         <td>${w.monotonia!=null?w.monotonia.toFixed(2):'—'}</td><td>${w.strain!=null?Math.round(w.strain):'—'}</td>
       </tr>`).join('')}</tbody></table>
-      <p class="evo-nota">Carga = PSE × minutos. Monotonia e strain seguem Foster (1998), que associou lesões e doenças à ultrapassagem de limiares individuais — não há corte universal, o que importa é o padrão deste aluno ao longo das semanas.</p>`;
+      ${NOTA_CARGA}`;
 
   // 3) Mapa de calor de dor
   const contagem = {};
@@ -4568,7 +4624,8 @@ async function renderEvolucaoProfessor(){
         <div>${bodyHeatSVG('costas', contagem, maxDor, generoAluno)}<div class="evo-heat-lbl">Costas</div></div>
       </div>
       <div class="body-map-sel" style="justify-content:center">${ranking.map(([id,n])=>
-        `<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)} · ${n}</span>`).join('')}</div>`;
+        `<span class="body-map-chip">${escHtml(CORPO_NOMES[id]||id)} · ${n}</span>`).join('')}</div>
+      ${NOTA_DOR}`;
 
   el.innerHTML = seletor +
     `<h3 class="evo-sec">Prontidão de hoje</h3>${prontidao}

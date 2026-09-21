@@ -97,8 +97,22 @@ instrument — don't paraphrase them casually:
 - **PSE** (esforço), CR-10, answered at the end — the session-RPE method, reviewed by Foster et al.
   ([DOI](https://doi.org/10.1123/ijspp.2020-0599)) and by Haddad et al. ([DOI](https://doi.org/10.3389/fnins.2017.00612)).
 - **Monotonia e strain** — Foster, 1998 ([DOI](https://doi.org/10.1097/00005768-199807000-00023)).
+- **Bem-estar (sono, estresse, dor)** — the four-item wellness log comes from Hooper & Mackinnon, 1995
+  ([DOI](https://doi.org/10.2165/00007256-199520050-00003)); the case for trusting subjective measures over
+  objective ones is Saw, Main & Gastin's systematic review of 56 studies
+  ([DOI](https://doi.org/10.1136/bjsports-2015-094758)).
+- **Dor por região** — Tavares et al., 2017 ([DOI](https://doi.org/10.23736/S0022-4707.17.07618-6)) found
+  per-muscle-site soreness tracked training load in ways a single global soreness question did not. That is
+  what the body map is for; it is not a clinical pain drawing and the legend says so.
 - **ACWR is deliberately absent.** It is contested in the literature and was left out until it can be grounded
   as firmly as the rest. Don't add it casually.
+
+**The citations are a UI element, not decoration.** `REFS` and the three `NOTA_*` constants render under the
+professor's readiness, load and pain blocks. Two rules when editing them: a reference only goes in if it speaks
+to what is actually on that screen, and every note states the measure's limit alongside its claim — a number
+presented as stronger than its evidence is worse than no citation when the professor has to defend a decision.
+**The anamnese carries no citation on purpose**: it is a bespoke form, and borrowing PAR-Q+ validation for it
+would lend credibility that belongs to a different instrument.
 
 `training_sessions` is the central table. It exists **independently of `bookings`** — a session the student
 trains alone still counts, because monotonia and strain are computed over the whole week and would be wrong if
