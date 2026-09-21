@@ -1024,6 +1024,12 @@ img { max-width: 100%; display: block; }
 .cal-month-cell.is-disabled:hover { border-color: var(--border); }
 .cal-month-cell.is-selected { border-color: var(--pine); background: var(--pine); }
 .cal-month-cell.is-selected .cal-month-daynum { color: #fff; font-weight: 800; }
+/* Dia de aula que o professor fechou: continua clicável de propósito, porque é
+   ao tocar nele que o aluno lê o motivo em vez de achar que a aula sumiu. */
+.cal-month-cell.is-cancelada { border-color: var(--crit); }
+.cal-month-cell.is-cancelada .cal-month-daynum { color: var(--crit); text-decoration: line-through; }
+.cal-month-cell.is-cancelada.is-selected { background: var(--crit); border-color: var(--crit); }
+.cal-month-cell.is-cancelada.is-selected .cal-month-daynum { color: #fff; }
 .cal-month-daynum { font-size: .82rem; }
 .cal-month-dot { font-size: .62rem; font-weight: 700; color: #fff; background: var(--pine); border-radius: 999px; min-width: 15px; height: 15px; padding: 0 3px; display: flex; align-items: center; justify-content: center; }
 .cal-day-detail { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--border); }
@@ -1322,8 +1328,7 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
 .aula-item:last-child { border-bottom: none; }
 .aula-item.vai { background: var(--good-bg); }
 .aula-item.nao-vai { opacity: .55; }
-.aula-item.cancelada { opacity: .6; }
-.aula-sem { font-size: .78rem; font-weight: 700; color: var(--crit); white-space: nowrap; }
+.aulas-corpo { padding: 14px 16px 18px; }
 .aula-quando { display: flex; flex-direction: column; font-size: .86rem; }
 .aula-quando span { font-size: .76rem; color: var(--muted); }
 .aula-acoes { display: flex; gap: 6px; }
@@ -5225,7 +5230,13 @@ async function renderCheckin(){
    e o aluno só diz se vai. A tela mostra as próximas ocorrências da grade sob
    a identidade do local onde a aula acontece — o professor presta serviço em
    estúdio de terceiro, e essa marca é parte do combinado. */
-const DIAS_PARA_CONFIRMAR = 7;
+/* Espelha a tela do personal de propósito: primeiro o dia no calendário, depois
+   os horários daquele dia. A lista corrida de todas as ocorrências funcionava
+   com quatro aulas na semana e desmontava com doze — e obrigava o aluno a
+   procurar a própria aula no meio das dos outros horários. */
+const DIAS_PARA_CONFIRMAR = 30;
+const aulasFixasEstado = {};   // grupoId -> { ancora: 1º dia do mês exibido, dia: 'YYYY-MM-DD' }
+let aulasFixasDados = null;
 
 async function renderAulasFixas(){
   const wrap = document.getElementById('aulas-fixas-wrap');
@@ -5245,79 +5256,192 @@ async function renderAulasFixas(){
   if(agendamento) agendamento.hidden = !temAgendamento;
 
   if(!deConfirmacao.length){ wrap.hidden = true; wrap.innerHTML = ''; return; }
-  wrap.hidden = false;
 
   const { data: slots } = await sb.from('class_slots').select('*')
-    .in('group_id', deConfirmacao.map(g=>g.id)).eq('ativo', true);
+    .in('group_id', deConfirmacao.map(g=>g.id)).eq('ativo', true).order('hora');
   if(!slots?.length){ wrap.hidden = true; wrap.innerHTML = ''; return; }
+  wrap.hidden = false;
 
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const limite = new Date(hoje); limite.setDate(limite.getDate() + DIAS_PARA_CONFIRMAR);
+
   const { data: confs } = await sb.from('class_confirmations').select('class_slot_id, data, vai')
     .eq('student_id', currentUser.id).gte('data', dateToStr(hoje));
   const jaDisse = {};
   (confs||[]).forEach(c=>{ jaDisse[`${c.class_slot_id}|${c.data}`] = c.vai; });
 
-  /* Dia fechado para as turmas cancela a aula. Some-la da lista seria pior do
-     que mostrá-la cancelada: o aluno conhece a grade dele e a ausência viraria
-     dúvida. Aparece, e aparece sem botão. */
+  // Dia fechado para as turmas cancela a aula. O dia continua clicável: é ao
+  // tocar nele que o aluno lê o motivo, em vez de achar que a aula sumiu.
   const { data: fechados } = await sb.from('schedule_exceptions')
     .select('date').eq('type','closed').neq('aplica_a','agendamento')
     .in('professor_id', [...new Set(slots.map(s=>s.professor_id))])
     .gte('date', dateToStr(hoje));
-  const diasSemAula = new Set((fechados||[]).map(f=>f.date));
 
-  const agora = new Date();
-  const ocorrencias = [];
-  for(let i=0; i<DIAS_PARA_CONFIRMAR; i++){
-    const d = new Date(hoje); d.setDate(d.getDate()+i);
-    slots.filter(s=>s.weekday === d.getDay()).forEach(s=>{
-      const [h,m] = s.hora.split(':').map(Number);
-      const quando = new Date(d); quando.setHours(h, m, 0, 0);
-      if(quando <= agora) return; // aula que já passou não se confirma
-      ocorrencias.push({ slot:s, data:dateToStr(d), quando,
-        cancelada: diasSemAula.has(dateToStr(d)),
-        grupo: deConfirmacao.find(g=>g.id === s.group_id) });
-    });
-  }
-  ocorrencias.sort((a,b)=> a.quando - b.quando);
+  aulasFixasDados = {
+    hoje, limite, jaDisse,
+    diasSemAula: new Set((fechados||[]).map(f=>f.date)),
+    slotsPorGrupo: deConfirmacao.reduce((acc,g)=>{
+      acc[g.id] = slots.filter(s=>s.group_id === g.id); return acc;
+    }, {}),
+  };
 
-  const porGrupo = {};
-  ocorrencias.forEach(o=>{ (porGrupo[o.grupo.id] ||= { grupo:o.grupo, itens:[] }).itens.push(o); });
-
-  wrap.innerHTML = Object.values(porGrupo).map(({grupo, itens})=>{
-    const cor = grupo.cor || 'var(--pine)';
-    return `<div class="local-bloco" style="--local-cor:${escHtml(cor)}">
+  wrap.innerHTML = deConfirmacao.map(grupo=>{
+    const logo = safeUrl(grupo.logo_url || '');
+    return `<div class="local-bloco" style="--local-cor:${escHtml(grupo.cor || 'var(--pine)')}">
       <div class="local-cabecalho">
-        ${grupo.logo_url ? `<img class="local-logo" src="${escHtml(safeUrl(grupo.logo_url))}" alt="">` : ''}
+        ${logo ? `<img class="local-logo" src="${escHtml(logo)}" alt="">` : ''}
         <div>
           <div class="local-nome">${escHtml(grupo.local_nome || grupo.nome)}</div>
-          <div class="local-sub">Suas aulas · toque para dizer se vai</div>
+          <div class="local-sub">Escolha o dia e diga se você vai</div>
         </div>
       </div>
-      <div class="aula-lista">${itens.map(o=>{
-        const resp = jaDisse[`${o.slot.id}|${o.data}`];
-        const dia = o.quando;
-        const ehHoje = dateToStr(dia) === dateToStr(new Date());
-        const quando = `<div class="aula-quando">
-            <strong>${ehHoje ? 'Hoje' : DAYS_FULL[dia.getDay()]}</strong>
-            <span>${dia.getDate()}/${String(dia.getMonth()+1).padStart(2,'0')} · ${escHtml(o.slot.hora)}</span>
-          </div>`;
-        if(o.cancelada) return `<div class="aula-item cancelada">${quando}
-          <div class="aula-sem">Sem aula nesse dia</div>
-        </div>`;
-        return `<div class="aula-item${resp===true?' vai':resp===false?' nao-vai':''}">
-          ${quando}
-          <div class="aula-acoes">
-            <button type="button" class="aula-btn${resp===true?' on':''}"
-              onclick="confirmarAula('${jsAttr(o.slot.id)}','${o.data}',true)">Vou</button>
-            <button type="button" class="aula-btn nao${resp===false?' on':''}"
-              onclick="confirmarAula('${jsAttr(o.slot.id)}','${o.data}',false)">Não vou</button>
+      <div class="aulas-corpo">
+        <p class="slots-label">Selecione o dia</p>
+        <div class="cal-widget">
+          <div class="cal-toolbar">
+            <div class="cal-nav">
+              <button type="button" class="cal-nav-btn" onclick="aulasCalNav('${jsAttr(grupo.id)}',-1)">&lsaquo;</button>
+              <span class="cal-nav-label" id="aulas-cal-label-${escHtml(grupo.id)}"></span>
+              <button type="button" class="cal-nav-btn" onclick="aulasCalNav('${jsAttr(grupo.id)}',1)">&rsaquo;</button>
+            </div>
           </div>
-        </div>`;
-      }).join('')}</div>
+          <div class="cal-month-weekdays">${DAYS_S.map(d=>`<span>${d}</span>`).join('')}</div>
+          <div class="cal-month-grid" id="aulas-cal-grid-${escHtml(grupo.id)}"></div>
+        </div>
+        <div id="aulas-dia-${escHtml(grupo.id)}"></div>
+      </div>
     </div>`;
   }).join('');
+
+  deConfirmacao.forEach(g=>{
+    const est = aulasFixasEstado[g.id] || (aulasFixasEstado[g.id] = { ancora:null, dia:null });
+    // Abre já na próxima aula dele: é quase sempre o que ele veio ver.
+    if(!est.dia || !temAulaNoDia(g.id, est.dia)) est.dia = proximoDiaComAula(g.id);
+    if(!est.ancora){
+      const base = est.dia ? strToDate(est.dia) : hoje;
+      est.ancora = new Date(base.getFullYear(), base.getMonth(), 1);
+    }
+    renderAulasCalGrid(g.id);
+    renderAulasDoDia(g.id);
+  });
+}
+
+// Aula que já começou não se confirma mais — por isso a hora entra na conta.
+function horariosDoDia(grupoId, ds){
+  if(!aulasFixasDados) return [];
+  const d = strToDate(ds);
+  const agora = new Date();
+  return (aulasFixasDados.slotsPorGrupo[grupoId] || [])
+    .filter(s=>s.weekday === d.getDay())
+    .filter(s=>{
+      const [h,m] = s.hora.split(':').map(Number);
+      const quando = new Date(d); quando.setHours(h, m, 0, 0);
+      return quando > agora;
+    })
+    .sort((a,b)=> a.hora.localeCompare(b.hora));
+}
+function temAulaNoDia(grupoId, ds){ return horariosDoDia(grupoId, ds).length > 0; }
+
+function proximoDiaComAula(grupoId){
+  if(!aulasFixasDados) return null;
+  const d = new Date(aulasFixasDados.hoje);
+  for(let i=0; i<=DIAS_PARA_CONFIRMAR; i++){
+    const ds = dateToStr(d);
+    if(temAulaNoDia(grupoId, ds) && !aulasFixasDados.diasSemAula.has(ds)) return ds;
+    d.setDate(d.getDate()+1);
+  }
+  return null;
+}
+
+function renderAulasCalGrid(grupoId){
+  const grid  = document.getElementById(`aulas-cal-grid-${grupoId}`);
+  const label = document.getElementById(`aulas-cal-label-${grupoId}`);
+  const est   = aulasFixasEstado[grupoId];
+  if(!grid || !est || !aulasFixasDados) return;
+  const { hoje, limite, diasSemAula } = aulasFixasDados;
+  const ano = est.ancora.getFullYear(), mes = est.ancora.getMonth();
+  if(label) label.textContent = `${MONTHS_FULL[mes]} ${ano}`;
+
+  const primeiroDow = new Date(ano, mes, 1).getDay();
+  const diasNoMes   = new Date(ano, mes+1, 0).getDate();
+  let celulas = '';
+  for(let i=0; i<primeiroDow; i++) celulas += `<div class="cal-month-cell" style="visibility:hidden"></div>`;
+  for(let dia=1; dia<=diasNoMes; dia++){
+    const d  = new Date(ano, mes, dia);
+    const ds = dateToStr(d);
+    const fora = d < hoje || d > limite;
+    const tem  = !fora && temAulaNoDia(grupoId, ds);
+    const cls = ['cal-month-cell'];
+    if(!tem) cls.push('is-disabled');
+    if(tem && diasSemAula.has(ds)) cls.push('is-cancelada');
+    if(d.getTime() === hoje.getTime()) cls.push('is-today');
+    if(est.dia === ds) cls.push('is-selected');
+    celulas += `<button type="button" class="${cls.join(' ')}" ${tem?'':'disabled'}
+      onclick="aulasSelecionaDia('${jsAttr(grupoId)}','${ds}')">
+      <span class="cal-month-daynum">${dia}</span></button>`;
+  }
+  grid.innerHTML = celulas;
+}
+
+function renderAulasDoDia(grupoId){
+  const area = document.getElementById(`aulas-dia-${grupoId}`);
+  const est  = aulasFixasEstado[grupoId];
+  if(!area || !est || !aulasFixasDados) return;
+
+  if(!est.dia){
+    area.innerHTML = `<p class="no-slots-msg">Nenhuma aula marcada nos próximos dias.</p>`;
+    return;
+  }
+  const d = strToDate(est.dia);
+  const titulo = `${est.dia === dateToStr(new Date()) ? 'Hoje' : DAYS_FULL[d.getDay()]}, ${
+    d.getDate()}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const cabecalho = `<p class="slots-label" style="margin-top:24px">${escHtml(titulo)}</p>`;
+
+  if(aulasFixasDados.diasSemAula.has(est.dia)){
+    area.innerHTML = cabecalho + `<p class="no-slots-msg">Seu professor fechou este dia — não há aula.</p>`;
+    return;
+  }
+  const horarios = horariosDoDia(grupoId, est.dia);
+  if(!horarios.length){
+    area.innerHTML = cabecalho + `<p class="no-slots-msg">Nenhuma aula neste dia.</p>`;
+    return;
+  }
+  area.innerHTML = `<p class="slots-label" style="margin-top:24px">${escHtml(titulo)} · você vai?</p>
+    <div class="aula-lista">${horarios.map(s=>{
+      const resp = aulasFixasDados.jaDisse[`${s.id}|${est.dia}`];
+      return `<div class="aula-item${resp===true?' vai':resp===false?' nao-vai':''}">
+        <div class="aula-quando">
+          <strong>${escHtml(s.hora)}</strong>
+          <span>${s.duracao_min} min</span>
+        </div>
+        <div class="aula-acoes">
+          <button type="button" class="aula-btn${resp===true?' on':''}"
+            onclick="confirmarAula('${jsAttr(s.id)}','${est.dia}',true)">Vou</button>
+          <button type="button" class="aula-btn nao${resp===false?' on':''}"
+            onclick="confirmarAula('${jsAttr(s.id)}','${est.dia}',false)">Não vou</button>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+function aulasCalNav(grupoId, dir){
+  const est = aulasFixasEstado[grupoId];
+  if(!est || !aulasFixasDados) return;
+  const { hoje, limite } = aulasFixasDados;
+  const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const mesMax   = new Date(limite.getFullYear(), limite.getMonth(), 1);
+  const prox = new Date(est.ancora.getFullYear(), est.ancora.getMonth()+dir, 1);
+  if(prox < mesAtual || prox > mesMax) return;
+  est.ancora = prox;
+  renderAulasCalGrid(grupoId);
+}
+
+function aulasSelecionaDia(grupoId, ds){
+  const est = aulasFixasEstado[grupoId];
+  if(!est) return;
+  est.dia = ds;
+  renderAulasCalGrid(grupoId);
+  renderAulasDoDia(grupoId);
 }
 
 async function confirmarAula(slotId, data, vai){
@@ -5327,6 +5451,15 @@ async function confirmarAula(slotId, data, vai){
             { onConflict: 'class_slot_id,student_id,data' });
   if(error){ showToast('❌ '+error.message); return; }
   showToast(vai ? '✅ Presença confirmada!' : 'Avisado que você não vai.');
+
+  /* Redesenha só o dia aberto. Recarregar a tela inteira jogaria o aluno de
+     volta ao topo a cada toque, e ele costuma responder vários de uma vez. */
+  if(aulasFixasDados){
+    aulasFixasDados.jaDisse[`${slotId}|${data}`] = vai;
+    const grupoId = Object.keys(aulasFixasDados.slotsPorGrupo)
+      .find(g => aulasFixasDados.slotsPorGrupo[g].some(s => s.id === slotId));
+    if(grupoId){ renderAulasDoDia(grupoId); return; }
+  }
   renderAulasFixas();
 }
 
