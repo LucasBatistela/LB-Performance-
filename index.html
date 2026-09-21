@@ -1263,6 +1263,9 @@ img { max-width: 100%; display: block; }
 .grupo-campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
 .grupo-campo > span { font-size: .76rem; font-weight: 600; color: var(--muted); }
 .grupo-campo input { width: 100%; }
+.logo-escolha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.logo-preview { width: 52px; height: 52px; border-radius: 8px; object-fit: contain;
+  background: #fff; padding: 3px; border: 1.5px solid var(--border); flex-shrink: 0; }
 .grupo-membros { display: flex; flex-wrap: wrap; gap: 6px; }
 .membro-chip { font-size: .78rem; font-weight: 600; padding: 7px 12px; border-radius: 999px;
   border: 1.5px solid var(--border); background: var(--surface); color: var(--ink-2); }
@@ -1306,7 +1309,10 @@ details.turma-bloco[open] > summary.turma-head { margin-bottom: 12px; }
   overflow: hidden; margin-bottom: 18px; }
 .local-cabecalho { display: flex; align-items: center; gap: 12px; padding: 14px 16px;
   background: var(--local-cor); color: #fff; }
-.local-logo { width: 38px; height: 38px; border-radius: 8px; object-fit: contain;
+/* 44px e não 38: o logo do estúdio é um conjunto de marca e nome empilhados, e
+   abaixo disso o nome vira borrão. Quem carrega a leitura é o texto ao lado —
+   aqui basta a marca ser reconhecível. */
+.local-logo { width: 44px; height: 44px; border-radius: 8px; object-fit: contain;
   background: #fff; padding: 3px; flex-shrink: 0; }
 .local-nome { font-family: var(--font-d); font-weight: 800; font-size: 1.02rem; }
 .local-sub { font-size: .76rem; opacity: .9; }
@@ -5460,12 +5466,67 @@ function configGrupoHTML(groupId){
         <input type="text" id="gc-local" value="${escHtml(g.local_nome||'')}" placeholder="Ex: Estúdio 10"></label>
       <label class="grupo-campo"><span>Cor do bloco</span>
         <input type="color" id="gc-cor" value="${escHtml(g.cor||'#E07A2F')}" style="max-width:70px;padding:4px"></label>
-      <label class="grupo-campo"><span>Endereço do logo (opcional)</span>
-        <input type="url" id="gc-logo" value="${escHtml(g.logo_url||'')}" placeholder="https://…"></label>
+      <div class="grupo-campo"><span>Logo do local (opcional)</span>
+        <input type="hidden" id="gc-logo" value="${escHtml(g.logo_url||'')}">
+        <div class="logo-escolha">
+          <!-- src="" resolveria para a própria página e desenharia ícone de imagem
+               quebrada, então sem logo o atributo simplesmente não existe. -->
+          <img id="gc-logo-preview" class="logo-preview" alt=""${
+            safeUrl(g.logo_url||'') ? ` src="${escHtml(safeUrl(g.logo_url))}"` : ' hidden'}>
+          <input type="file" id="gc-logo-input" accept="image/png,image/jpeg,image/webp" hidden
+            onchange="handleLogoUpload(this,'${jsAttr(groupId)}')">
+          <button type="button" class="btn-ghost" style="font-size:.78rem;padding:8px 14px"
+            onclick="document.getElementById('gc-logo-input').click()">Escolher imagem</button>
+          <button type="button" class="btn-ghost" style="font-size:.78rem;padding:8px 14px"
+            id="gc-logo-remover"${g.logo_url?'':' hidden'} onclick="removerLogoGrupo()">Remover</button>
+        </div>
+      </div>
     </div>
     <button class="btn-primary" style="font-size:.82rem;padding:9px 16px;align-self:flex-start"
       onclick="salvarConfigGrupo('${jsAttr(groupId)}')">Salvar grupo</button>
   </div>`;
+}
+
+/* O logo é escolhido como arquivo, não como endereço: o professor tem a imagem
+   no celular, não um link. Ele sobe na hora e o endereço fica num campo oculto,
+   para o Salvar continuar sendo um passo só com o resto do formulário. */
+const LOGO_MAX_PX = 512;
+
+async function handleLogoUpload(input, groupId){
+  const file = input.files?.[0];
+  input.value = '';
+  if(!file) return;
+  if(!sb || !currentUser){ showToast('❌ Faça login novamente.'); return; }
+
+  showToast('Enviando logo…');
+  let blob;
+  // PNG, não JPEG: logo com fundo transparente viraria um retângulo preto.
+  try { blob = await comprimirImagem(file, LOGO_MAX_PX, 'image/png'); }
+  catch(e){ showToast('❌ '+e.message); return; }
+
+  const caminho = `${currentUser.id}/${groupId}.png`;
+  const { error } = await sb.storage.from('logos')
+    .upload(caminho, blob, { contentType:'image/png', upsert:true });
+  if(error){ showToast('❌ Não consegui enviar o logo: '+error.message); return; }
+
+  const { data: pub } = sb.storage.from('logos').getPublicUrl(caminho);
+  aplicarLogoNoFormulario(`${pub.publicUrl}?v=${Date.now()}`);
+  showToast('Logo carregado — toque em Salvar grupo para confirmar.');
+}
+
+function removerLogoGrupo(){ aplicarLogoNoFormulario(''); }
+
+function aplicarLogoNoFormulario(url){
+  const campo = document.getElementById('gc-logo');
+  const prev  = document.getElementById('gc-logo-preview');
+  const rem   = document.getElementById('gc-logo-remover');
+  const seguro = safeUrl(url || '');
+  if(campo) campo.value = seguro;
+  if(prev){
+    if(seguro){ prev.src = seguro; prev.hidden = false; }
+    else { prev.removeAttribute('src'); prev.hidden = true; }
+  }
+  if(rem)  rem.hidden = !seguro;
 }
 
 async function salvarConfigGrupo(groupId){
@@ -5487,7 +5548,9 @@ async function salvarConfigGrupo(groupId){
     modalidade,
     local_nome: conf ? ((document.getElementById('gc-local')?.value||'').trim() || null) : null,
     cor:        conf ? (document.getElementById('gc-cor')?.value || null) : null,
-    logo_url:   conf ? ((document.getElementById('gc-logo')?.value||'').trim() || null) : null,
+    // O campo só é preenchido pelo upload, mas o que vai para o banco passa pelo
+    // mesmo filtro de quem o lê depois — endereço inválido não chega a ser salvo.
+    logo_url:   conf ? (safeUrl((document.getElementById('gc-logo')?.value||'').trim()) || null) : null,
   };
   const { error } = await sb.from('student_groups').update(patch).eq('id', groupId);
   if(error){ showToast('❌ '+error.message); return; }
@@ -9868,7 +9931,8 @@ document.addEventListener('click', function(e) {
    chegava a vê-la. Vale para aluno e professor: é o mesmo fluxo nas duas telas. */
 const AVATAR_MAX_PX = 400;
 
-function comprimirImagem(file, maxPx){
+function comprimirImagem(file, maxPx, tipo){
+  tipo = tipo || 'image/jpeg';
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
     reader.onerror = ()=> reject(new Error('Não consegui ler esse arquivo.'));
@@ -9882,7 +9946,7 @@ function comprimirImagem(file, maxPx){
         canvas.height = Math.max(1, Math.round(img.height*escala));
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(b => b ? resolve(b) : reject(new Error('Não consegui converter a imagem.')),
-          'image/jpeg', 0.85);
+          tipo, 0.85);
       };
       img.src = e.target.result;
     };

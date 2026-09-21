@@ -156,6 +156,20 @@ policies deadlock with `infinite recursion detected in policy`. `e_membro_do_gru
 exactly that reason: it reads membership without triggering RLS. Any new policy spanning these two tables
 should go through it rather than re-querying the other table directly.
 
+## Imagens que o usuário envia
+
+`profiles.avatar_url` and `student_groups.logo_url` hold a **public Storage URL**, not image bytes and not a
+`data:` URI. The avatar used to live only in `localStorage`, which meant it died with the browser profile and
+nobody but its owner ever saw it; don't reintroduce that. Both flows share `comprimirImagem()` (canvas resize →
+`toBlob`) and both upload to a bucket whose policy pins `(storage.foldername(name))[1]` to `auth.uid()`, so the
+path's first folder is the owner — keep that shape for any new bucket. Avatars go out as JPEG; **logos go out as
+PNG**, because a transparent logo flattened to JPEG turns into a black rectangle. The upload path is fixed per
+owner, so both append `?v=<timestamp>` to bust the CDN, and every URL is filtered through `safeUrl()` on write
+and on render.
+
+**Never put `capture` on an image input.** `capture="environment"` makes the phone open the rear camera directly
+and, on Android, removes the gallery option entirely — students could not pick a photo they already had.
+
 ## `[hidden]` is global, don't re-declare it
 
 `[hidden] { display: none !important; }` sits in the reset. It is there because the `hidden` attribute loses to
