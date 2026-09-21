@@ -209,6 +209,25 @@ and on render.
 **Never put `capture` on an image input.** `capture="environment"` makes the phone open the rear camera directly
 and, on Android, removes the gallery option entirely — students could not pick a photo they already had.
 
+## Celular
+
+The app is used almost entirely on phones, students and professor alike. Three rules that are easy to undo by
+accident:
+
+- **The screen does not zoom.** `user-scalable=no` is *not* the mechanism — iOS Safari has ignored it since
+  iOS 10. What works is refusing the gesture events (`gesturestart`/`gesturechange`/`gestureend`, plus
+  `touchmove` with two fingers), and `touch-action: manipulation` on `html` for double-tap. The one exception
+  is `#body-map-wrap`, where the student needs to zoom to hit the right muscle; `podeDarZoom()` is the guard.
+- **Every form control is at least 16px on screens under 820px**, with `!important`, because below that iOS
+  zooms in on focus and never zooms back out. That is a browser rule, not a style choice — don't "fix" the
+  `!important` away.
+- **The swipe-back gesture bails out inside anything that scrolls horizontally** (`.q-scale`, `.div-tabs`,
+  `.day-strip`), on slow drags, and whenever an overlay is open. Dragging the PSE ruler used to navigate away
+  mid check-in.
+
+The two CDN scripts are `defer`red, so `init()` runs on `DOMContentLoaded` rather than inline — putting it back
+inline would break, because the deferred scripts have not run yet at that point.
+
 ## `[hidden]` is global, don't re-declare it
 
 `[hidden] { display: none !important; }` sits in the reset. It is there because the `hidden` attribute loses to
