@@ -2994,9 +2994,15 @@ function strToDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(
 function expandFixedOccurrences(anchors, skipsByBooking, physicalKeySet, fromDate, toDateExclusive){
   const out = [];
   (anchors||[]).forEach(anchor=>{
-    const dow = strToDate(anchor.date).getDay();
+    const inicioSerie = strToDate(anchor.date);
+    const dow = inicioSerie.getDay();
     const skips = skipsByBooking[anchor.id] || new Set();
-    const cursor = new Date(fromDate); cursor.setHours(0,0,0,0);
+    /* A série vale a partir do dia em que o horário foi fixado, nunca antes.
+       Sem isto o cursor começava na borda da janela que está sendo exibida, e
+       um horário fixado em outubro aparecia em todas as terças de setembro —
+       agendamentos que nunca existiram, ocupando horário que estava livre. */
+    const cursor = new Date(Math.max(fromDate.getTime(), inicioSerie.getTime()));
+    cursor.setHours(0,0,0,0);
     while(cursor.getDay()!==dow) cursor.setDate(cursor.getDate()+1);
     while(cursor < toDateExclusive){
       const ds = dateToStr(cursor);
